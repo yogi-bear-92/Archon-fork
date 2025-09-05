@@ -1,306 +1,332 @@
-# CLAUDE.md
+# Claude Code Configuration - SPARC Development Environment
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
 
-## Alpha Development Guidelines
+**ABSOLUTE RULES**:
+1. ALL operations MUST be concurrent/parallel in a single message
+2. **NEVER save working files, text/mds and tests to the root folder**
+3. ALWAYS organize files in appropriate subdirectories
+4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
 
-**Local-only deployment** - each user runs their own instance.
+### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
 
-### Core Principles
+**MANDATORY PATTERNS:**
+- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
+- **Task tool (Claude Code)**: ALWAYS spawn ALL agents in ONE message with full instructions
+- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
+- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
+- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
 
-- **No backwards compatibility** - remove deprecated code immediately
-- **Detailed errors over graceful failures** - we want to identify and fix issues fast
-- **Break things to improve them** - alpha is for rapid iteration
+### 🎯 CRITICAL: Claude Code Task Tool for Agent Execution
 
-### Error Handling
-
-**Core Principle**: In alpha, we need to intelligently decide when to fail hard and fast to quickly address issues, and when to allow processes to complete in critical services despite failures. Read below carefully and make intelligent decisions on a case-by-case basis.
-
-#### When to Fail Fast and Loud (Let it Crash!)
-
-These errors should stop execution and bubble up immediately:
-
-- **Service startup failures** - If credentials, database, or any service can't initialize, the system should crash with a clear error
-- **Missing configuration** - Missing environment variables or invalid settings should stop the system
-- **Database connection failures** - Don't hide connection issues, expose them
-- **Authentication/authorization failures** - Security errors must be visible and halt the operation
-- **Data corruption or validation errors** - Never silently accept bad data, Pydantic should raise
-- **Critical dependencies unavailable** - If a required service is down, fail immediately
-- **Invalid data that would corrupt state** - Never store zero embeddings, null foreign keys, or malformed JSON
-
-#### When to Complete but Log Detailed Errors
-
-These operations should continue but track and report failures clearly:
-
-- **Batch processing** - When crawling websites or processing documents, complete what you can and report detailed failures for each item
-- **Background tasks** - Embedding generation, async jobs should finish the queue but log failures
-- **WebSocket events** - Don't crash on a single event failure, log it and continue serving other clients
-- **Optional features** - If projects/tasks are disabled, log and skip rather than crash
-- **External API calls** - Retry with exponential backoff, then fail with a clear message about what service failed and why
-
-#### Critical Nuance: Never Accept Corrupted Data
-
-When a process should continue despite failures, it must **skip the failed item entirely** rather than storing corrupted data:
-
-**❌ WRONG - Silent Corruption:**
-
-```python
-try:
-    embedding = create_embedding(text)
-except Exception as e:
-    embedding = [0.0] * 1536  # NEVER DO THIS - corrupts database
-    store_document(doc, embedding)
+**Claude Code's Task tool is the PRIMARY way to spawn agents:**
+```javascript
+// ✅ CORRECT: Use Claude Code's Task tool for parallel agent execution
+[Single Message]:
+  Task("Research agent", "Analyze requirements and patterns...", "researcher")
+  Task("Coder agent", "Implement core features...", "coder")
+  Task("Tester agent", "Create comprehensive tests...", "tester")
+  Task("Reviewer agent", "Review code quality...", "reviewer")
+  Task("Architect agent", "Design system architecture...", "system-architect")
 ```
 
-**✅ CORRECT - Skip Failed Items:**
+**MCP tools are ONLY for coordination setup:**
+- `mcp__claude-flow__swarm_init` - Initialize coordination topology
+- `mcp__claude-flow__agent_spawn` - Define agent types for coordination
+- `mcp__claude-flow__task_orchestrate` - Orchestrate high-level workflows
 
-```python
-try:
-    embedding = create_embedding(text)
-    store_document(doc, embedding)  # Only store on success
-except Exception as e:
-    failed_items.append({'doc': doc, 'error': str(e)})
-    logger.error(f"Skipping document {doc.id}: {e}")
-    # Continue with next document, don't store anything
-```
+### 📁 File Organization Rules
 
-**✅ CORRECT - Batch Processing with Failure Tracking:**
+**NEVER save to root folder. Use these directories:**
+- `/src` - Source code files
+- `/tests` - Test files
+- `/docs` - Documentation and markdown files
+- `/config` - Configuration files
+- `/scripts` - Utility scripts
+- `/examples` - Example code
 
-```python
-def process_batch(items):
-    results = {'succeeded': [], 'failed': []}
+## Project Overview
 
-    for item in items:
-        try:
-            result = process_item(item)
-            results['succeeded'].append(result)
-        except Exception as e:
-            results['failed'].append({
-                'item': item,
-                'error': str(e),
-                'traceback': traceback.format_exc()
-            })
-            logger.error(f"Failed to process {item.id}: {e}")
+This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
 
-    # Always return both successes and failures
-    return results
-```
+## SPARC Commands
 
-#### Error Message Guidelines
+### Core Commands
+- `npx claude-flow sparc modes` - List available modes
+- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
+- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
+- `npx claude-flow sparc info <mode>` - Get mode details
 
-- Include context about what was being attempted when the error occurred
-- Preserve full stack traces with `exc_info=True` in Python logging
-- Use specific exception types, not generic Exception catching
-- Include relevant IDs, URLs, or data that helps debug the issue
-- Never return None/null to indicate failure - raise an exception with details
-- For batch operations, always report both success count and detailed failure list
+### Batchtools Commands
+- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
+- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
+- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
 
-### Code Quality
+### Build Commands
+- `npm run build` - Build project
+- `npm run test` - Run tests
+- `npm run lint` - Linting
+- `npm run typecheck` - Type checking
 
-- Remove dead code immediately rather than maintaining it - no backward compatibility or legacy functions
-- Prioritize functionality over production-ready patterns
-- Focus on user experience and feature completeness
-- When updating code, don't reference what is changing (avoid keywords like LEGACY, CHANGED, REMOVED), instead focus on comments that document just the functionality of the code
+## SPARC Workflow Phases
 
-## Architecture Overview
+1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
+2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
+3. **Architecture** - System design (`sparc run architect`)
+4. **Refinement** - TDD implementation (`sparc tdd`)
+5. **Completion** - Integration (`sparc run integration`)
 
-Archon V2 Alpha is a microservices-based knowledge management system with MCP (Model Context Protocol) integration:
+## Code Style & Best Practices
 
-- **Frontend (port 3737)**: React + TypeScript + Vite + TailwindCSS
-- **Main Server (port 8181)**: FastAPI with HTTP polling for updates
-- **MCP Server (port 8051)**: Lightweight HTTP-based MCP protocol server
-- **Agents Service (port 8052)**: PydanticAI agents for AI/ML operations
-- **Database**: Supabase (PostgreSQL + pgvector for embeddings)
+- **Modular Design**: Files under 500 lines
+- **Environment Safety**: Never hardcode secrets
+- **Test-First**: Write tests before implementation
+- **Clean Architecture**: Separate concerns
+- **Documentation**: Keep updated
 
-## Development Commands
+## 🚀 Available Agents (54 Total)
 
-### Frontend (archon-ui-main/)
+### Core Development
+`coder`, `reviewer`, `tester`, `planner`, `researcher`
+
+### Swarm Coordination
+`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
+
+### Consensus & Distributed
+`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
+
+### Performance & Optimization
+`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
+
+### GitHub & Repository
+`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
+
+### SPARC Methodology
+`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
+
+### Specialized Development
+`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
+
+### Testing & Validation
+`tdd-london-swarm`, `production-validator`
+
+### Migration & Planning
+`migration-planner`, `swarm-init`
+
+## 🎯 Claude Code vs MCP Tools
+
+### Claude Code Handles ALL EXECUTION:
+- **Task tool**: Spawn and run agents concurrently for actual work
+- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
+- Code generation and programming
+- Bash commands and system operations
+- Implementation work
+- Project navigation and analysis
+- TodoWrite and task management
+- Git operations
+- Package management
+- Testing and debugging
+
+### MCP Tools ONLY COORDINATE:
+- Swarm initialization (topology setup)
+- Agent type definitions (coordination patterns)
+- Task orchestration (high-level planning)
+- Memory management
+- Neural features
+- Performance tracking
+- GitHub integration
+
+**KEY**: MCP coordinates the strategy, Claude Code's Task tool executes with real agents.
+
+## 🚀 Quick Setup
 
 ```bash
-npm run dev              # Start development server on port 3737
-npm run build            # Build for production
-npm run lint             # Run ESLint
-npm run test             # Run Vitest tests
-npm run test:coverage    # Run tests with coverage report
+# Add Claude Flow MCP server
+claude mcp add claude-flow npx claude-flow@alpha mcp start
 ```
 
-### Backend (python/)
+## MCP Tool Categories
 
+### Coordination
+`swarm_init`, `agent_spawn`, `task_orchestrate`
+
+### Monitoring
+`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
+
+### Memory & Neural
+`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
+
+### GitHub Integration
+`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
+
+### System
+`benchmark_run`, `features_detect`, `swarm_monitor`
+
+## 🚀 Agent Execution Flow with Claude Code
+
+### The Correct Pattern:
+
+1. **Optional**: Use MCP tools to set up coordination topology
+2. **REQUIRED**: Use Claude Code's Task tool to spawn agents that do actual work
+3. **REQUIRED**: Each agent runs hooks for coordination
+4. **REQUIRED**: Batch all operations in single messages
+
+### Example Full-Stack Development:
+
+```javascript
+// Single message with all agent spawning via Claude Code's Task tool
+[Parallel Agent Execution]:
+  Task("Backend Developer", "Build REST API with Express. Use hooks for coordination.", "backend-dev")
+  Task("Frontend Developer", "Create React UI. Coordinate with backend via memory.", "coder")
+  Task("Database Architect", "Design PostgreSQL schema. Store schema in memory.", "code-analyzer")
+  Task("Test Engineer", "Write Jest tests. Check memory for API contracts.", "tester")
+  Task("DevOps Engineer", "Setup Docker and CI/CD. Document in memory.", "cicd-engineer")
+  Task("Security Auditor", "Review authentication. Report findings via hooks.", "reviewer")
+  
+  // All todos batched together
+  TodoWrite { todos: [...8-10 todos...] }
+  
+  // All file operations together
+  Write "backend/server.js"
+  Write "frontend/App.jsx"
+  Write "database/schema.sql"
+```
+
+## 📋 Agent Coordination Protocol
+
+### Every Agent Spawned via Task Tool MUST:
+
+**1️⃣ BEFORE Work:**
 ```bash
-# Using uv package manager
-uv sync                  # Install/update dependencies
-uv run pytest            # Run tests
-uv run python -m src.server.main  # Run server locally
-
-# With Docker
-docker-compose up --build -d       # Start all services
-docker-compose logs -f             # View logs
-docker-compose restart              # Restart services
+npx claude-flow@alpha hooks pre-task --description "[task]"
+npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
 ```
 
-### Testing
-
+**2️⃣ DURING Work:**
 ```bash
-# Frontend tests (from archon-ui-main/)
-npm run test:coverage:stream       # Run with streaming output
-npm run test:ui                    # Run with Vitest UI
-
-# Backend tests (from python/)
-uv run pytest tests/test_api_essentials.py -v
-uv run pytest tests/test_service_integration.py -v
+npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
+npx claude-flow@alpha hooks notify --message "[what was done]"
 ```
 
-## Key API Endpoints
-
-### Knowledge Base
-
-- `POST /api/knowledge/crawl` - Crawl a website
-- `POST /api/knowledge/upload` - Upload documents (PDF, DOCX, MD)
-- `GET /api/knowledge/items` - List knowledge items
-- `POST /api/knowledge/search` - RAG search
-
-### MCP Integration
-
-- `GET /api/mcp/health` - MCP server status
-- `POST /api/mcp/tools/{tool_name}` - Execute MCP tool
-- `GET /api/mcp/tools` - List available tools
-
-### Projects & Tasks (when enabled)
-
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create project
-- `GET /api/projects/{id}` - Get single project
-- `PUT /api/projects/{id}` - Update project
-- `DELETE /api/projects/{id}` - Delete project
-- `GET /api/projects/{id}/tasks` - Get tasks for project (use this, not getTasks)
-- `POST /api/tasks` - Create task
-- `PUT /api/tasks/{id}` - Update task
-- `DELETE /api/tasks/{id}` - Delete task
-
-## Polling Architecture
-
-### HTTP Polling (replaced Socket.IO)
-- **Polling intervals**: 1-2s for active operations, 5-10s for background data
-- **ETag caching**: Reduces bandwidth by ~70% via 304 Not Modified responses
-- **Smart pausing**: Stops polling when browser tab is inactive
-- **Progress endpoints**: `/api/progress/crawl`, `/api/progress/project-creation`
-
-### Key Polling Hooks
-- `usePolling` - Generic polling with ETag support
-- `useDatabaseMutation` - Optimistic updates with rollback
-- `useProjectMutation` - Project-specific operations
-
-## Environment Variables
-
-Required in `.env`:
-
+**3️⃣ AFTER Work:**
 ```bash
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-key-here
+npx claude-flow@alpha hooks post-task --task-id "[task]"
+npx claude-flow@alpha hooks session-end --export-metrics true
 ```
 
-Optional:
+## 🎯 Concurrent Execution Examples
 
-```bash
-OPENAI_API_KEY=your-openai-key        # Can be set via UI
-LOGFIRE_TOKEN=your-logfire-token      # For observability
-LOG_LEVEL=INFO                         # DEBUG, INFO, WARNING, ERROR
+### ✅ CORRECT WORKFLOW: MCP Coordinates, Claude Code Executes
+
+```javascript
+// Step 1: MCP tools set up coordination (optional, for complex tasks)
+[Single Message - Coordination Setup]:
+  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
+  mcp__claude-flow__agent_spawn { type: "researcher" }
+  mcp__claude-flow__agent_spawn { type: "coder" }
+  mcp__claude-flow__agent_spawn { type: "tester" }
+
+// Step 2: Claude Code Task tool spawns ACTUAL agents that do the work
+[Single Message - Parallel Agent Execution]:
+  // Claude Code's Task tool spawns real agents concurrently
+  Task("Research agent", "Analyze API requirements and best practices. Check memory for prior decisions.", "researcher")
+  Task("Coder agent", "Implement REST endpoints with authentication. Coordinate via hooks.", "coder")
+  Task("Database agent", "Design and implement database schema. Store decisions in memory.", "code-analyzer")
+  Task("Tester agent", "Create comprehensive test suite with 90% coverage.", "tester")
+  Task("Reviewer agent", "Review code quality and security. Document findings.", "reviewer")
+  
+  // Batch ALL todos in ONE call
+  TodoWrite { todos: [
+    {id: "1", content: "Research API patterns", status: "in_progress", priority: "high"},
+    {id: "2", content: "Design database schema", status: "in_progress", priority: "high"},
+    {id: "3", content: "Implement authentication", status: "pending", priority: "high"},
+    {id: "4", content: "Build REST endpoints", status: "pending", priority: "high"},
+    {id: "5", content: "Write unit tests", status: "pending", priority: "medium"},
+    {id: "6", content: "Integration tests", status: "pending", priority: "medium"},
+    {id: "7", content: "API documentation", status: "pending", priority: "low"},
+    {id: "8", content: "Performance optimization", status: "pending", priority: "low"}
+  ]}
+  
+  // Parallel file operations
+  Bash "mkdir -p app/{src,tests,docs,config}"
+  Write "app/package.json"
+  Write "app/src/server.js"
+  Write "app/tests/server.test.js"
+  Write "app/docs/API.md"
 ```
 
-## File Organization
+### ❌ WRONG (Multiple Messages):
+```javascript
+Message 1: mcp__claude-flow__swarm_init
+Message 2: Task("agent 1")
+Message 3: TodoWrite { todos: [single todo] }
+Message 4: Write "file.js"
+// This breaks parallel coordination!
+```
 
-### Frontend Structure
+## Performance Benefits
 
-- `src/components/` - Reusable UI components
-- `src/pages/` - Main application pages
-- `src/services/` - API communication and business logic
-- `src/hooks/` - Custom React hooks
-- `src/contexts/` - React context providers
+- **84.8% SWE-Bench solve rate**
+- **32.3% token reduction**
+- **2.8-4.4x speed improvement**
+- **27+ neural models**
 
-### Backend Structure
+## Hooks Integration
 
-- `src/server/` - Main FastAPI application
-- `src/server/api_routes/` - API route handlers
-- `src/server/services/` - Business logic services
-- `src/mcp/` - MCP server implementation
-- `src/agents/` - PydanticAI agent implementations
+### Pre-Operation
+- Auto-assign agents by file type
+- Validate commands for safety
+- Prepare resources automatically
+- Optimize topology by complexity
+- Cache searches
 
-## Database Schema
+### Post-Operation
+- Auto-format code
+- Train neural patterns
+- Update memory
+- Analyze performance
+- Track token usage
 
-Key tables in Supabase:
+### Session Management
+- Generate summaries
+- Persist state
+- Track metrics
+- Restore context
+- Export workflows
 
-- `sources` - Crawled websites and uploaded documents
-- `documents` - Processed document chunks with embeddings
-- `projects` - Project management (optional feature)
-- `tasks` - Task tracking linked to projects
-- `code_examples` - Extracted code snippets
+## Advanced Features (v2.0.0)
 
-## API Naming Conventions
+- 🚀 Automatic Topology Selection
+- ⚡ Parallel Execution (2.8-4.4x speed)
+- 🧠 Neural Training
+- 📊 Bottleneck Analysis
+- 🤖 Smart Auto-Spawning
+- 🛡️ Self-Healing Workflows
+- 💾 Cross-Session Memory
+- 🔗 GitHub Integration
 
-### Task Status Values
-Use database values directly (no UI mapping):
-- `todo`, `doing`, `review`, `done`
+## Integration Tips
 
-### Service Method Patterns
-- `get[Resource]sByProject(projectId)` - Scoped queries
-- `get[Resource](id)` - Single resource
-- `create[Resource](data)` - Create operations
-- `update[Resource](id, updates)` - Updates
-- `delete[Resource](id)` - Soft deletes
+1. Start with basic swarm init
+2. Scale agents gradually
+3. Use memory for context
+4. Monitor progress regularly
+5. Train patterns from success
+6. Enable hooks automation
+7. Use GitHub tools first
 
-### State Naming
-- `is[Action]ing` - Loading states (e.g., `isSwitchingProject`)
-- `[resource]Error` - Error messages
-- `selected[Resource]` - Current selection
+## Support
 
-## Common Development Tasks
+- Documentation: https://github.com/ruvnet/claude-flow
+- Issues: https://github.com/ruvnet/claude-flow/issues
 
-### Add a new API endpoint
+---
 
-1. Create route handler in `python/src/server/api_routes/`
-2. Add service logic in `python/src/server/services/`
-3. Include router in `python/src/server/main.py`
-4. Update frontend service in `archon-ui-main/src/services/`
+Remember: **Claude Flow coordinates, Claude Code creates!**
 
-### Add a new UI component
-
-1. Create component in `archon-ui-main/src/components/`
-2. Add to page in `archon-ui-main/src/pages/`
-3. Include any new API calls in services
-4. Add tests in `archon-ui-main/test/`
-
-### Debug MCP connection issues
-
-1. Check MCP health: `curl http://localhost:8051/health`
-2. View MCP logs: `docker-compose logs archon-mcp`
-3. Test tool execution via UI MCP page
-4. Verify Supabase connection and credentials
-
-## Code Quality Standards
-
-We enforce code quality through automated linting and type checking:
-
-- **Python 3.12** with 120 character line length
-- **Ruff** for linting - checks for errors, warnings, unused imports, and code style
-- **Mypy** for type checking - ensures type safety across the codebase
-- **Auto-formatting** on save in IDEs to maintain consistent style
-- Run `uv run ruff check` and `uv run mypy src/` locally before committing
-
-## MCP Tools Available
-
-When connected to Cursor/Windsurf:
-
-- `archon:perform_rag_query` - Search knowledge base
-- `archon:search_code_examples` - Find code snippets
-- `archon:manage_project` - Project operations
-- `archon:manage_task` - Task management
-- `archon:get_available_sources` - List knowledge sources
-
-## Important Notes
-
-- Projects feature is optional - toggle in Settings UI
-- All services communicate via HTTP, not gRPC
-- HTTP polling handles all updates (Socket.IO removed)
-- Frontend uses Vite proxy for API calls in development
-- Python backend uses `uv` for dependency management
-- Docker Compose handles service orchestration
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+Never save working files, text/mds and tests to the root folder.
