@@ -1,0 +1,50 @@
+# Claude Flow Dockerfile - AI Orchestration Service
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install curl for health checks and other utilities
+RUN apk add --no-cache curl bash
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies first
+RUN npm install
+
+# Install claude-flow globally
+RUN npm install -g claude-flow@alpha
+
+# Create necessary directories
+RUN mkdir -p .claude-flow/config .claude-flow/hooks .swarm logs
+
+# Copy Claude Flow configuration
+COPY .claude-flow/ ./.claude-flow/
+
+# Set default environment variables
+ENV NODE_ENV=production
+ENV CLAUDE_FLOW_PORT=8053
+ENV ARCHON_INTEGRATION=true
+ENV SERVICE_DISCOVERY_MODE=docker_compose
+ENV LOG_LEVEL=INFO
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S claude-flow -u 1001
+
+# Set proper ownership
+RUN chown -R claude-flow:nodejs /app
+
+# Switch to non-root user
+USER claude-flow
+
+# Expose the port
+EXPOSE 8053
+
+# Health check - using HTTP endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${CLAUDE_FLOW_PORT:-8053}/health || \
+      curl -f http://localhost:${CLAUDE_FLOW_PORT:-8053}/status || exit 1
+
+# Default command with better error handling
+CMD ["sh", "-c", "npx claude-flow@alpha mcp start --config .claude-flow/config/topology.json --hooks .claude-flow/hooks.js --port ${CLAUDE_FLOW_PORT:-8053} --http || npx claude-flow@alpha mcp start --port ${CLAUDE_FLOW_PORT:-8053} --http"]

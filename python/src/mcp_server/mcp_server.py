@@ -482,6 +482,22 @@ def register_modules():
         logger.error(f"✗ Failed to register feature tools: {e}")
         logger.error(traceback.format_exc())
 
+    # Claude Flow Integration Tools
+    try:
+        from src.mcp_server.features.claude_flow import register_claude_flow_tools
+        from src.server.services.mcp_service_client import get_mcp_service_client
+        
+        # Get HTTP client for Claude Flow service calls
+        service_client = get_mcp_service_client()
+        register_claude_flow_tools(mcp)
+        modules_registered += 1
+        logger.info("✓ Claude Flow integration tools registered")
+    except ImportError as e:
+        logger.warning(f"⚠ Claude Flow tools not available: {e}")
+    except Exception as e:
+        logger.error(f"✗ Failed to register Claude Flow tools: {e}")
+        logger.error(traceback.format_exc())
+
     logger.info(f"📦 Total modules registered: {modules_registered}")
 
     if modules_registered == 0:
