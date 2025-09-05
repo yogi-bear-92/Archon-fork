@@ -1,5 +1,5 @@
 """
-Integration tests for Master Agent system.
+Integration tests for Claude Flow Expert Agent system.
 
 This module tests end-to-end workflows, RAG processing with Archon integration,
 multi-agent coordination scenarios, and system-level behavior.
@@ -11,12 +11,12 @@ import time
 from typing import Dict, Any
 from unittest.mock import patch, MagicMock
 
-from src.agents.master.master_agent import (
-    MasterAgent, MasterAgentConfig, MasterAgentDependencies,
+from src.agents.claude_flow_expert.claude_flow_expert_agent import (
+    ClaudeFlowExpertAgent, ClaudeFlowExpertConfig, ClaudeFlowExpertDependencies,
     QueryRequest, ProcessingStrategy
 )
-from src.agents.master.capability_matrix import QueryType
-from tests.mocks.master_agent_mocks import (
+from src.agents.claude_flow_expert.capability_matrix import QueryType
+from tests.mocks.claude_flow_expert_agent_mocks import (
     MockArchonMCPClient, MockClaudeFlowCoordinator, MockFallbackManager,
     TestDataGenerator
 )
@@ -27,9 +27,9 @@ class TestRAGProcessingIntegration:
     """Test RAG processing with Archon integration."""
     
     @pytest.mark.asyncio
-    async def test_successful_rag_query_workflow(self, patched_master_agent_dependencies):
+    async def test_successful_rag_query_workflow(self, patched_claude_flow_expert_agent_dependencies):
         """Test complete RAG query processing workflow."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
         
         # Set up mock RAG response
         rag_response = {
@@ -51,15 +51,15 @@ class TestRAGProcessingIntegration:
         mcp_client.set_rag_response("How to design REST APIs", rag_response)
         
         # Create agent and process query
-        config = MasterAgentConfig(rag_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="How to design REST APIs",
             query_type=QueryType.RESEARCH,
             require_rag=True
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         result = await agent.process_query(request, deps)
         
@@ -71,10 +71,10 @@ class TestRAGProcessingIntegration:
         assert "api-design-guide" in str(mcp_client.rag_responses)
     
     @pytest.mark.asyncio
-    async def test_rag_failure_with_fallback(self, patched_master_agent_dependencies):
+    async def test_rag_failure_with_fallback(self, patched_claude_flow_expert_agent_dependencies):
         """Test RAG failure triggers fallback mechanism."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        fallback_manager = patched_master_agent_dependencies["fallback"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        fallback_manager = patched_claude_flow_expert_agent_dependencies["fallback"]
         
         # Configure RAG to fail
         mcp_client.should_fail = True
@@ -93,14 +93,14 @@ class TestRAGProcessingIntegration:
         }
         fallback_manager.set_wiki_response("API design principles", fallback_response)
         
-        config = MasterAgentConfig(rag_enabled=True, rag_fallback_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True, rag_fallback_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="API design principles",
             require_rag=True
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         result = await agent.process_query(request, deps)
         
@@ -110,9 +110,9 @@ class TestRAGProcessingIntegration:
         assert fallback_manager.call_count > 0
     
     @pytest.mark.asyncio
-    async def test_code_search_integration(self, patched_master_agent_dependencies):
+    async def test_code_search_integration(self, patched_claude_flow_expert_agent_dependencies):
         """Test code search functionality integration."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
         
         # Set up code search response
         code_response = {
@@ -128,8 +128,8 @@ class TestRAGProcessingIntegration:
         }
         mcp_client.set_code_search_response("OAuth implementation", code_response)
         
-        config = MasterAgentConfig()
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        agent = ClaudeFlowExpertAgent(config)
         
         # Mock the tool call to test code search
         with patch.object(agent, '_create_agent') as mock_create:
@@ -164,12 +164,12 @@ class TestMultiAgentCoordinationIntegration:
     """Test multi-agent coordination scenarios."""
     
     @pytest.mark.asyncio
-    async def test_successful_multi_agent_coordination(self, patched_master_agent_dependencies):
+    async def test_successful_multi_agent_coordination(self, patched_claude_flow_expert_agent_dependencies):
         """Test successful multi-agent coordination workflow."""
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
-        config = MasterAgentConfig(max_coordinated_agents=5)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(max_coordinated_agents=5)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Build a complete web application with authentication",
@@ -177,7 +177,7 @@ class TestMultiAgentCoordinationIntegration:
             max_agents=4,
             context={"tech_stack": "FastAPI + React"}
         )
-        deps = MasterAgentDependencies(coordinate_agents=True)
+        deps = ClaudeFlowExpertDependencies(coordinate_agents=True)
         
         result = await agent.process_query(request, deps)
         
@@ -192,22 +192,22 @@ class TestMultiAgentCoordinationIntegration:
         assert len(coordinator.agents) > 0
     
     @pytest.mark.asyncio
-    async def test_coordination_failure_fallback(self, patched_master_agent_dependencies):
+    async def test_coordination_failure_fallback(self, patched_claude_flow_expert_agent_dependencies):
         """Test coordination failure triggers single agent fallback."""
-        coordinator = patched_master_agent_dependencies["coordinator"]
-        fallback_manager = patched_master_agent_dependencies["fallback"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
+        fallback_manager = patched_claude_flow_expert_agent_dependencies["fallback"]
         
         # Configure coordination to fail
         coordinator.should_fail = True
         
-        config = MasterAgentConfig()
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Complex task requiring coordination",
             max_agents=3
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         result = await agent.process_query(request, deps)
         
@@ -217,12 +217,12 @@ class TestMultiAgentCoordinationIntegration:
         assert fallback_manager.call_count > 0
     
     @pytest.mark.asyncio
-    async def test_agent_selection_accuracy(self, patched_master_agent_dependencies):
+    async def test_agent_selection_accuracy(self, patched_claude_flow_expert_agent_dependencies):
         """Test accuracy of agent selection for different task types."""
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
-        config = MasterAgentConfig()
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        agent = ClaudeFlowExpertAgent(config)
         
         test_scenarios = [
             {
@@ -258,10 +258,10 @@ class TestEndToEndWorkflows:
     """Test complete end-to-end workflows."""
     
     @pytest.mark.asyncio
-    async def test_coding_workflow_with_rag(self, patched_master_agent_dependencies):
+    async def test_coding_workflow_with_rag(self, patched_claude_flow_expert_agent_dependencies):
         """Test complete coding workflow with RAG support."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
         # Set up RAG responses for research phase
         rag_response = {
@@ -276,8 +276,8 @@ class TestEndToEndWorkflows:
         }
         mcp_client.set_rag_response("FastAPI best practices", rag_response)
         
-        config = MasterAgentConfig(rag_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Simulate multi-step workflow
         workflow_steps = [
@@ -301,7 +301,7 @@ class TestEndToEndWorkflows:
         ]
         
         results = []
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         for step in workflow_steps:
             result = await agent.process_query(step["request"], deps)
@@ -320,10 +320,10 @@ class TestEndToEndWorkflows:
         assert coordinator.call_count >= 1
     
     @pytest.mark.asyncio
-    async def test_hybrid_processing_workflow(self, patched_master_agent_dependencies):
+    async def test_hybrid_processing_workflow(self, patched_claude_flow_expert_agent_dependencies):
         """Test hybrid processing workflow combining RAG and coordination."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
         # Set up responses for hybrid processing
         rag_response = {
@@ -338,15 +338,15 @@ class TestEndToEndWorkflows:
         }
         mcp_client.set_rag_response("system architecture", rag_response)
         
-        config = MasterAgentConfig(rag_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Design and implement a scalable microservices architecture with comprehensive documentation, testing, and deployment strategies",
             query_type=QueryType.CODING,
             max_agents=4
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         result = await agent.process_query(request, deps)
         
@@ -366,24 +366,24 @@ class TestErrorHandlingAndResilience:
     """Test error handling and system resilience."""
     
     @pytest.mark.asyncio
-    async def test_partial_system_failure_resilience(self, patched_master_agent_dependencies):
+    async def test_partial_system_failure_resilience(self, patched_claude_flow_expert_agent_dependencies):
         """Test system resilience when some components fail."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
-        fallback_manager = patched_master_agent_dependencies["fallback"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
+        fallback_manager = patched_claude_flow_expert_agent_dependencies["fallback"]
         
         # Configure RAG to fail but coordination to succeed
         mcp_client.should_fail = True
         
-        config = MasterAgentConfig(rag_enabled=True, rag_fallback_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True, rag_fallback_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Complex task that normally requires RAG and coordination",
             require_rag=True,
             max_agents=3
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         result = await agent.process_query(request, deps)
         
@@ -393,24 +393,24 @@ class TestErrorHandlingAndResilience:
         assert result.fallback_used or fallback_manager.call_count > 0
     
     @pytest.mark.asyncio
-    async def test_circuit_breaker_integration(self, patched_master_agent_dependencies):
+    async def test_circuit_breaker_integration(self, patched_claude_flow_expert_agent_dependencies):
         """Test circuit breaker integration in real workflow."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
         
         # Configure high failure rate to trigger circuit breaker
         mcp_client.failure_rate = 1.0  # 100% failure rate
         
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             circuit_breaker_enabled=True,
             circuit_breaker_threshold=2
         )
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Query that will trigger circuit breaker",
             require_rag=True
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # First few queries should fail and open circuit breaker
         results = []
@@ -429,24 +429,24 @@ class TestErrorHandlingAndResilience:
         assert rag_breaker_state in ["open", "half_open"]
     
     @pytest.mark.asyncio
-    async def test_timeout_handling_integration(self, patched_master_agent_dependencies):
+    async def test_timeout_handling_integration(self, patched_claude_flow_expert_agent_dependencies):
         """Test timeout handling in integrated workflows."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
         # Configure delays to test timeout behavior
         mcp_client.response_delay = 0.1
         coordinator.coordination_delay = 0.1
         
-        config = MasterAgentConfig(timeout=30)  # 30 second timeout
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(timeout=30)  # 30 second timeout
+        agent = ClaudeFlowExpertAgent(config)
         
         request = QueryRequest(
             query="Task that involves both RAG and coordination",
             require_rag=True,
             max_agents=3
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         start_time = time.time()
         result = await agent.process_query(request, deps)
@@ -466,17 +466,17 @@ class TestMemoryAndStatePersistence:
     """Test memory management and state persistence."""
     
     @pytest.mark.asyncio
-    async def test_cross_query_context_persistence(self, patched_master_agent_dependencies):
+    async def test_cross_query_context_persistence(self, patched_claude_flow_expert_agent_dependencies):
         """Test context persistence across multiple queries."""
-        config = MasterAgentConfig(memory_persistence_enabled=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(memory_persistence_enabled=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         # First query establishes context
         first_request = QueryRequest(
             query="Start working on a web application project",
             context={"project_type": "web_app", "framework": "FastAPI"}
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         first_result = await agent.process_query(first_request, deps)
         assert first_result.success is True
@@ -495,13 +495,13 @@ class TestMemoryAndStatePersistence:
         assert metrics["queries_processed"] >= 2
     
     @pytest.mark.asyncio
-    async def test_performance_metrics_accuracy(self, patched_master_agent_dependencies):
+    async def test_performance_metrics_accuracy(self, patched_claude_flow_expert_agent_dependencies):
         """Test accuracy of performance metrics collection."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
-        config = MasterAgentConfig(enable_metrics=True)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(enable_metrics=True)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Process different types of queries
         queries = [
@@ -511,7 +511,7 @@ class TestMemoryAndStatePersistence:
             QueryRequest(query="Research task", query_type=QueryType.RESEARCH, require_rag=True)
         ]
         
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         for request in queries:
             result = await agent.process_query(request, deps)
@@ -535,10 +535,10 @@ class TestSystemScalability:
     """Test system scalability and load handling."""
     
     @pytest.mark.asyncio
-    async def test_concurrent_request_handling(self, patched_master_agent_dependencies):
+    async def test_concurrent_request_handling(self, patched_claude_flow_expert_agent_dependencies):
         """Test handling of concurrent requests."""
-        config = MasterAgentConfig(max_coordinated_agents=10)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(max_coordinated_agents=10)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Create concurrent requests
         num_concurrent = 10
@@ -546,7 +546,7 @@ class TestSystemScalability:
             QueryRequest(query=f"Concurrent query {i}", query_type=QueryType.GENERAL)
             for i in range(num_concurrent)
         ]
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Process all requests concurrently
         start_time = time.time()
@@ -566,15 +566,15 @@ class TestSystemScalability:
         assert metrics["queries_processed"] == num_concurrent
     
     @pytest.mark.asyncio
-    async def test_resource_management_under_load(self, patched_master_agent_dependencies):
+    async def test_resource_management_under_load(self, patched_claude_flow_expert_agent_dependencies):
         """Test resource management under load conditions."""
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             max_coordinated_agents=5,
             memory_persistence_enabled=True
         )
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Create resource-intensive requests
         intensive_requests = [
@@ -587,7 +587,7 @@ class TestSystemScalability:
             for i in range(5)
         ]
         
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Process requests and monitor resource usage
         results = []
@@ -615,10 +615,10 @@ class TestLongRunningWorkflows:
     """Test long-running and complex workflows."""
     
     @pytest.mark.asyncio
-    async def test_extended_project_workflow(self, patched_master_agent_dependencies):
+    async def test_extended_project_workflow(self, patched_claude_flow_expert_agent_dependencies):
         """Test extended project workflow simulation."""
-        mcp_client = patched_master_agent_dependencies["mcp_client"]
-        coordinator = patched_master_agent_dependencies["coordinator"]
+        mcp_client = patched_claude_flow_expert_agent_dependencies["mcp_client"]
+        coordinator = patched_claude_flow_expert_agent_dependencies["coordinator"]
         
         # Set up comprehensive responses
         research_response = {
@@ -630,12 +630,12 @@ class TestLongRunningWorkflows:
         }
         mcp_client.set_rag_response("project planning", research_response)
         
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             rag_enabled=True,
             max_coordinated_agents=8,
             memory_persistence_enabled=True
         )
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Simulate comprehensive project workflow
         workflow_phases = [
@@ -676,7 +676,7 @@ class TestLongRunningWorkflows:
             }
         ]
         
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         phase_results = {}
         
         total_start_time = time.time()

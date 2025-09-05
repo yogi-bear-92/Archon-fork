@@ -1,5 +1,5 @@
 """
-Performance tests for Serena Master Agent semantic analysis operations.
+Performance tests for Serena Claude Flow Expert Agent semantic analysis operations.
 
 Tests semantic analysis performance characteristics, scalability,
 memory usage, and response times under various load conditions.

@@ -2,7 +2,7 @@
 Claude Flow Coordination Hooks for seamless swarm orchestration.
 
 This module provides integration hooks for Claude Flow's swarm coordination system,
-enabling the master agent to leverage Claude Flow's advanced orchestration capabilities.
+enabling the claude flow expert agent to leverage Claude Flow's advanced orchestration capabilities.
 """
 
 import asyncio
@@ -40,7 +40,7 @@ class ClaudeFlowCoordinator:
     """
     Claude Flow coordination hooks for swarm orchestration.
     
-    Provides seamless integration between the Master Agent and Claude Flow's
+    Provides seamless integration between the Claude Flow Expert Agent and Claude Flow's
     advanced swarm coordination capabilities including topology management,
     agent spawning, and performance monitoring.
     """

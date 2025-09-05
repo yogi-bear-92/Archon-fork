@@ -1,7 +1,7 @@
 """
-Serena Master Agent Coordination Hooks System
+Serena Claude Flow Expert Agent Coordination Hooks System
 
-This module provides comprehensive coordination hooks for the Serena Master Agent,
+This module provides comprehensive coordination hooks for the Serena Claude Flow Expert Agent,
 integrating semantic code intelligence with Claude Flow orchestration and
 Archon's task management system.
 
@@ -93,7 +93,7 @@ class HookExecutionResult:
 
 class SerenaCoordinationHooks:
     """
-    Comprehensive coordination hooks system for Serena Master Agent.
+    Comprehensive coordination hooks system for Serena Claude Flow Expert Agent.
     
     Provides semantic-aware coordination patterns that integrate with
     Claude Flow and Archon systems for optimal multi-agent workflows.
@@ -876,7 +876,7 @@ class SerenaCoordinationHooks:
         """Assign optimal roles to agents based on workflow analysis."""
         role_assignments = {}
         
-        # Serena Master Agent as coordinator
+        # Serena Claude Flow Expert Agent as coordinator
         role_assignments["serena-master"] = {
             "role": "coordinator",
             "responsibilities": [

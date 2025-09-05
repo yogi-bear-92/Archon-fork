@@ -1,5 +1,7 @@
 # Claude Flow Expert Agent Configuration
 
+**Tags**: claude-flow, expert-agent, configuration, ai-consultant, sparc, multi-agent-systems, orchestration, workflow-automation, mcp-protocol, technical-consultant, integration-specialist, agent-coordination, topology-design, performance-optimization, neural-patterns, github-integration, troubleshooting, best-practices, knowledge-management, rag-enhanced, swarm-intelligence, consensus-algorithms, memory-management, tdd-methodology, code-generation, architecture-design, system-architecture, devops, machine-learning, web-development, distributed-systems, autonomous-agents, cognitive-patterns, enterprise-ai, development-tools, software-engineering
+
 ## Agent Profile
 
 **Name**: Claude Flow Expert Agent  

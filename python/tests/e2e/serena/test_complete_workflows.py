@@ -1,5 +1,5 @@
 """
-End-to-end workflow tests for complete Serena Master Agent scenarios.
+End-to-end workflow tests for complete Serena Claude Flow Expert Agent scenarios.
 
 Tests complete workflows from initial analysis through code generation,
 review, testing, and optimization with full agent coordination.

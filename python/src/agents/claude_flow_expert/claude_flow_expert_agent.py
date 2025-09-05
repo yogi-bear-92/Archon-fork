@@ -1,9 +1,9 @@
 """
-Core Master Agent for Archon with PydanticAI framework integration.
+Claude Flow Expert Agent - Multi-Agent Orchestration Specialist.
 
-This agent serves as the central orchestrator for all AI operations within Archon,
-providing intelligent routing, RAG-enhanced query processing, and seamless integration
-with Claude Flow's swarm coordination and Archon's knowledge systems.
+Premier multi-agent orchestration and swarm coordination specialist in the 
+Claude Flow ecosystem with 64+ agent expertise, RAG integration, and 
+sophisticated workflow automation with Archon knowledge systems.
 """
 
 import asyncio
@@ -38,8 +38,8 @@ class ProcessingStrategy(str, Enum):
 
 
 @dataclass 
-class MasterAgentConfig:
-    """Configuration for the Master Agent."""
+class ClaudeFlowExpertConfig:
+    """Configuration for the Claude Flow Expert Agent."""
     
     # Core settings
     model: str = "openai:gpt-4o"
@@ -66,8 +66,8 @@ class MasterAgentConfig:
     circuit_breaker_threshold: int = 5
 
 
-class MasterAgentDependencies(ArchonDependencies):
-    """Dependencies for the Master Agent."""
+class ClaudeFlowExpertDependencies(ArchonDependencies):
+    """Dependencies for the Claude Flow Expert Agent."""
     
     query_type: Optional[QueryType] = None
     processing_strategy: Optional[ProcessingStrategy] = None
@@ -80,7 +80,7 @@ class MasterAgentDependencies(ArchonDependencies):
 
 
 class QueryRequest(BaseModel):
-    """Query request model for the master agent."""
+    """Query request model for the claude flow expert agent."""
     
     query: str = Field(..., description="The user's query or task")
     query_type: Optional[QueryType] = Field(default=None, description="Type of query")
@@ -91,7 +91,7 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseAgentOutput):
-    """Response model for master agent queries."""
+    """Response model for claude flow expert agent queries."""
     
     query_type: Optional[QueryType] = None
     processing_strategy: Optional[ProcessingStrategy] = None
@@ -148,21 +148,22 @@ class CircuitBreaker:
             raise
 
 
-class MasterAgent(BaseAgent[MasterAgentDependencies, QueryResponse]):
+class ClaudeFlowExpertAgent(BaseAgent[ClaudeFlowExpertDependencies, QueryResponse]):
     """
-    Master Agent for Archon with PydanticAI framework integration.
+    Claude Flow Expert Agent - Multi-Agent Orchestration Specialist.
     
     This agent provides:
-    - Intelligent query processing with RAG enhancement
-    - Agent capability routing and orchestration
-    - Claude Flow swarm coordination
+    - 64+ specialized agent coordination and routing
+    - Intelligent query processing with RAG enhancement  
+    - Claude Flow swarm orchestration and workflow automation
+    - Multi-topology coordination (hierarchical, mesh, adaptive)
     - Fallback strategies for resilience
     - Performance monitoring and metrics
     """
     
-    def __init__(self, config: MasterAgentConfig = None, **kwargs):
-        """Initialize the master agent."""
-        self.config = config or MasterAgentConfig()
+    def __init__(self, config: ClaudeFlowExpertConfig = None, **kwargs):
+        """Initialize the Claude Flow Expert agent."""
+        self.config = config or ClaudeFlowExpertConfig()
         
         # Initialize components
         self.capability_matrix = AgentCapabilityMatrix()
@@ -191,7 +192,7 @@ class MasterAgent(BaseAgent[MasterAgentDependencies, QueryResponse]):
         
         super().__init__(
             model=self.config.model,
-            name="MasterAgent",
+            name="ClaudeFlowExpertAgent",
             retries=self.config.max_retries,
             enable_rate_limiting=self.config.enable_rate_limiting,
             **kwargs
@@ -212,9 +213,9 @@ class MasterAgent(BaseAgent[MasterAgentDependencies, QueryResponse]):
         return agent
     
     def get_system_prompt(self) -> str:
-        """Get the system prompt for the master agent."""
+        """Get the system prompt for the claude flow expert agent."""
         return """
-You are the Master Agent for the Archon AI development platform, orchestrating intelligent query processing and agent coordination.
+You are the Claude Flow Expert Agent for the Archon AI development platform, orchestrating intelligent query processing and agent coordination.
 
 Your core responsibilities:
 1. **Query Analysis**: Determine query type and optimal processing strategy
@@ -239,7 +240,7 @@ Always provide structured responses with processing metadata and confidence scor
 """
     
     def _register_tools(self, agent: Agent):
-        """Register tools for the master agent."""
+        """Register tools for the claude flow expert agent."""
         
         @agent.tool
         async def perform_rag_query(
@@ -325,7 +326,7 @@ Always provide structured responses with processing metadata and confidence scor
     async def process_query(
         self, 
         request: QueryRequest, 
-        deps: MasterAgentDependencies
+        deps: ClaudeFlowExpertDependencies
     ) -> QueryResponse:
         """
         Main query processing method with RAG enhancement and intelligent routing.
@@ -608,7 +609,7 @@ Always provide structured responses with processing metadata and confidence scor
     async def _process_rag_enhanced(
         self, 
         request: QueryRequest, 
-        deps: MasterAgentDependencies,
+        deps: ClaudeFlowExpertDependencies,
         response: QueryResponse
     ) -> QueryResponse:
         """Process query with RAG enhancement."""
@@ -640,7 +641,7 @@ Focus on providing accurate, context-aware responses.
     async def _process_multi_agent(
         self,
         request: QueryRequest,
-        deps: MasterAgentDependencies,
+        deps: ClaudeFlowExpertDependencies,
         response: QueryResponse
     ) -> QueryResponse:
         """Process query with multi-agent coordination."""
@@ -678,7 +679,7 @@ Focus on providing accurate, context-aware responses.
     async def _process_single_agent(
         self,
         request: QueryRequest,
-        deps: MasterAgentDependencies,
+        deps: ClaudeFlowExpertDependencies,
         response: QueryResponse
     ) -> QueryResponse:
         """Process query with single agent."""
@@ -718,7 +719,7 @@ Provide a focused response based on your specialized capabilities.
     async def _process_hybrid(
         self,
         request: QueryRequest,
-        deps: MasterAgentDependencies,
+        deps: ClaudeFlowExpertDependencies,
         response: QueryResponse
     ) -> QueryResponse:
         """Process query with hybrid RAG + multi-agent approach."""
@@ -757,7 +758,7 @@ Provide a focused response based on your specialized capabilities.
     async def _process_fallback(
         self,
         request: QueryRequest,
-        deps: MasterAgentDependencies,
+        deps: ClaudeFlowExpertDependencies,
         response: QueryResponse
     ) -> QueryResponse:
         """Process query using fallback strategies."""

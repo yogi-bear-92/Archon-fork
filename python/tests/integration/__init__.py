@@ -1,1 +1,1 @@
-# Integration tests for Master Agent system
+# Integration tests for Claude Flow Expert Agent system

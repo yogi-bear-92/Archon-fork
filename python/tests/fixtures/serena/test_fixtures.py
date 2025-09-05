@@ -1,5 +1,5 @@
 """
-Test fixtures and data for Serena Master Agent testing.
+Test fixtures and data for Serena Claude Flow Expert Agent testing.
 
 Provides comprehensive test data for validating Serena MCP tools,
 semantic analysis operations, and multi-agent coordination workflows.

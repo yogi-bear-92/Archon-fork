@@ -14,7 +14,7 @@ from enum import Enum
 
 
 class QueryType(str, Enum):
-    """Types of queries that can be processed by the master agent."""
+    """Types of queries that can be processed by the claude flow expert agent."""
     
     RESEARCH = "research"
     CODING = "coding"

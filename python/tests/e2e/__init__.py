@@ -1,1 +1,1 @@
-# End-to-end tests for Master Agent system
+# End-to-end tests for Claude Flow Expert Agent system

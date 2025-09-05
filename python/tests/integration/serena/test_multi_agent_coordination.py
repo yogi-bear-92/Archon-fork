@@ -1,5 +1,5 @@
 """
-Integration tests for multi-agent coordination workflows with Serena Master Agent.
+Integration tests for multi-agent coordination workflows with Serena Claude Flow Expert Agent.
 
 Tests the interaction between Serena and other agents through Claude Flow
 coordination protocols, message passing, and shared memory systems.
@@ -39,7 +39,7 @@ class TestSerenaAgentCoordination:
         swarm_result = await mock_coordination.swarm_init("hierarchical", 3)
         swarm_id = swarm_result["swarm_id"]
         
-        # Spawn Serena master agent
+        # Spawn Serena claude flow expert agent
         serena_agent = await mock_coordination.agent_spawn(
             "serena_master", 
             ["semantic_analysis", "code_intelligence", "coordination"]

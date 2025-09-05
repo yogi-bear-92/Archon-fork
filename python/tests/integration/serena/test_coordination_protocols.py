@@ -1,5 +1,5 @@
 """
-Coordination protocol tests for Serena Master Agent communication.
+Coordination protocol tests for Serena Claude Flow Expert Agent communication.
 
 Tests agent communication protocols, message routing, error handling,
 hooks execution, and coordination state management.

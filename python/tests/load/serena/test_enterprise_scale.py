@@ -1,5 +1,5 @@
 """
-Load tests for Serena Master Agent enterprise-scale operations.
+Load tests for Serena Claude Flow Expert Agent enterprise-scale operations.
 
 Tests system behavior under heavy load, concurrent operations,
 large-scale coordination, and enterprise deployment scenarios.

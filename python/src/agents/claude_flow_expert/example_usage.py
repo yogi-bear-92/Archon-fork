@@ -1,7 +1,7 @@
 """
-Example usage of the Master Agent with PydanticAI framework.
+Example usage of the Claude Flow Expert Agent with PydanticAI framework.
 
-This demonstrates how to use the Master Agent for various types of queries
+This demonstrates how to use the Claude Flow Expert Agent for various types of queries
 with RAG enhancement, agent coordination, and fallback strategies.
 """
 
@@ -10,10 +10,10 @@ import json
 import logging
 from typing import Any, Dict
 
-from .master_agent import (
-    MasterAgent,
-    MasterAgentConfig,
-    MasterAgentDependencies,
+from .claude_flow_expert_agent import (
+    ClaudeFlowExpertAgent,
+    ClaudeFlowExpertConfig,
+    ClaudeFlowExpertDependencies,
     QueryRequest,
     QueryType,
     ProcessingStrategy
@@ -24,13 +24,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class MasterAgentExample:
-    """Example usage class for the Master Agent."""
+class ClaudeFlowExpertExample:
+    """Example usage class for the Claude Flow Expert Agent."""
     
     def __init__(self):
         """Initialize example with custom configuration."""
-        # Configure the master agent
-        config = MasterAgentConfig(
+        # Configure the claude flow expert agent
+        config = ClaudeFlowExpertConfig(
             model="openai:gpt-4o",
             max_retries=3,
             timeout=120,
@@ -40,8 +40,8 @@ class MasterAgentExample:
             circuit_breaker_enabled=True
         )
         
-        self.master_agent = MasterAgent(config=config)
-        logger.info("Master Agent example initialized")
+        self.claude_flow_expert = ClaudeFlowExpertAgent(config=config)
+        logger.info("Claude Flow Expert Agent example initialized")
     
     async def example_coding_query(self) -> Dict[str, Any]:
         """Example: Processing a coding-related query with RAG enhancement."""
@@ -57,7 +57,7 @@ class MasterAgentExample:
         )
         
         # Set up dependencies
-        deps = MasterAgentDependencies(
+        deps = ClaudeFlowExpertDependencies(
             user_id="example_user",
             request_id="coding_001",
             query_type=QueryType.CODING,
@@ -67,7 +67,7 @@ class MasterAgentExample:
         
         try:
             # Process the query
-            result = await self.master_agent.process_query(request, deps)
+            result = await self.claude_flow_expert.process_query(request, deps)
             
             print(f"Query Type: {result.query_type}")
             print(f"Processing Strategy: {result.processing_strategy}")
@@ -96,7 +96,7 @@ class MasterAgentExample:
             max_agents=3
         )
         
-        deps = MasterAgentDependencies(
+        deps = ClaudeFlowExpertDependencies(
             user_id="example_user",
             request_id="research_001",
             query_type=QueryType.RESEARCH,
@@ -105,7 +105,7 @@ class MasterAgentExample:
         )
         
         try:
-            result = await self.master_agent.process_query(request, deps)
+            result = await self.claude_flow_expert.process_query(request, deps)
             
             print(f"Query processed with {len(result.agents_used)} agents")
             print(f"Coordination metrics: {result.coordination_metrics}")
@@ -133,7 +133,7 @@ class MasterAgentExample:
         for query, query_type in queries:
             try:
                 # Route to appropriate agents
-                recommended_agents = await self.master_agent.route_to_agent(
+                recommended_agents = await self.claude_flow_expert.route_to_agent(
                     query=query,
                     query_type=query_type,
                     preferred_agents=None
@@ -172,7 +172,7 @@ class MasterAgentExample:
         agent_types = ["backend-dev", "tester", "reviewer", "api-docs"]
         
         try:
-            result = await self.master_agent.coordinate_multi_agent(
+            result = await self.claude_flow_expert.coordinate_multi_agent(
                 objective=objective,
                 agent_types=agent_types,
                 max_agents=4
@@ -200,7 +200,7 @@ class MasterAgentExample:
         
         # 1. Wiki search fallback
         try:
-            wiki_result = await self.master_agent.fallback_to_wiki(
+            wiki_result = await self.claude_flow_expert.fallback_to_wiki(
                 "What is Docker containerization?"
             )
             fallback_results.append({
@@ -214,7 +214,7 @@ class MasterAgentExample:
         
         # 2. Single agent fallback
         try:
-            single_agent_result = await self.master_agent.fallback_manager.single_agent_fallback(
+            single_agent_result = await self.claude_flow_expert.fallback_manager.single_agent_fallback(
                 objective="Create a simple Hello World API",
                 preferred_agent="coder"
             )
@@ -235,9 +235,9 @@ class MasterAgentExample:
         
         try:
             # Get current performance metrics
-            metrics = await self.master_agent.get_performance_metrics()
+            metrics = await self.claude_flow_expert.get_performance_metrics()
             
-            print("=== Master Agent Metrics ===")
+            print("=== Claude Flow Expert Agent Metrics ===")
             print(f"Queries Processed: {metrics.get('queries_processed', 0)}")
             print(f"Success Rate: {metrics.get('successful_queries', 0)}/{metrics.get('queries_processed', 0)}")
             print(f"RAG Queries: {metrics.get('rag_queries', 0)}")
@@ -246,15 +246,15 @@ class MasterAgentExample:
             print(f"Average Processing Time: {metrics.get('average_processing_time', 0):.2f}s")
             
             # Get capability matrix stats
-            capability_stats = self.master_agent.capability_matrix.export_capabilities()
+            capability_stats = self.claude_flow_expert.capability_matrix.export_capabilities()
             print(f"\nTotal Agent Capabilities: {capability_stats.get('total_agents', 0)}")
             
             # Get fallback stats
-            fallback_stats = self.master_agent.fallback_manager.get_fallback_stats()
+            fallback_stats = self.claude_flow_expert.fallback_manager.get_fallback_stats()
             print(f"Fallback Statistics: {json.dumps(fallback_stats, indent=2)}")
             
             return {
-                "master_agent_metrics": metrics,
+                "claude_flow_expert_metrics": metrics,
                 "capability_stats": capability_stats,
                 "fallback_stats": fallback_stats
             }
@@ -269,11 +269,11 @@ class MasterAgentExample:
         
         try:
             # Get current capabilities
-            capabilities = self.master_agent.capability_matrix.get_capabilities()
+            capabilities = self.claude_flow_expert.capability_matrix.get_capabilities()
             print(f"Total capabilities loaded: {len(capabilities)}")
             
             # Get capabilities for specific query type
-            coding_capabilities = self.master_agent.capability_matrix.get_capabilities_for_query_type(
+            coding_capabilities = self.claude_flow_expert.capability_matrix.get_capabilities_for_query_type(
                 QueryType.CODING, max_results=5
             )
             
@@ -282,7 +282,7 @@ class MasterAgentExample:
                 print(f"- {cap['agent_type']}: {cap['relevance_score']:.3f}")
             
             # Update capability performance
-            update_success = self.master_agent.capability_matrix.update_performance_metrics(
+            update_success = self.claude_flow_expert.capability_matrix.update_performance_metrics(
                 agent_type="coder",
                 success=True,
                 response_time=25.5
@@ -291,7 +291,7 @@ class MasterAgentExample:
             print(f"Capability update success: {update_success}")
             
             # Get coordination-compatible agents
-            coord_agents = self.master_agent.capability_matrix.get_coordination_compatible_agents()
+            coord_agents = self.claude_flow_expert.capability_matrix.get_coordination_compatible_agents()
             print(f"Coordination-compatible agents: {len(coord_agents)}")
             
             return {
@@ -306,7 +306,7 @@ class MasterAgentExample:
     
     async def run_all_examples(self) -> Dict[str, Any]:
         """Run all examples in sequence."""
-        print("🚀 Running Master Agent Examples")
+        print("🚀 Running Claude Flow Expert Agent Examples")
         print("=" * 50)
         
         results = {}
@@ -340,7 +340,7 @@ class MasterAgentExample:
 async def main():
     """Main function to run examples."""
     try:
-        example = MasterAgentExample()
+        example = ClaudeFlowExpertExample()
         results = await example.run_all_examples()
         
         print("\n" + "=" * 50)
@@ -352,10 +352,10 @@ async def main():
             print(f"{example_name}: {status}")
         
         # Save results to file for inspection
-        with open("master_agent_example_results.json", "w") as f:
+        with open("claude_flow_expert_example_results.json", "w") as f:
             json.dump(results, f, indent=2, default=str)
         
-        print("\n📁 Results saved to master_agent_example_results.json")
+        print("\n📁 Results saved to claude_flow_expert_example_results.json")
         
     except Exception as e:
         logger.error(f"Main execution failed: {e}")

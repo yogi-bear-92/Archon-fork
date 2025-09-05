@@ -1,5 +1,5 @@
 """
-Memory management tests for Serena Master Agent context persistence.
+Memory management tests for Serena Claude Flow Expert Agent context persistence.
 
 Tests memory storage, retrieval, persistence across sessions, 
 cache management, and context sharing between agents.

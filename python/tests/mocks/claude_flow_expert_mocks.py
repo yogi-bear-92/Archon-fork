@@ -1,7 +1,7 @@
 """
-Mock objects for Master Agent testing.
+Mock objects for Claude Flow Expert Agent testing.
 
-This module provides comprehensive mock implementations for testing the Master Agent
+This module provides comprehensive mock implementations for testing the Claude Flow Expert Agent
 system including Archon MCP client, Claude Flow coordination, and fallback mechanisms.
 """
 
@@ -12,8 +12,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, MagicMock
 
-from src.agents.master.capability_matrix import QueryType
-from src.agents.master.master_agent import ProcessingStrategy, MasterAgentConfig
+from src.agents.claude_flow_expert.capability_matrix import QueryType
+from src.agents.claude_flow_expert.claude_flow_expert_agent import ProcessingStrategy, ClaudeFlowExpertConfig
 
 
 class MockArchonMCPClient:
@@ -433,11 +433,11 @@ class MockCapabilityMatrix:
         return False
 
 
-class MockMasterAgent:
-    """Mock Master Agent for integration testing."""
+class MockClaudeFlowExpertAgent:
+    """Mock Claude Flow Expert Agent for integration testing."""
     
-    def __init__(self, config: Optional[MasterAgentConfig] = None):
-        self.config = config or MasterAgentConfig()
+    def __init__(self, config: Optional[ClaudeFlowExpertConfig] = None):
+        self.config = config or ClaudeFlowExpertConfig()
         self.mcp_client = MockArchonMCPClient()
         self.claude_flow_coordinator = MockClaudeFlowCoordinator()
         self.fallback_manager = MockFallbackManager()

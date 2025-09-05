@@ -1,1 +1,1 @@
-# Performance tests for Master Agent system
+# Performance tests for Claude Flow Expert Agent system

@@ -1,7 +1,7 @@
 """
 Serena Coordination Client SDK
 
-Provides a high-level client interface for interacting with the Serena Master Agent
+Provides a high-level client interface for interacting with the Serena Claude Flow Expert Agent
 coordination hooks system. This SDK simplifies integration with other agents and
 external systems, providing semantic intelligence capabilities.
 """
@@ -64,7 +64,7 @@ class CoordinationResponse:
 
 class SerenaCoordinationClient:
     """
-    High-level client for Serena Master Agent coordination services.
+    High-level client for Serena Claude Flow Expert Agent coordination services.
     
     This client provides a simple interface for:
     - Semantic analysis coordination

@@ -1,5 +1,5 @@
 """
-Mock objects for Serena Master Agent MCP tools testing.
+Mock objects for Serena Claude Flow Expert Agent MCP tools testing.
 
 Provides comprehensive mocks for all Serena MCP tool integrations
 and coordination protocols used in testing scenarios.

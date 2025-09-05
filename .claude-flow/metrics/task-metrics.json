@@ -1,18 +1,10 @@
 [
   {
-    "id": "cmd-status-1757073514212",
-    "type": "status",
+    "id": "cmd-agent-1757080351256",
+    "type": "agent",
     "success": true,
-    "duration": 2.0428330000000017,
-    "timestamp": 1757073514214,
-    "metadata": {}
-  },
-  {
-    "id": "cmd-hooks-1757073689747",
-    "type": "hooks",
-    "success": true,
-    "duration": 3011.410708,
-    "timestamp": 1757073692758,
+    "duration": 0.3972080000000062,
+    "timestamp": 1757080351257,
     "metadata": {}
   }
 ]

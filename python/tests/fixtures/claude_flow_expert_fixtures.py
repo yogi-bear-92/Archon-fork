@@ -1,7 +1,7 @@
 """
-Test fixtures for Master Agent testing.
+Test fixtures for Claude Flow Expert Agent testing.
 
-This module provides pytest fixtures for comprehensive Master Agent testing
+This module provides pytest fixtures for comprehensive Claude Flow Expert Agent testing
 including configuration, test data, and performance baselines.
 """
 
@@ -9,23 +9,23 @@ import pytest
 from unittest.mock import patch, MagicMock
 from typing import Dict, Any, List
 
-from src.agents.master.master_agent import MasterAgentConfig, MasterAgentDependencies
-from src.agents.master.capability_matrix import QueryType
-from tests.mocks.master_agent_mocks import (
+from src.agents.claude_flow_expert.claude_flow_expert_agent import ClaudeFlowExpertConfig, ClaudeFlowExpertDependencies
+from src.agents.claude_flow_expert.capability_matrix import QueryType
+from tests.mocks.claude_flow_expert_agent_mocks import (
     MockArchonMCPClient,
     MockClaudeFlowCoordinator,
     MockFallbackManager,
     MockCapabilityMatrix,
-    MockMasterAgent,
+    MockClaudeFlowExpertAgent,
     TestDataGenerator,
     PerformanceTestHelper
 )
 
 
 @pytest.fixture
-def master_agent_config():
-    """Default Master Agent configuration for testing."""
-    return MasterAgentConfig(
+def claude_flow_expert_agent_config():
+    """Default Claude Flow Expert Agent configuration for testing."""
+    return ClaudeFlowExpertConfig(
         model="openai:gpt-4o-mini",  # Use smaller model for testing
         max_retries=2,
         timeout=30,
@@ -42,9 +42,9 @@ def master_agent_config():
 
 
 @pytest.fixture
-def master_agent_deps():
-    """Default Master Agent dependencies for testing."""
-    return MasterAgentDependencies(
+def claude_flow_expert_agent_deps():
+    """Default Claude Flow Expert Agent dependencies for testing."""
+    return ClaudeFlowExpertDependencies(
         query_type=QueryType.GENERAL,
         coordinate_agents=True,
         metrics_callback=None,
@@ -77,9 +77,9 @@ def mock_capability_matrix():
 
 
 @pytest.fixture
-def mock_master_agent(master_agent_config):
-    """Mock master agent with default configuration."""
-    return MockMasterAgent(master_agent_config)
+def mock_claude_flow_expert_agent(claude_flow_expert_agent_config):
+    """Mock claude flow expert agent with default configuration."""
+    return MockClaudeFlowExpertAgent(claude_flow_expert_agent_config)
 
 
 @pytest.fixture
@@ -377,17 +377,17 @@ def mock_pydantic_ai_agent():
 
 
 @pytest.fixture
-def patched_master_agent_dependencies(
+def patched_claude_flow_expert_agent_dependencies(
     mock_archon_mcp_client,
     mock_claude_flow_coordinator,
     mock_fallback_manager,
     mock_capability_matrix
 ):
-    """Patch all Master Agent dependencies for isolated testing."""
+    """Patch all Claude Flow Expert Agent dependencies for isolated testing."""
     with patch("src.agents.mcp_client.get_mcp_client", return_value=mock_archon_mcp_client), \
-         patch("src.agents.master.coordination_hooks.ClaudeFlowCoordinator", return_value=mock_claude_flow_coordinator), \
-         patch("src.agents.master.fallback_strategies.FallbackManager", return_value=mock_fallback_manager), \
-         patch("src.agents.master.capability_matrix.AgentCapabilityMatrix", return_value=mock_capability_matrix):
+         patch("src.agents.claude_flow_expert.coordination_hooks.ClaudeFlowCoordinator", return_value=mock_claude_flow_coordinator), \
+         patch("src.agents.claude_flow_expert.fallback_strategies.FallbackManager", return_value=mock_fallback_manager), \
+         patch("src.agents.claude_flow_expert.capability_matrix.AgentCapabilityMatrix", return_value=mock_capability_matrix):
         yield {
             "mcp_client": mock_archon_mcp_client,
             "coordinator": mock_claude_flow_coordinator,

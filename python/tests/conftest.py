@@ -1,4 +1,4 @@
-"""Enhanced test configuration for Archon with Serena Master Agent testing support."""
+"""Enhanced test configuration for Archon with Serena Claude Flow Expert Agent testing support."""
 
 import os
 from unittest.mock import MagicMock, patch
@@ -186,7 +186,7 @@ def test_knowledge_item():
 # Serena-specific test configuration and fixtures
 @pytest.fixture
 def serena_test_config():
-    """Configuration for Serena Master Agent tests."""
+    """Configuration for Serena Claude Flow Expert Agent tests."""
     return {
         "test_mode": True,
         "mock_mcp_tools": True,
@@ -367,7 +367,7 @@ def pytest_collection_modifyitems(config, items):
 def pytest_configure(config):
     """Configure custom pytest markers."""
     config.addinivalue_line(
-        "markers", "serena: mark test as part of Serena Master Agent test suite"
+        "markers", "serena: mark test as part of Serena Claude Flow Expert Agent test suite"
     )
     config.addinivalue_line(
         "markers", "unit: mark test as a unit test"

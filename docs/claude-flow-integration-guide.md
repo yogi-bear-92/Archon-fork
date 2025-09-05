@@ -1,5 +1,7 @@
 # Claude Flow Integration Guide for Archon
 
+**Tags**: claude-flow, integration, guide, multi-agent, sparc, archon-integration, swarm-orchestration, agent-types, topology-configuration, performance-benefits, specialized-agents, coordination-patterns, github-automation, installation-setup, usage-patterns, knowledge-base-integration, rag-queries, neural-training, consensus-mechanisms, memory-persistence, best-practices, troubleshooting, web-development, machine-learning, devops, cicd, distributed-systems, workflow-methodology, test-driven-development, code-review, project-management, enterprise-ai, development-tools, automation-framework, system-design, technical-documentation
+
 ## Overview
 
 Claude Flow is a multi-agent orchestration framework that enables the creation of specialized AI agents working together in swarms to solve complex problems. This guide covers integrating Claude Flow with Archon's knowledge management system.

@@ -1,7 +1,7 @@
 """
 Serena Coordination API Routes
 
-Provides REST API endpoints for interacting with the Serena Master Agent
+Provides REST API endpoints for interacting with the Serena Claude Flow Expert Agent
 coordination hooks system. These endpoints enable external systems and
 other agents to coordinate with Serena's semantic intelligence capabilities.
 """

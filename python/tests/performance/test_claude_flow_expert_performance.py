@@ -1,5 +1,5 @@
 """
-Performance tests for Master Agent system.
+Performance tests for Claude Flow Expert Agent system.
 
 This module tests query processing latency, concurrent request handling,
 memory usage optimization, and system performance under various load conditions.
@@ -12,9 +12,9 @@ import statistics
 from typing import List, Dict, Any
 from unittest.mock import patch
 
-from src.agents.master.master_agent import MasterAgentConfig, MasterAgentDependencies, QueryRequest
-from src.agents.master.capability_matrix import QueryType
-from tests.mocks.master_agent_mocks import MockMasterAgent, TestDataGenerator, PerformanceTestHelper
+from src.agents.claude_flow_expert.claude_flow_expert_agent import ClaudeFlowExpertConfig, ClaudeFlowExpertDependencies, QueryRequest
+from src.agents.claude_flow_expert.capability_matrix import QueryType
+from tests.mocks.claude_flow_expert_agent_mocks import MockClaudeFlowExpertAgent, TestDataGenerator, PerformanceTestHelper
 
 
 @pytest.mark.performance
@@ -24,19 +24,19 @@ class TestQueryProcessingLatency:
     @pytest.mark.asyncio
     async def test_single_query_latency_baseline(self, performance_monitor):
         """Test single query processing latency baseline."""
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             timeout=30,
             enable_rate_limiting=False,
             circuit_breaker_enabled=False
         )
-        mock_agent = MockMasterAgent(config)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         mock_agent.processing_delay = 0.05  # 50ms base processing time
         
         request = QueryRequest(
             query="Test query for latency measurement",
             query_type=QueryType.GENERAL
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Measure single query performance
         performance_monitor.start()
@@ -62,8 +62,8 @@ class TestQueryProcessingLatency:
     @pytest.mark.asyncio
     async def test_rag_query_latency(self, performance_monitor):
         """Test RAG-enhanced query latency."""
-        config = MasterAgentConfig(rag_enabled=True)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         mock_agent.mcp_client.response_delay = 0.1  # 100ms RAG delay
         
         request = QueryRequest(
@@ -71,7 +71,7 @@ class TestQueryProcessingLatency:
             query_type=QueryType.RESEARCH,
             require_rag=True
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         performance_monitor.start()
         performance_monitor.sample_memory()
@@ -96,8 +96,8 @@ class TestQueryProcessingLatency:
     @pytest.mark.asyncio
     async def test_multi_agent_coordination_latency(self, performance_monitor):
         """Test multi-agent coordination latency."""
-        config = MasterAgentConfig(max_coordinated_agents=5)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(max_coordinated_agents=5)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         mock_agent.claude_flow_coordinator.coordination_delay = 0.15  # 150ms coordination delay
         
         request = QueryRequest(
@@ -105,7 +105,7 @@ class TestQueryProcessingLatency:
             query_type=QueryType.COORDINATION,
             max_agents=4
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         performance_monitor.start()
         
@@ -128,8 +128,8 @@ class TestQueryProcessingLatency:
     @pytest.mark.asyncio
     async def test_latency_percentiles(self, async_test_helper):
         """Test latency distribution and percentiles."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Add some variability to processing times
         mock_agent.processing_delay = 0.05
@@ -140,7 +140,7 @@ class TestQueryProcessingLatency:
             QueryRequest(query=f"Test query {i}", query_type=QueryType.GENERAL)
             for i in range(num_queries)
         ]
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         latencies = []
         
@@ -170,8 +170,8 @@ class TestConcurrentRequestHandling:
     @pytest.mark.asyncio
     async def test_concurrent_query_throughput(self, performance_monitor, async_test_helper):
         """Test system throughput with concurrent queries."""
-        config = MasterAgentConfig(max_coordinated_agents=10)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(max_coordinated_agents=10)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         mock_agent.processing_delay = 0.1  # 100ms base processing
         
         # Test different concurrency levels
@@ -183,7 +183,7 @@ class TestConcurrentRequestHandling:
                 QueryRequest(query=f"Concurrent query {i}", query_type=QueryType.GENERAL)
                 for i in range(concurrency)
             ]
-            deps = MasterAgentDependencies()
+            deps = ClaudeFlowExpertDependencies()
             
             performance_monitor.start()
             
@@ -231,8 +231,8 @@ class TestConcurrentRequestHandling:
     @pytest.mark.asyncio
     async def test_mixed_workload_performance(self, performance_monitor):
         """Test performance with mixed query types."""
-        config = MasterAgentConfig(rag_enabled=True)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Configure different delays for different components
         mock_agent.processing_delay = 0.05
@@ -251,7 +251,7 @@ class TestConcurrentRequestHandling:
             *[QueryRequest(query=f"Complex hybrid task {i}", query_type=QueryType.CODING, max_agents=2, require_rag=False) for i in range(2)]
         ]
         
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         performance_monitor.start()
         start_time = time.time()
@@ -281,8 +281,8 @@ class TestConcurrentRequestHandling:
     @pytest.mark.asyncio
     async def test_sustained_load_performance(self, performance_monitor):
         """Test performance under sustained load."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         mock_agent.processing_delay = 0.05
         
         # Sustained load test parameters
@@ -297,7 +297,7 @@ class TestConcurrentRequestHandling:
         tasks = []
         for i in range(total_queries):
             request = QueryRequest(query=f"Sustained load query {i}")
-            deps = MasterAgentDependencies()
+            deps = ClaudeFlowExpertDependencies()
             
             task = asyncio.create_task(mock_agent.process_query(request, deps))
             tasks.append(task)
@@ -335,11 +335,11 @@ class TestMemoryUsageOptimization:
     @pytest.mark.asyncio
     async def test_memory_usage_single_query(self, memory_monitor):
         """Test memory usage for single query processing."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         request = QueryRequest(query="Memory test query")
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Monitor memory during query processing
         memory_monitor.start()
@@ -362,8 +362,8 @@ class TestMemoryUsageOptimization:
     @pytest.mark.asyncio
     async def test_memory_usage_under_load(self, memory_monitor):
         """Test memory usage under concurrent load."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Create concurrent requests
         num_concurrent = 20
@@ -371,7 +371,7 @@ class TestMemoryUsageOptimization:
             QueryRequest(query=f"Memory load test {i}")
             for i in range(num_concurrent)
         ]
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         memory_monitor.start()
         initial_memory = memory_monitor.get_peak_memory()
@@ -396,8 +396,8 @@ class TestMemoryUsageOptimization:
     @pytest.mark.asyncio
     async def test_memory_cleanup_after_processing(self, memory_monitor):
         """Test memory cleanup after query processing."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         memory_monitor.start()
         baseline_memory = memory_monitor.get_peak_memory()
@@ -409,7 +409,7 @@ class TestMemoryUsageOptimization:
                 QueryRequest(query=f"Cleanup test batch {batch} query {i}")
                 for i in range(batch_size)
             ]
-            deps = MasterAgentDependencies()
+            deps = ClaudeFlowExpertDependencies()
             
             tasks = [mock_agent.process_query(request, deps) for request in requests]
             results = await asyncio.gather(*tasks)
@@ -430,8 +430,8 @@ class TestMemoryUsageOptimization:
     @pytest.mark.asyncio
     async def test_memory_usage_different_query_types(self, memory_monitor):
         """Test memory usage patterns for different query types."""
-        config = MasterAgentConfig(rag_enabled=True)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         query_types = [
             ("simple", QueryRequest(query="Simple query", query_type=QueryType.GENERAL)),
@@ -441,7 +441,7 @@ class TestMemoryUsageOptimization:
         ]
         
         memory_usage = {}
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         for query_name, request in query_types:
             memory_monitor.start()
@@ -475,8 +475,8 @@ class TestAgentSelectionPerformance:
     @pytest.mark.asyncio
     async def test_agent_routing_performance(self, performance_monitor):
         """Test performance of agent routing algorithm."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Test routing performance for different query types
         query_scenarios = [
@@ -517,8 +517,8 @@ class TestAgentSelectionPerformance:
     @pytest.mark.asyncio
     async def test_capability_matrix_lookup_performance(self, performance_monitor):
         """Test capability matrix lookup performance."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Test capability lookups
         num_lookups = 100
@@ -546,8 +546,8 @@ class TestAgentSelectionPerformance:
     @pytest.mark.asyncio
     async def test_agent_selection_accuracy_vs_speed(self, performance_monitor):
         """Test trade-off between agent selection accuracy and speed."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         test_queries = [
             ("Build a REST API with authentication", QueryType.CODING),
@@ -596,8 +596,8 @@ class TestFallbackPerformance:
     @pytest.mark.asyncio
     async def test_fallback_activation_speed(self, performance_monitor):
         """Test speed of fallback activation when primary services fail."""
-        config = MasterAgentConfig(rag_fallback_enabled=True)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_fallback_enabled=True)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Configure primary service to fail
         mock_agent.mcp_client.should_fail = True
@@ -606,7 +606,7 @@ class TestFallbackPerformance:
             query="Query that will trigger fallback",
             require_rag=True
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         start_time = time.time()
         result = await mock_agent.process_query(request, deps)
@@ -623,8 +623,8 @@ class TestFallbackPerformance:
     @pytest.mark.asyncio
     async def test_multiple_fallback_strategies_performance(self, performance_monitor):
         """Test performance when multiple fallback strategies are triggered."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Configure multiple components to fail in sequence
         mock_agent.mcp_client.should_fail = True
@@ -635,7 +635,7 @@ class TestFallbackPerformance:
             require_rag=True,
             max_agents=3
         )
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         start_time = time.time()
         result = await mock_agent.process_query(request, deps)
@@ -660,8 +660,8 @@ class TestLoadTestingScenarios:
     @pytest.mark.asyncio
     async def test_burst_load_handling(self, performance_monitor, async_test_helper):
         """Test handling of burst load scenarios."""
-        config = MasterAgentConfig(max_coordinated_agents=15)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(max_coordinated_agents=15)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Simulate burst load: many requests in short time
         burst_size = 50
@@ -669,7 +669,7 @@ class TestLoadTestingScenarios:
             QueryRequest(query=f"Burst query {i}", query_type=QueryType.GENERAL)
             for i in range(burst_size)
         ]
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         performance_monitor.start()
         start_time = time.time()
@@ -695,8 +695,8 @@ class TestLoadTestingScenarios:
     @pytest.mark.asyncio
     async def test_gradual_load_increase(self, performance_monitor):
         """Test performance under gradually increasing load."""
-        config = MasterAgentConfig()
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig()
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Test with increasing load levels
         load_levels = [5, 10, 15, 20, 25]  # Queries per wave
@@ -709,7 +709,7 @@ class TestLoadTestingScenarios:
                 QueryRequest(query=f"Load level {load_level} query {i}")
                 for i in range(load_level)
             ]
-            deps = MasterAgentDependencies()
+            deps = ClaudeFlowExpertDependencies()
             
             performance_monitor.start()
             wave_start = time.time()
@@ -755,8 +755,8 @@ class TestLoadTestingScenarios:
     @pytest.mark.asyncio
     async def test_mixed_load_patterns(self, performance_monitor):
         """Test performance under realistic mixed load patterns."""
-        config = MasterAgentConfig(rag_enabled=True)
-        mock_agent = MockMasterAgent(config)
+        config = ClaudeFlowExpertConfig(rag_enabled=True)
+        mock_agent = MockClaudeFlowExpertAgent(config)
         
         # Define realistic workload mix
         workload_mix = {
@@ -799,7 +799,7 @@ class TestLoadTestingScenarios:
                     for i in range(count)
                 ])
         
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         performance_monitor.start()
         start_time = time.time()

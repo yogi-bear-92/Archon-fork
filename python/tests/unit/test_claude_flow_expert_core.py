@@ -1,7 +1,7 @@
 """
-Unit tests for Master Agent core functionality.
+Unit tests for Claude Flow Expert Agent core functionality.
 
-This module tests the core Master Agent functionality including initialization,
+This module tests the core Claude Flow Expert Agent functionality including initialization,
 configuration, query classification, processing strategy determination, and
 basic agent operations.
 """
@@ -11,20 +11,20 @@ import asyncio
 import time
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from src.agents.master.master_agent import (
-    MasterAgent, MasterAgentConfig, MasterAgentDependencies,
+from src.agents.claude_flow_expert.claude_flow_expert_agent import (
+    ClaudeFlowExpertAgent, ClaudeFlowExpertConfig, ClaudeFlowExpertDependencies,
     QueryRequest, QueryResponse, ProcessingStrategy, CircuitBreaker
 )
-from src.agents.master.capability_matrix import QueryType
-from tests.mocks.master_agent_mocks import MockMasterAgent, TestDataGenerator
+from src.agents.claude_flow_expert.capability_matrix import QueryType
+from tests.mocks.claude_flow_expert_agent_mocks import MockClaudeFlowExpertAgent, TestDataGenerator
 
 
-class TestMasterAgentInitialization:
-    """Test Master Agent initialization and configuration."""
+class TestClaudeFlowExpertAgentInitialization:
+    """Test Claude Flow Expert Agent initialization and configuration."""
     
     def test_default_initialization(self):
-        """Test Master Agent initialization with default config."""
-        agent = MasterAgent()
+        """Test Claude Flow Expert Agent initialization with default config."""
+        agent = ClaudeFlowExpertAgent()
         
         assert agent.config is not None
         assert agent.capability_matrix is not None
@@ -39,8 +39,8 @@ class TestMasterAgentInitialization:
         assert agent.metrics["average_processing_time"] == 0.0
     
     def test_custom_config_initialization(self):
-        """Test Master Agent with custom configuration."""
-        config = MasterAgentConfig(
+        """Test Claude Flow Expert Agent with custom configuration."""
+        config = ClaudeFlowExpertConfig(
             model="openai:gpt-3.5-turbo",
             max_retries=5,
             timeout=60,
@@ -48,7 +48,7 @@ class TestMasterAgentInitialization:
             max_coordinated_agents=15
         )
         
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         assert agent.config.model == "openai:gpt-3.5-turbo"
         assert agent.config.max_retries == 5
@@ -58,8 +58,8 @@ class TestMasterAgentInitialization:
     
     def test_circuit_breaker_initialization(self):
         """Test circuit breaker initialization."""
-        config = MasterAgentConfig(circuit_breaker_threshold=10)
-        agent = MasterAgent(config)
+        config = ClaudeFlowExpertConfig(circuit_breaker_threshold=10)
+        agent = ClaudeFlowExpertAgent(config)
         
         for breaker in agent.circuit_breakers.values():
             assert breaker.threshold == 10
@@ -68,7 +68,7 @@ class TestMasterAgentInitialization:
     @pytest.mark.asyncio
     async def test_agent_tools_registration(self):
         """Test that PydanticAI tools are properly registered."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         # Check that the agent has the expected tools
         # Note: This would need to be adapted based on actual PydanticAI implementation
@@ -81,7 +81,7 @@ class TestQueryClassification:
     
     def test_classify_coding_queries(self):
         """Test classification of coding-related queries."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         coding_queries = [
             "Write a Python function to sort arrays",
@@ -98,7 +98,7 @@ class TestQueryClassification:
     
     def test_classify_research_queries(self):
         """Test classification of research-related queries."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         research_queries = [
             "What are the best practices for API design?",
@@ -113,7 +113,7 @@ class TestQueryClassification:
     
     def test_classify_analysis_queries(self):
         """Test classification of analysis-related queries."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         analysis_queries = [
             "Analyze the performance of this algorithm",
@@ -128,7 +128,7 @@ class TestQueryClassification:
     
     def test_classify_general_queries(self):
         """Test classification of general queries."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         general_queries = [
             "Hello, how are you?",
@@ -148,7 +148,7 @@ class TestProcessingStrategyDetermination:
     @pytest.mark.asyncio
     async def test_rag_enhanced_strategy(self):
         """Test RAG-enhanced strategy selection."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         # RAG required explicitly
         request = QueryRequest(
@@ -169,7 +169,7 @@ class TestProcessingStrategyDetermination:
     @pytest.mark.asyncio
     async def test_multi_agent_strategy(self):
         """Test multi-agent strategy selection."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         # Coordination query type
         request = QueryRequest(
@@ -190,7 +190,7 @@ class TestProcessingStrategyDetermination:
     @pytest.mark.asyncio
     async def test_hybrid_strategy(self):
         """Test hybrid strategy selection."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         # Complex coding task
         request = QueryRequest(
@@ -203,7 +203,7 @@ class TestProcessingStrategyDetermination:
     @pytest.mark.asyncio
     async def test_single_agent_strategy(self):
         """Test single agent strategy selection."""
-        agent = MasterAgent()
+        agent = ClaudeFlowExpertAgent()
         
         request = QueryRequest(
             query="Simple task",
@@ -296,9 +296,9 @@ class TestAgentRouting:
     """Test agent routing and selection logic."""
     
     @pytest.mark.asyncio
-    async def test_route_to_agent_coding_task(self, master_agent_config):
+    async def test_route_to_agent_coding_task(self, claude_flow_expert_agent_config):
         """Test agent routing for coding tasks."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         agents = await agent.route_to_agent(
             query="Implement a REST API",
@@ -312,9 +312,9 @@ class TestAgentRouting:
         assert any(agent_type in coding_agents for agent_type in agents)
     
     @pytest.mark.asyncio
-    async def test_route_to_agent_with_preferences(self, master_agent_config):
+    async def test_route_to_agent_with_preferences(self, claude_flow_expert_agent_config):
         """Test agent routing with preferred agents."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         preferred = ["researcher", "analyst"]
         agents = await agent.route_to_agent(
@@ -327,9 +327,9 @@ class TestAgentRouting:
         assert any(agent_type in preferred for agent_type in agents)
     
     @pytest.mark.asyncio
-    async def test_route_to_agent_fallback(self, master_agent_config):
+    async def test_route_to_agent_fallback(self, claude_flow_expert_agent_config):
         """Test agent routing fallback to defaults."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         # Mock capability matrix to simulate routing failure
         with patch.object(agent.capability_matrix, 'get_capabilities_for_query_type') as mock_get:
@@ -348,9 +348,9 @@ class TestAgentRouting:
 class TestMetricsAndPerformanceTracking:
     """Test metrics collection and performance tracking."""
     
-    def test_metrics_initialization(self, master_agent_config):
+    def test_metrics_initialization(self, claude_flow_expert_agent_config):
         """Test metrics are properly initialized."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         expected_metrics = [
             "queries_processed",
@@ -365,9 +365,9 @@ class TestMetricsAndPerformanceTracking:
             assert metric in agent.metrics
             assert isinstance(agent.metrics[metric], (int, float))
     
-    def test_average_processing_time_calculation(self, master_agent_config):
+    def test_average_processing_time_calculation(self, claude_flow_expert_agent_config):
         """Test average processing time calculation."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         # Simulate processing times
         agent.metrics["queries_processed"] = 0
@@ -389,9 +389,9 @@ class TestMetricsAndPerformanceTracking:
         assert agent.metrics["average_processing_time"] == 2.0
     
     @pytest.mark.asyncio
-    async def test_get_performance_metrics(self, master_agent_config):
+    async def test_get_performance_metrics(self, claude_flow_expert_agent_config):
         """Test performance metrics retrieval."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         # Set some test metrics
         agent.metrics["queries_processed"] = 100
@@ -421,9 +421,9 @@ class TestMetricsAndPerformanceTracking:
 class TestDefaultAgentSelection:
     """Test default agent selection logic."""
     
-    def test_default_agents_coding(self, master_agent_config):
+    def test_default_agents_coding(self, claude_flow_expert_agent_config):
         """Test default agents for coding tasks."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         defaults = agent._get_default_agents(QueryType.CODING)
         
@@ -433,9 +433,9 @@ class TestDefaultAgentSelection:
         expected_agents = ["coder", "reviewer", "tester"]
         assert all(agent_type in defaults for agent_type in expected_agents)
     
-    def test_default_agents_research(self, master_agent_config):
+    def test_default_agents_research(self, claude_flow_expert_agent_config):
         """Test default agents for research tasks."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         defaults = agent._get_default_agents(QueryType.RESEARCH)
         
@@ -443,9 +443,9 @@ class TestDefaultAgentSelection:
         assert "researcher" in defaults
         assert "analyst" in defaults
     
-    def test_default_agents_general(self, master_agent_config):
+    def test_default_agents_general(self, claude_flow_expert_agent_config):
         """Test default agents for general tasks."""
-        agent = MasterAgent(master_agent_config)
+        agent = ClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         defaults = agent._get_default_agents(QueryType.GENERAL)
         
@@ -456,18 +456,18 @@ class TestDefaultAgentSelection:
 
 
 class TestConfigurationValidation:
-    """Test Master Agent configuration validation."""
+    """Test Claude Flow Expert Agent configuration validation."""
     
     def test_config_with_invalid_values(self):
         """Test configuration with invalid values."""
         # Test negative values are handled appropriately
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             max_retries=-1,  # Should default or be corrected
             timeout=0,       # Should default or be corrected
             max_coordinated_agents=0  # Should default or be corrected
         )
         
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         # Agent should still be functional with corrected values
         assert agent.config is not None
@@ -475,25 +475,25 @@ class TestConfigurationValidation:
     
     def test_config_memory_settings(self):
         """Test memory-related configuration."""
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             memory_persistence_enabled=True,
             memory_ttl=7200  # 2 hours
         )
         
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         assert agent.config.memory_persistence_enabled is True
         assert agent.config.memory_ttl == 7200
     
     def test_config_performance_settings(self):
         """Test performance-related configuration."""
-        config = MasterAgentConfig(
+        config = ClaudeFlowExpertConfig(
             enable_metrics=True,
             circuit_breaker_enabled=True,
             circuit_breaker_threshold=10
         )
         
-        agent = MasterAgent(config)
+        agent = ClaudeFlowExpertAgent(config)
         
         assert agent.config.enable_metrics is True
         assert agent.config.circuit_breaker_enabled is True
@@ -501,20 +501,20 @@ class TestConfigurationValidation:
 
 
 @pytest.mark.asyncio
-class TestMasterAgentAsyncBehavior:
-    """Test Master Agent async behavior and concurrency."""
+class TestClaudeFlowExpertAgentAsyncBehavior:
+    """Test Claude Flow Expert Agent async behavior and concurrency."""
     
-    async def test_concurrent_query_processing(self, master_agent_config):
-        """Test Master Agent handles concurrent queries properly."""
+    async def test_concurrent_query_processing(self, claude_flow_expert_agent_config):
+        """Test Claude Flow Expert Agent handles concurrent queries properly."""
         # Use mock agent for this test to avoid actual LLM calls
-        mock_agent = MockMasterAgent(master_agent_config)
+        mock_agent = MockClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         
         # Create multiple concurrent requests
         requests = [
             TestDataGenerator.create_query_request(f"Query {i}")
             for i in range(5)
         ]
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Process concurrently
         tasks = [
@@ -531,13 +531,13 @@ class TestMasterAgentAsyncBehavior:
         # Metrics should be updated
         assert mock_agent.metrics["queries_processed"] == 5
     
-    async def test_async_timeout_handling(self, master_agent_config):
+    async def test_async_timeout_handling(self, claude_flow_expert_agent_config):
         """Test async timeout handling."""
-        mock_agent = MockMasterAgent(master_agent_config)
+        mock_agent = MockClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         mock_agent.processing_delay = 5.0  # 5 second delay
         
         request = TestDataGenerator.create_query_request("Slow query")
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Should complete even with delay (using asyncio.wait_for in real implementation)
         start_time = time.time()
@@ -547,13 +547,13 @@ class TestMasterAgentAsyncBehavior:
         assert result["success"] is True
         assert elapsed_time >= 5.0  # Should take at least the delay time
     
-    async def test_async_error_propagation(self, master_agent_config):
+    async def test_async_error_propagation(self, claude_flow_expert_agent_config):
         """Test async error propagation and handling."""
-        mock_agent = MockMasterAgent(master_agent_config)
+        mock_agent = MockClaudeFlowExpertAgent(claude_flow_expert_agent_config)
         mock_agent.should_fail = True
         
         request = TestDataGenerator.create_query_request("Failing query")
-        deps = MasterAgentDependencies()
+        deps = ClaudeFlowExpertDependencies()
         
         # Should handle the failure gracefully
         result = await mock_agent.process_query(request, deps)
