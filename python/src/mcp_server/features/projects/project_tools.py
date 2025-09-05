@@ -379,6 +379,94 @@ def register_project_tools(mcp: FastMCP):
             )
 
     @mcp.tool()
+    async def cleanup_empty_projects(
+        ctx: Context,
+        dry_run: bool = False,
+    ) -> str:
+        """
+        Clean up projects that have no tasks.
+
+        Args:
+            dry_run: If true, only report what would be deleted without actually deleting
+
+        Returns:
+            JSON with cleanup results:
+            {
+                "success": true,
+                "empty_projects_found": 5,
+                "projects_deleted": 5,
+                "projects_kept": 10,
+                "deleted_project_ids": [...],
+                "message": "Cleanup completed successfully"
+            }
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                # Get all projects
+                projects_response = await client.get(urljoin(api_url, "/api/projects"))
+                if projects_response.status_code != 200:
+                    return MCPErrorFormatter.format_error(
+                        error_type="api_error",
+                        message="Failed to fetch projects",
+                        suggestion="Try again later",
+                        http_status=projects_response.status_code,
+                    )
+
+                projects = projects_response.json().get("projects", [])
+                empty_projects = []
+                projects_with_tasks = []
+
+                # Check each project for tasks
+                for project in projects:
+                    project_id = project['id']
+                    project_title = project['title']
+
+                    # Get tasks for this project
+                    tasks_response = await client.get(
+                        urljoin(api_url, f"/api/tasks?project_id={project_id}")
+                    )
+                    if tasks_response.status_code == 200:
+                        tasks = tasks_response.json().get('tasks', [])
+                        if len(tasks) == 0:
+                            empty_projects.append(project)
+                        else:
+                            projects_with_tasks.append(project)
+
+                deleted_project_ids = []
+
+                if not dry_run and empty_projects:
+                    # Delete empty projects
+                    for project in empty_projects:
+                        project_id = project['id']
+                        delete_response = await client.delete(
+                            urljoin(api_url, f"/api/projects/{project_id}")
+                        )
+                        if delete_response.status_code == 200:
+                            deleted_project_ids.append(project_id)
+
+                return json.dumps({
+                    "success": True,
+                    "empty_projects_found": len(empty_projects),
+                    "projects_deleted": len(deleted_project_ids),
+                    "projects_kept": len(projects_with_tasks),
+                    "deleted_project_ids": deleted_project_ids,
+                    "dry_run": dry_run,
+                    "message": f"Cleanup completed successfully. {'Dry run - no projects deleted.' if dry_run else f'Deleted {len(deleted_project_ids)} empty projects.'}"
+                })
+
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+            return MCPErrorFormatter.format_error(
+                error_type="internal_error",
+                message=f"Failed to cleanup empty projects: {str(e)}",
+                suggestion="Try again later",
+                http_status=500,
+            )
+
+    @mcp.tool()
     async def create_project(
         ctx: Context,
         title: str,

@@ -225,6 +225,7 @@ MCP_INSTRUCTIONS = """
 - `create_project(title, description, github_repo=None)` - Auto-detects GitHub repo if not provided
 - `check_duplicate_projects(title, github_repo=None)` - Check for existing similar projects
 - `merge_duplicate_projects(primary_project_id, duplicate_project_ids, merge_strategy="consolidate")` - Merge duplicate projects
+- `cleanup_empty_projects(dry_run=False)` - Delete projects with no tasks
 - `auto_detect_github_path(project_title, base_path=None)` - Auto-detect GitHub repository path
 - `list_projects()`
 - `get_project(project_id)`
