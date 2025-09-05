@@ -1,0 +1,266 @@
+name: Intelligent Reviewer Assignment
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+
+jobs:
+  smart-review-assignment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Analyze PR and Assign Smart Reviews
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            console.log(`Analyzing PR #${context.issue.number} with ${files.length} files`);
+            
+            // Advanced analysis patterns
+            const analysisPatterns = {
+              'critical-system': {
+                patterns: [/ansf-workflow\/src\/production/, /phase3.*optimal/, /ML_ENHANCED_ANSF/, /real-time-monitoring/i],
+                reviewers: ['System Architect', 'Senior Backend Developer'],
+                minReviews: 2,
+                priority: 'critical'
+              },
+              'neural-networks': {
+                patterns: [/neural/, /ml_/, /transformer/, /embedding/, /model.*\.py$/],
+                reviewers: ['ML Engineer', 'Data Scientist', 'Neural Network Specialist'],
+                minReviews: 1,
+                priority: 'high'
+              },
+              'production-deployment': {
+                patterns: [/production/, /deployment/, /docker/i, /monitoring/, /dashboard/],
+                reviewers: ['DevOps Engineer', 'Production Specialist', 'SRE'],
+                minReviews: 1,
+                priority: 'high'
+              },
+              'github-actions': {
+                patterns: [/\.github\/workflows/, /\.github\/actions/],
+                reviewers: ['CI/CD Specialist', 'DevOps Engineer'],
+                minReviews: 1,
+                priority: 'medium'
+              },
+              'claude-flow': {
+                patterns: [/claude-flow/, /hooks/, /\.claude-flow/],
+                reviewers: ['Claude Flow Expert', 'Automation Specialist'],
+                minReviews: 1,
+                priority: 'medium'
+              },
+              'configuration': {
+                patterns: [/CLAUDE\.md/, /docker-compose/, /\.env/, /config/],
+                reviewers: ['Configuration Specialist', 'DevOps Engineer'],
+                minReviews: 1,
+                priority: 'high'
+              },
+              'documentation': {
+                patterns: [/\.md$/, /docs\//, /README/],
+                reviewers: ['Technical Writer', 'Documentation Specialist'],
+                minReviews: 1,
+                priority: 'low'
+              }
+            };
+            
+            // Analyze changed files
+            let detectedCategories = new Set();
+            let totalChanges = pr.additions + pr.deletions;
+            let criticalFiles = [];
+            
+            files.forEach(file => {
+              const path = file.filename;
+              
+              Object.entries(analysisPatterns).forEach(([category, config]) => {
+                const matchesPattern = config.patterns.some(pattern => pattern.test(path));
+                if (matchesPattern) {
+                  detectedCategories.add(category);
+                  if (config.priority === 'critical') {
+                    criticalFiles.push(path);
+                  }
+                }
+              });
+            });
+            
+            // Determine review strategy
+            let reviewStrategy = {
+              categories: Array.from(detectedCategories),
+              suggestedReviewers: new Set(),
+              minReviews: 1,
+              estimatedReviewTime: 'medium',
+              requiresExpertReview: false
+            };
+            
+            // Aggregate reviewers from all detected categories
+            detectedCategories.forEach(category => {
+              const config = analysisPatterns[category];
+              config.reviewers.forEach(reviewer => reviewStrategy.suggestedReviewers.add(reviewer));
+              reviewStrategy.minReviews = Math.max(reviewStrategy.minReviews, config.minReviews);
+              
+              if (config.priority === 'critical') {
+                reviewStrategy.requiresExpertReview = true;
+              }
+            });
+            
+            // Adjust based on PR size
+            if (totalChanges > 1000) {
+              reviewStrategy.minReviews = Math.max(reviewStrategy.minReviews, 2);
+              reviewStrategy.estimatedReviewTime = 'long';
+              reviewStrategy.requiresExpertReview = true;
+            } else if (totalChanges > 500) {
+              reviewStrategy.estimatedReviewTime = 'medium-long';
+            } else if (totalChanges < 50) {
+              reviewStrategy.estimatedReviewTime = 'quick';
+            }
+            
+            // Generate intelligent review assignment comment
+            let comment = `## 🤖 Intelligent Review Assignment
+            
+**PR Analysis Summary:**
+- **Files Changed**: ${files.length}
+- **Lines Changed**: +${pr.additions}/-${pr.deletions} (${totalChanges} total)
+- **Estimated Review Time**: ${reviewStrategy.estimatedReviewTime}
+- **Categories Detected**: ${reviewStrategy.categories.join(', ')}
+
+### 🎯 Recommended Reviewers:
+
+`;
+            
+            if (reviewStrategy.suggestedReviewers.size > 0) {
+              Array.from(reviewStrategy.suggestedReviewers).forEach(reviewer => {
+                comment += `- 👤 **${reviewer}**\n`;
+              });
+            } else {
+              comment += "- 👤 **General Code Reviewer** - No specific expertise required\n";
+            }
+            
+            comment += `\n**Minimum Reviews Recommended**: ${reviewStrategy.minReviews}\n`;
+            
+            if (reviewStrategy.requiresExpertReview) {
+              comment += "\n⚠️ **Expert Review Required** - This PR modifies critical system components\n";
+            }
+            
+            // Add category-specific guidance
+            if (detectedCategories.has('critical-system')) {
+              comment += `
+### 🚨 Critical System Changes Detected
+Files requiring special attention:
+${criticalFiles.map(f => `- \`${f}\``).join('\n')}
+
+**Review Checklist:**
+- ✅ ANSF Phase 3 accuracy maintained (>97%)
+- ✅ Neural model integration verified (>88.7% accuracy)
+- ✅ Production deployment tested
+- ✅ Real-time monitoring functional
+- ✅ Memory optimization preserved
+`;
+            }
+            
+            if (detectedCategories.has('neural-networks')) {
+              comment += `
+### 🧠 Neural Network Changes
+**ML Review Checklist:**
+- ✅ Model architecture validated
+- ✅ Performance benchmarks maintained
+- ✅ Training pipeline integrity
+- ✅ Inference optimization verified
+`;
+            }
+            
+            if (detectedCategories.has('production-deployment')) {
+              comment += `
+### 🚀 Production Deployment Changes
+**DevOps Review Checklist:**
+- ✅ Deployment scripts validated
+- ✅ Infrastructure as code reviewed
+- ✅ Monitoring and alerting updated
+- ✅ Rollback procedures verified
+`;
+            }
+            
+            if (totalChanges > 1000) {
+              comment += `
+### 📏 Large PR Guidelines
+This PR is quite large (${totalChanges} lines). Consider:
+- Breaking into smaller, focused PRs
+- Providing detailed description of changes
+- Self-reviewing before requesting formal review
+- Highlighting the most critical changes for reviewers
+`;
+            }
+            
+            comment += `
+### 🔄 Branch Protection Status
+- **Feature Branch Required**: ✅ ${pr.head.ref.match(/^(feature|feat|fix|hotfix|enhancement|refactor|docs|chore|test|ci|perf)\//) ? 'Valid' : '❌ Invalid'}
+- **Target Branch**: \`${pr.base.ref}\`
+- **Auto-merge Eligible**: ${totalChanges < 100 && !reviewStrategy.requiresExpertReview ? '✅ Yes' : '❌ No (requires manual review)'}
+
+*This analysis is generated automatically. Feel free to request additional reviewers or modify assignments as needed.*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+            
+            // Create status check
+            const statusState = reviewStrategy.requiresExpertReview ? 'pending' : 'success';
+            const statusDescription = reviewStrategy.requiresExpertReview ? 
+              'Expert review required for critical changes' : 
+              'Standard review process applies';
+              
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: pr.head.sha,
+              state: statusState,
+              context: 'auto-assign-reviewers',
+              description: statusDescription
+            });
+
+      - name: Setup Review Reminders
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Set up automated review reminders for stale PRs
+            const prAge = Date.now() - new Date(context.payload.pull_request.created_at).getTime();
+            const daysSincePR = Math.floor(prAge / (1000 * 60 * 60 * 24));
+            
+            if (daysSincePR > 2) {
+              const reminderComment = `## ⏰ Review Reminder
+              
+This PR has been open for ${daysSincePR} days. 
+
+**For Reviewers:**
+- Please prioritize review if this is blocking development
+- Use GitHub's "Request Changes" or "Approve" options
+- Add specific feedback for any concerns
+
+**For Author:**
+- Consider pinging reviewers directly if urgent
+- Ensure PR description clearly explains the changes
+- Respond to any reviewer feedback promptly
+
+*Automated reminder - this helps maintain development velocity*`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: reminderComment
+              });
+            }
