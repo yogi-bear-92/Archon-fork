@@ -15,7 +15,7 @@ COPY pyproject.toml .
 # Install server dependencies to a virtual environment using uv
 RUN uv venv /venv && \
     . /venv/bin/activate && \
-    uv pip install --group server --group server-reranking
+    uv pip install -e . --group server --group server-reranking
 
 # Runtime stage
 FROM python:3.12-slim
@@ -74,5 +74,5 @@ EXPOSE ${ARCHON_SERVER_PORT}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD sh -c "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${ARCHON_SERVER_PORT}/health')\""
 
-# Run the Server service
-CMD sh -c "python -m uvicorn src.server.main:socket_app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT} --workers 1"
+# Run the Server service - use simple health server in development mode
+CMD sh -c "if [ \"${DEVELOPMENT_MODE:-false}\" = \"true\" ]; then python -m uvicorn src.server.simple_health:app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT}; else python -m uvicorn src.server.main:app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT} --workers 1; fi"

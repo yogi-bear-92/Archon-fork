@@ -30,6 +30,8 @@ services:
       - AGENTS_ENABLED=${AGENTS_ENABLED:-false}
       - CLAUDE_FLOW_ENABLED=${CLAUDE_FLOW_ENABLED:-true}
       - CLAUDE_FLOW_PORT=${CLAUDE_FLOW_PORT:-8053}
+      - DEVELOPMENT_MODE=${DEVELOPMENT_MODE:-false}
+      - SKIP_INIT_CHECKS=${SKIP_INIT_CHECKS:-false}
     networks:
       - app-network
     volumes:
@@ -102,7 +104,7 @@ services:
           "CMD",
           "sh",
           "-c",
-          'python -c "import socket; s=socket.socket(); s.connect((''localhost'', ${ARCHON_MCP_PORT:-8051})); s.close()"',
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:${ARCHON_MCP_PORT:-8051}/health'')"',
         ]
       interval: 30s
       timeout: 10s
