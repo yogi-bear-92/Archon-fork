@@ -498,6 +498,18 @@ def register_modules():
         logger.error(f"✗ Failed to register Claude Flow tools: {e}")
         logger.error(traceback.format_exc())
 
+    # AI Tagging Tools
+    try:
+        from src.mcp_server.features.ai_tagging.ai_tagging_tools import register_ai_tagging_tools
+
+        register_ai_tagging_tools(mcp)
+        modules_registered += 1
+        logger.info("✓ AI Tagging tools registered")
+
+    except Exception as e:
+        logger.error(f"✗ Failed to register AI Tagging tools: {e}")
+        logger.error(traceback.format_exc())
+
     logger.info(f"📦 Total modules registered: {modules_registered}")
 
     if modules_registered == 0:

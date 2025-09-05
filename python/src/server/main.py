@@ -20,6 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api_routes.agent_chat_api import router as agent_chat_router
+from .api_routes.ai_tagging_api import ai_tagging_router
 from .api_routes.bug_report_api import router as bug_report_router
 from .api_routes.claude_flow_api import router as claude_flow_router
 from .api_routes.internal_api import router as internal_router
@@ -202,6 +203,7 @@ app.include_router(projects_router)
 app.include_router(progress_router)
 app.include_router(agent_chat_router)
 app.include_router(claude_flow_router)
+app.include_router(ai_tagging_router)
 app.include_router(internal_router)
 app.include_router(bug_report_router)
 

@@ -1,0 +1,140 @@
+---
+globs: *.py
+description: Python backend development rules and conventions
+---
+
+# Python Backend Development Rules
+
+## Python Configuration
+- **Python Version**: 3.12+ (see [pyproject.toml](mdc:python/pyproject.toml))
+- **Package Manager**: Use `uv` for dependency management
+- **Type Hints**: Full typing annotations required
+- **Linting**: Ruff for code style, MyPy for type checking
+
+## FastAPI Development Standards
+
+### API Design
+- **Async/Await**: Use async/await patterns throughout
+- **Pydantic Models**: Define request/response models with Pydantic
+- **HTTP Status Codes**: Use appropriate HTTP status codes
+- **Error Handling**: Implement comprehensive error handling with proper responses
+- **API Documentation**: Auto-generate OpenAPI/Swagger documentation
+
+### Project Structure
+- **Microservices**: Each service in [python/src/](mdc:python/src/) subdirectory
+- **Server**: Main API server in [python/src/server/](mdc:python/src/server/)
+- **MCP Server**: MCP protocol server in [python/src/mcp/](mdc:python/src/mcp/)
+- **Agents**: AI agents service in [python/src/agents/](mdc:python/src/agents/)
+
+### Dependency Management
+- **Dependency Groups**: Use dependency groups in [pyproject.toml](mdc:python/pyproject.toml)
+  - `server`: Core server dependencies
+  - `mcp`: MCP server dependencies  
+  - `agents`: AI agents dependencies
+  - `dev`: Development and testing tools
+- **Version Pinning**: Pin major versions for stability
+- **Security**: Regular dependency updates and security scanning
+
+## Code Quality Standards
+
+### Type Safety
+- **Type Annotations**: All function parameters and return types must be annotated
+- **Pydantic Models**: Use Pydantic for data validation and serialization
+- **Generic Types**: Use generics for reusable components
+- **Type Checking**: Run MyPy with strict settings
+
+### Code Style (Ruff Configuration)
+- **Line Length**: 120 characters maximum
+- **Import Sorting**: Use isort for import organization
+- **Code Formatting**: Consistent formatting with Ruff
+- **Linting Rules**: Enable comprehensive linting rules (see [pyproject.toml](mdc:python/pyproject.toml))
+
+### Error Handling
+- **Structured Logging**: Use Logfire for structured logging
+- **Exception Handling**: Proper exception handling with meaningful messages
+- **HTTP Errors**: Use FastAPI HTTPException for API errors
+- **Validation Errors**: Handle Pydantic validation errors gracefully
+
+## Database Integration
+
+### Supabase Integration
+- **Connection Pooling**: Use asyncpg for PostgreSQL connection pooling
+- **Vector Search**: Leverage pgvector for semantic search capabilities
+- **Migrations**: Use SQL migration files in [migration/](mdc:migration/)
+- **Environment Variables**: Secure configuration management
+
+### Data Models
+- **Pydantic Models**: Define data models with Pydantic
+- **Database Schemas**: Use SQLAlchemy or similar for database schemas
+- **Validation**: Comprehensive data validation at API boundaries
+- **Serialization**: Proper JSON serialization for API responses
+
+## AI/ML Integration
+
+### PydanticAI Integration
+- **Agent Definition**: Define AI agents using PydanticAI framework
+- **Model Configuration**: Support for multiple LLM providers (OpenAI, Gemini, Ollama)
+- **Context Management**: Proper context management for AI conversations
+- **Error Handling**: Robust error handling for AI service failures
+
+### RAG Implementation
+- **Vector Embeddings**: Use pgvector for semantic search
+- **Document Processing**: Support for PDF, DOCX, and Markdown documents
+- **Context Retrieval**: Implement advanced RAG strategies
+- **Caching**: Implement caching for expensive AI operations
+
+## Testing Standards
+
+### Test Structure
+- **Test Directory**: Tests in [tests/](mdc:tests/) directory
+- **Pytest Configuration**: Use pytest with async support
+- **Test Fixtures**: Use pytest fixtures for test data and setup
+- **Mocking**: Use pytest-mock for external service mocking
+
+### Test Coverage
+- **Unit Tests**: Comprehensive unit tests for all business logic
+- **Integration Tests**: Test API endpoints and database interactions
+- **Async Testing**: Proper async test patterns with pytest-asyncio
+- **Coverage Reports**: Generate coverage reports for CI/CD
+
+## Security Standards
+
+### Authentication & Authorization
+- **JWT Tokens**: Use python-jose for JWT token handling
+- **Password Security**: Use cryptography library for secure password handling
+- **Rate Limiting**: Implement rate limiting with slowapi
+- **CORS**: Proper CORS configuration for frontend integration
+
+### Data Security
+- **Environment Variables**: Never commit secrets to version control
+- **Input Validation**: Validate all user inputs with Pydantic
+- **SQL Injection**: Use parameterized queries to prevent SQL injection
+- **HTTPS**: Enforce HTTPS in production environments
+
+## Performance Optimization
+
+### Async Programming
+- **Async/Await**: Use async/await throughout the application
+- **Connection Pooling**: Implement proper database connection pooling
+- **Caching**: Use appropriate caching strategies for frequently accessed data
+- **Background Tasks**: Use FastAPI background tasks for non-blocking operations
+
+### Monitoring & Logging
+- **Structured Logging**: Use Logfire for structured logging
+- **Performance Metrics**: Monitor API response times and database queries
+- **Error Tracking**: Implement comprehensive error tracking
+- **Health Checks**: Implement health check endpoints for monitoring
+
+## Development Workflow
+
+### Local Development
+- **Docker Support**: Use Docker for consistent development environment
+- **Environment Setup**: Use .env files for local configuration
+- **Hot Reload**: Use watchfiles for development hot reload
+- **Debugging**: Proper debugging setup with breakpoints
+
+### Code Organization
+- **Module Structure**: Organize code into logical modules
+- **Import Management**: Use absolute imports and avoid circular dependencies
+- **Documentation**: Comprehensive docstrings for all functions and classes
+- **API Documentation**: Auto-generated API documentation with FastAPI

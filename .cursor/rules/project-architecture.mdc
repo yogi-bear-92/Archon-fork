@@ -1,0 +1,49 @@
+---
+alwaysApply: true
+description: Archon project architecture and structure guidelines
+---
+
+# Archon Project Architecture
+
+## Project Overview
+Archon is a command center for AI coding assistants with microservices architecture:
+- **Frontend UI**: React + Vite (Port 3737) - [archon-ui-main/](mdc:archon-ui-main/)
+- **Server API**: FastAPI + SocketIO (Port 8181) - [python/](mdc:python/)
+- **MCP Server**: HTTP Wrapper (Port 8051) - [python/src/mcp/](mdc:python/src/mcp/)
+- **Agents Service**: PydanticAI (Port 8052) - [python/src/agents/](mdc:python/src/agents/)
+- **Database**: Supabase PostgreSQL + pgvector
+
+## Directory Structure Rules
+
+### Core Directories
+- **NEVER save files to root folder** - use appropriate subdirectories
+- **Frontend**: All UI code in [archon-ui-main/](mdc:archon-ui-main/) with [src/](mdc:archon-ui-main/src/) subdirectory
+- **Backend**: All Python code in [python/](mdc:python/) with [src/](mdc:python/src/) subdirectory
+- **Documentation**: All docs in [docs/](mdc:docs/) directory
+- **Configuration**: Environment and config files in [config/](mdc:config/) directory
+
+### Microservices Pattern
+- Each service is independent with no shared code dependencies
+- Services communicate via RESTful HTTP APIs and WebSocket
+- MCP protocol for AI client integration
+- Clear separation between frontend, backend, MCP, and agents services
+
+### File Organization
+- Use absolute imports with proper path aliases
+- No circular dependencies between services
+- Each service has its own package.json/pyproject.toml
+- Shared utilities go in appropriate service directories
+
+## Technology Stack
+- **Backend**: Python 3.12+, FastAPI, PydanticAI, Supabase
+- **Frontend**: React 18+, TypeScript, TailwindCSS, Vite
+- **AI/ML**: OpenAI, Gemini, Ollama support with pgvector
+- **Integration**: SPARC methodology, Claude-Flow orchestration
+- **Database**: PostgreSQL with pgvector for semantic search
+
+## Key Features
+- Progressive Refinement Knowledge Management
+- Advanced RAG strategies (contextual embeddings, hybrid search)
+- Multi-LLM support with MCP protocol
+- WebSocket real-time updates
+- Task-driven development workflow

@@ -30,6 +30,7 @@ from contextlib import asynccontextmanager
 from ..config.logfire_config import get_logger
 from .claude_flow_service import claude_flow_service
 from .claude_flow_task_integration import claude_flow_task_integration
+from .ai_tagging_background_service import get_ai_tagging_background_service
 
 logger = get_logger(__name__)
 
@@ -464,7 +465,10 @@ class SerenaCoordinationHooks:
             # Phase 5: Update Performance Models
             performance_updates = await self._update_performance_models(execution_metrics)
             
-            # Phase 6: Cleanup and Optimize
+            # Phase 6: AI Tagging Enhancement
+            ai_tagging_results = await self._enhance_with_ai_tagging(task_result)
+            
+            # Phase 7: Cleanup and Optimize
             cleanup_results = await self._cleanup_task_resources(task_id)
             
             execution_time = time.time() - start_time
@@ -475,6 +479,7 @@ class SerenaCoordinationHooks:
                 "learning_patterns": learning_patterns,
                 "sharing_results": sharing_results,
                 "performance_updates": performance_updates,
+                "ai_tagging_results": ai_tagging_results,
                 "cleanup_results": cleanup_results,
                 "persistence_metrics": {
                     "artifacts_stored": len(knowledge_artifacts.get("artifacts", [])),
@@ -507,6 +512,98 @@ class SerenaCoordinationHooks:
                 retry_count=0,
                 next_actions=["retry_persistence", "partial_save"]
             )
+
+    async def _enhance_with_ai_tagging(self, task_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Enhance knowledge with AI-generated tags.
+        
+        This method:
+        1. Identifies sources that need AI tagging
+        2. Generates AI tags for content
+        3. Updates source records with enhanced tags
+        4. Provides feedback on tagging success
+        """
+        try:
+            task_id = task_result.get("task_id")
+            logger.info(f"Enhancing knowledge with AI tagging for task: {task_id}")
+            
+            # Get AI tagging service
+            ai_tagging_service = get_ai_tagging_background_service()
+            
+            # Check if this task involved knowledge creation/updates
+            knowledge_updates = task_result.get("knowledge_updates", {})
+            sources_created = knowledge_updates.get("sources_created", [])
+            sources_updated = knowledge_updates.get("sources_updated", [])
+            
+            all_sources = sources_created + sources_updated
+            ai_tagging_results = {
+                "sources_processed": [],
+                "ai_tags_generated": 0,
+                "errors": [],
+                "success_count": 0,
+                "total_sources": len(all_sources)
+            }
+            
+            if not all_sources:
+                logger.info("No sources to enhance with AI tagging")
+                return ai_tagging_results
+            
+            # Process each source for AI tagging
+            for source_id in all_sources:
+                try:
+                    # Update source with AI tags
+                    result = await ai_tagging_service.update_source_tags_with_ai(
+                        source_id=source_id,
+                        force_update=False  # Don't force update existing tags
+                    )
+                    
+                    if result["success"]:
+                        ai_tagging_results["sources_processed"].append({
+                            "source_id": source_id,
+                            "success": True,
+                            "ai_tags_generated": result.get("ai_tags_generated", 0),
+                            "total_tags": result.get("total_tags", 0)
+                        })
+                        ai_tagging_results["ai_tags_generated"] += result.get("ai_tags_generated", 0)
+                        ai_tagging_results["success_count"] += 1
+                        
+                        logger.info(f"Enhanced source {source_id} with {result.get('ai_tags_generated', 0)} AI tags")
+                    else:
+                        ai_tagging_results["sources_processed"].append({
+                            "source_id": source_id,
+                            "success": False,
+                            "error": result.get("error", "Unknown error")
+                        })
+                        ai_tagging_results["errors"].append(f"Source {source_id}: {result.get('error', 'Unknown error')}")
+                        
+                except Exception as e:
+                    error_msg = f"Failed to enhance source {source_id} with AI tags: {str(e)}"
+                    logger.warning(error_msg)
+                    ai_tagging_results["errors"].append(error_msg)
+                    ai_tagging_results["sources_processed"].append({
+                        "source_id": source_id,
+                        "success": False,
+                        "error": str(e)
+                    })
+            
+            # Log overall results
+            if ai_tagging_results["success_count"] > 0:
+                logger.info(f"AI tagging enhancement completed: {ai_tagging_results['success_count']}/{ai_tagging_results['total_sources']} sources enhanced with {ai_tagging_results['ai_tags_generated']} total AI tags")
+            else:
+                logger.warning("No sources were successfully enhanced with AI tags")
+            
+            return ai_tagging_results
+            
+        except Exception as e:
+            logger.error(f"AI tagging enhancement failed: {e}", exc_info=True)
+            return {
+                "sources_processed": [],
+                "ai_tags_generated": 0,
+                "errors": [str(e)],
+                "success_count": 0,
+                "total_sources": 0,
+                "enhancement_failed": True
+            }
 
     async def _extract_knowledge_artifacts(self, task_result: Dict[str, Any]) -> Dict[str, Any]:
         """Extract valuable knowledge artifacts from task execution."""

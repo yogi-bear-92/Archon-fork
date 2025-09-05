@@ -1,0 +1,156 @@
+---
+alwaysApply: true
+description: General coding standards and best practices for the Archon project
+---
+
+# General Coding Standards & Best Practices
+
+## Code Organization Principles
+
+### File Structure
+- **Never save to root**: Always use appropriate subdirectories
+- **Logical Grouping**: Group related files in dedicated directories
+- **Clear Naming**: Use descriptive, self-documenting file and directory names
+- **Consistent Structure**: Maintain consistent directory structure across services
+
+### Import Management
+- **Absolute Imports**: Use absolute imports with proper path aliases
+- **No Circular Dependencies**: Avoid circular dependencies between modules
+- **Import Order**: Group imports logically (standard library, third-party, internal)
+- **Barrel Exports**: Use index files for clean public APIs
+
+## Code Quality Standards
+
+### Readability
+- **Clear Naming**: Use descriptive variable, function, and class names
+- **Consistent Formatting**: Follow consistent code formatting standards
+- **Meaningful Comments**: Write comments that explain "why", not "what"
+- **Self-Documenting Code**: Write code that is self-explanatory
+
+### Maintainability
+- **Single Responsibility**: Each function/class should have one clear purpose
+- **DRY Principle**: Don't Repeat Yourself - extract common functionality
+- **KISS Principle**: Keep It Simple, Stupid - prefer simple solutions
+- **YAGNI Principle**: You Aren't Gonna Need It - don't over-engineer
+
+### Error Handling
+- **Fail Fast**: Detect and handle errors as early as possible
+- **Meaningful Messages**: Provide clear, actionable error messages
+- **Logging**: Use structured logging for debugging and monitoring
+- **Graceful Degradation**: Handle errors gracefully without crashing
+
+## Security Best Practices
+
+### Input Validation
+- **Validate All Inputs**: Never trust user input, always validate
+- **Sanitize Data**: Sanitize data before processing or storing
+- **Type Safety**: Use strong typing to prevent type-related vulnerabilities
+- **SQL Injection**: Use parameterized queries to prevent SQL injection
+
+### Authentication & Authorization
+- **Secure Authentication**: Implement secure authentication mechanisms
+- **Principle of Least Privilege**: Grant minimum necessary permissions
+- **Session Management**: Implement secure session management
+- **Password Security**: Use strong password policies and hashing
+
+### Data Protection
+- **Encryption**: Encrypt sensitive data at rest and in transit
+- **Environment Variables**: Store secrets in environment variables
+- **No Hardcoded Secrets**: Never hardcode secrets in source code
+- **Regular Security Updates**: Keep dependencies updated for security patches
+
+## Performance Best Practices
+
+### Frontend Performance
+- **Code Splitting**: Implement code splitting for better loading performance
+- **Lazy Loading**: Use lazy loading for non-critical components
+- **Memoization**: Use React.memo, useMemo, and useCallback appropriately
+- **Bundle Optimization**: Optimize bundle size and loading strategies
+
+### Backend Performance
+- **Async Operations**: Use async/await for I/O operations
+- **Connection Pooling**: Implement proper database connection pooling
+- **Caching**: Use appropriate caching strategies for frequently accessed data
+- **Database Optimization**: Optimize database queries and indexes
+
+### General Performance
+- **Profiling**: Profile code to identify performance bottlenecks
+- **Monitoring**: Implement performance monitoring and alerting
+- **Resource Management**: Properly manage memory and other resources
+- **Scalability**: Design for horizontal and vertical scaling
+
+## Testing Best Practices
+
+### Test Coverage
+- **Comprehensive Testing**: Write tests for all critical functionality
+- **Edge Cases**: Test edge cases and error conditions
+- **Integration Testing**: Test component integration and workflows
+- **End-to-End Testing**: Test complete user workflows
+
+### Test Quality
+- **Clear Test Names**: Use descriptive test names that explain the scenario
+- **Arrange-Act-Assert**: Follow the AAA pattern for test structure
+- **Independent Tests**: Tests should be independent and not rely on each other
+- **Fast Tests**: Keep unit tests fast and focused
+
+### Test Maintenance
+- **Regular Updates**: Keep tests updated with code changes
+- **Test Documentation**: Document complex test scenarios
+- **Test Data**: Use consistent, realistic test data
+- **Mocking**: Use appropriate mocking for external dependencies
+
+## Documentation Standards
+
+### Code Documentation
+- **Docstrings**: Write comprehensive docstrings for all public functions
+- **API Documentation**: Document all public APIs and interfaces
+- **README Files**: Maintain clear README files for each service
+- **Architecture Documentation**: Document system architecture and design decisions
+
+### Development Documentation
+- **Setup Instructions**: Provide clear setup and installation instructions
+- **Contributing Guidelines**: Document how to contribute to the project
+- **Troubleshooting**: Document common issues and solutions
+- **Changelog**: Maintain a changelog for version releases
+
+## Git & Version Control
+
+### Commit Standards
+- **Conventional Commits**: Use conventional commit message format
+- **Atomic Commits**: Make small, focused commits with single logical changes
+- **Clear Messages**: Write clear, descriptive commit messages
+- **Reference Issues**: Reference related issues in commit messages
+
+### Branch Management
+- **Feature Branches**: Use feature branches for new development
+- **Branch Naming**: Use descriptive branch names (feature/description)
+- **Regular Merges**: Merge changes regularly to avoid conflicts
+- **Clean History**: Maintain a clean, linear git history
+
+## Code Review Standards
+
+### Review Process
+- **Peer Review**: All code changes must be reviewed by peers
+- **Automated Checks**: Use automated linting and testing in CI/CD
+- **Security Review**: Review code for security vulnerabilities
+- **Performance Review**: Consider performance implications of changes
+
+### Review Guidelines
+- **Constructive Feedback**: Provide constructive, helpful feedback
+- **Focus on Code**: Focus on code quality, not personal preferences
+- **Ask Questions**: Ask clarifying questions when needed
+- **Approve Responsibly**: Only approve code you understand and trust
+
+## Continuous Improvement
+
+### Code Quality Metrics
+- **Track Metrics**: Monitor code quality metrics over time
+- **Refactoring**: Regularly refactor code to improve quality
+- **Technical Debt**: Address technical debt proactively
+- **Learning**: Continuously learn and improve coding practices
+
+### Team Standards
+- **Consistent Practices**: Maintain consistent coding practices across the team
+- **Knowledge Sharing**: Share knowledge and best practices with the team
+- **Regular Reviews**: Regularly review and update coding standards
+- **Training**: Provide training on coding standards and best practices
