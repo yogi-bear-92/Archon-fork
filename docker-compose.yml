@@ -175,16 +175,13 @@ services:
     command:
       [
         "npx",
-        "claude-flow@alpha",
+        "flow-nexus@latest",
         "mcp",
         "start",
-        "--config",
-        ".claude-flow/config/topology.json",
-        "--hooks",
-        ".claude-flow/hooks.js",
-        "--port",
+        "-p",
         "${CLAUDE_FLOW_PORT:-8053}",
-        "--http"
+        "-m",
+        "complete"
       ]
     healthcheck:
       test:
