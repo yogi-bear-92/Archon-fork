@@ -1,0 +1,56 @@
+{
+  "name": "flow-nexus-challenge-solutions",
+  "version": "1.0.0",
+  "description": "Integrated solutions for Flow Nexus challenges using Serena + Archon PRP + Claude Flow coordination",
+  "main": "test-runner.js",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:agent-spawning": "node agent-spawning-master/solution.js",
+    "test:lightning-deploy": "node lightning-deploy-master/solution.js", 
+    "test:neural-mesh": "node neural-mesh-coordinator/solution.js",
+    "validate": "npm test",
+    "coordination": "npx claude-flow@alpha hooks session-restore --session-id swarm-solutions"
+  },
+  "keywords": [
+    "flow-nexus",
+    "challenges",
+    "claude-flow",
+    "serena",
+    "archon-prp",
+    "swarm-coordination",
+    "mcp-integration"
+  ],
+  "author": "Integrated Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^28.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yogi-bear-92/Archon-fork.git"
+  },
+  "integrationFramework": {
+    "serena": {
+      "enabled": true,
+      "semanticAnalysis": true,
+      "cacheSize": "50MB"
+    },
+    "archonPrp": {
+      "enabled": true,
+      "refinementCycles": 3,
+      "progressiveImprovement": true
+    },
+    "claudeFlow": {
+      "enabled": true,
+      "topology": "mesh",
+      "coordination": "adaptive"
+    }
+  }
+}
