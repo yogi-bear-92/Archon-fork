@@ -1,0 +1,237 @@
+name: Commit Message Enhancement
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'fix/*', 'enhancement/*' ]
+
+jobs:
+  commit-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Analyze Commit Messages
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            
+            try {
+              // Get the latest commit message
+              const commitMessage = execSync('git log -1 --pretty=%B', { encoding: 'utf8' }).trim();
+              const commitHash = execSync('git log -1 --pretty=%h', { encoding: 'utf8' }).trim();
+              const commitAuthor = execSync('git log -1 --pretty=%an', { encoding: 'utf8' }).trim();
+              
+              console.log(`Analyzing commit: ${commitHash}`);
+              console.log(`Author: ${commitAuthor}`);
+              console.log(`Message: ${commitMessage}`);
+              
+              // Analyze commit message quality
+              let analysis = {
+                hasType: false,
+                hasScope: false,
+                hasDescription: false,
+                isANSFRelated: false,
+                isPhaseRelated: false,
+                isNeuralRelated: false,
+                suggestions: []
+              };
+              
+              // Check for conventional commit format
+              const conventionalPattern = /^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+/;
+              if (conventionalPattern.test(commitMessage)) {
+                analysis.hasType = true;
+                const match = commitMessage.match(/^(\w+)(\((.+)\))?: (.+)/);
+                if (match && match[3]) analysis.hasScope = true;
+                if (match && match[4] && match[4].length > 10) analysis.hasDescription = true;
+              }
+              
+              // Check for ANSF-specific content
+              const messageLC = commitMessage.toLowerCase();
+              if (messageLC.includes('ansf') || messageLC.includes('coordination')) analysis.isANSFRelated = true;
+              if (messageLC.includes('phase')) analysis.isPhaseRelated = true;
+              if (messageLC.includes('neural') || messageLC.includes('ml')) analysis.isNeuralRelated = true;
+              
+              // Generate suggestions
+              if (!analysis.hasType) {
+                analysis.suggestions.push("💡 Consider using conventional commit format: `type: description` (e.g., feat:, fix:, docs:)");
+              }
+              
+              if (analysis.isANSFRelated && !analysis.hasScope) {
+                analysis.suggestions.push("🤖 ANSF-related commit - consider adding scope: `feat(ansf): your change`");
+              }
+              
+              if (analysis.isPhaseRelated) {
+                analysis.suggestions.push("🎯 Phase-related change detected - specify which phase in commit message");
+              }
+              
+              if (analysis.isNeuralRelated) {
+                analysis.suggestions.push("🧠 Neural/ML change detected - include performance impact if applicable");
+              }
+              
+              if (commitMessage.length < 20) {
+                analysis.suggestions.push("📝 Consider adding more detail to commit message for better project history");
+              }
+              
+              // Output analysis
+              if (analysis.suggestions.length > 0) {
+                console.log('\n📋 Commit Message Enhancement Suggestions:');
+                analysis.suggestions.forEach(suggestion => {
+                  console.log(`  ${suggestion}`);
+                });
+              } else {
+                console.log('✅ Commit message follows good practices!');
+              }
+              
+              // Store analysis for potential future use
+              console.log('\n📊 Commit Analysis Summary:');
+              console.log(`  - Has type prefix: ${analysis.hasType ? '✅' : '❌'}`);
+              console.log(`  - Has scope: ${analysis.hasScope ? '✅' : '➖'}`);
+              console.log(`  - Has good description: ${analysis.hasDescription ? '✅' : '❌'}`);
+              console.log(`  - ANSF-related: ${analysis.isANSFRelated ? '🤖' : '➖'}`);
+              console.log(`  - Phase-related: ${analysis.isPhaseRelated ? '🎯' : '➖'}`);
+              console.log(`  - Neural-related: ${analysis.isNeuralRelated ? '🧠' : '➖'}`);
+              
+            } catch (error) {
+              console.log('Commit analysis completed with minor issues:', error.message);
+            }
+
+      - name: ANSF System Commit Classification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            
+            try {
+              // Get files changed in this commit
+              const changedFiles = execSync('git diff --name-only HEAD~1 HEAD', { encoding: 'utf8' }).trim().split('\n').filter(f => f);
+              const commitMessage = execSync('git log -1 --pretty=%B', { encoding: 'utf8' }).trim();
+              
+              // Classify the commit based on files and message
+              let classification = {
+                category: 'general',
+                impact: 'low',
+                systems: [],
+                recommendations: []
+              };
+              
+              changedFiles.forEach(file => {
+                if (file.includes('ansf-workflow/src/production/')) {
+                  classification.systems.push('production-deployment');
+                  classification.impact = 'high';
+                }
+                if (file.includes('phase3') || file.includes('optimal')) {
+                  classification.systems.push('phase3-optimal');
+                  classification.impact = 'high';
+                }
+                if (file.includes('neural') || file.includes('ml_') || file.includes('transformer')) {
+                  classification.systems.push('neural-networks');
+                  classification.impact = 'medium';
+                }
+                if (file.includes('monitoring') || file.includes('dashboard')) {
+                  classification.systems.push('monitoring');
+                  classification.impact = 'medium';
+                }
+                if (file.includes('.claude-flow/') || file.includes('CLAUDE.md')) {
+                  classification.systems.push('configuration');
+                  classification.impact = 'medium';
+                }
+                if (file.includes('.github/')) {
+                  classification.systems.push('ci-cd');
+                  classification.impact = 'low';
+                }
+              });
+              
+              // Determine overall category
+              if (classification.systems.includes('production-deployment') || classification.systems.includes('phase3-optimal')) {
+                classification.category = 'critical-system';
+              } else if (classification.systems.includes('neural-networks')) {
+                classification.category = 'ai-ml';
+              } else if (classification.systems.includes('monitoring')) {
+                classification.category = 'observability';
+              } else if (classification.systems.includes('ci-cd')) {
+                classification.category = 'development-tools';
+              }
+              
+              // Generate recommendations based on classification
+              if (classification.impact === 'high') {
+                classification.recommendations.push('🚨 High-impact change - ensure thorough testing before deployment');
+              }
+              
+              if (classification.systems.includes('phase3-optimal')) {
+                classification.recommendations.push('🎯 Phase 3 changes - verify coordination accuracy >97%');
+              }
+              
+              if (classification.systems.includes('neural-networks')) {
+                classification.recommendations.push('🧠 Neural network changes - validate model performance >88.7%');
+              }
+              
+              if (classification.systems.includes('production-deployment')) {
+                classification.recommendations.push('🚀 Production changes - test deployment scripts in staging');
+              }
+              
+              // Output classification
+              console.log('\n🏷️ Commit Classification:');
+              console.log(`  Category: ${classification.category}`);
+              console.log(`  Impact Level: ${classification.impact}`);
+              console.log(`  Systems Affected: ${classification.systems.join(', ') || 'none detected'}`);
+              
+              if (classification.recommendations.length > 0) {
+                console.log('\n📋 System-Specific Recommendations:');
+                classification.recommendations.forEach(rec => {
+                  console.log(`  ${rec}`);
+                });
+              }
+              
+            } catch (error) {
+              console.log('Commit classification completed:', error.message);
+            }
+
+      - name: Generate Commit Insights
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            
+            try {
+              // Get commit statistics
+              const stats = execSync('git diff --stat HEAD~1 HEAD', { encoding: 'utf8' });
+              const commitMessage = execSync('git log -1 --pretty=%B', { encoding: 'utf8' }).trim();
+              const commitDate = execSync('git log -1 --pretty=%ci', { encoding: 'utf8' }).trim();
+              
+              console.log('\n📈 Commit Statistics:');
+              console.log(stats || 'No file changes detected');
+              
+              // Check for potential improvements
+              const improvements = [];
+              
+              if (commitMessage.split('\n').length === 1 && commitMessage.length > 80) {
+                improvements.push('📝 Consider breaking long commit messages into title + body');
+              }
+              
+              if (!commitMessage.match(/\b(close|closes|fix|fixes|resolve|resolves)\s+#\d+/i)) {
+                improvements.push('🔗 Consider linking to issues with "closes #123" or "fixes #456"');
+              }
+              
+              if (stats && stats.includes('|') && stats.split('\n').length > 10) {
+                improvements.push('📦 Large commit detected - consider breaking into smaller commits');
+              }
+              
+              if (improvements.length > 0) {
+                console.log('\n💡 Commit Quality Improvements:');
+                improvements.forEach(improvement => {
+                  console.log(`  ${improvement}`);
+                });
+              } else {
+                console.log('\n✨ Commit quality looks good!');
+              }
+              
+            } catch (error) {
+              console.log('Commit insights generation completed:', error.message);
+            }

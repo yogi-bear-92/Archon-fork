@@ -1,0 +1,140 @@
+name: 🐛 Bug Report
+description: Report a bug in the ANSF system
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+projects: ["Archon-fork/1"]
+assignees:
+  - yogi-bear-92
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Report
+        
+        Thanks for taking the time to report this bug! Please provide as much detail as possible.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Bug Severity
+      description: How severe is this bug?
+      options:
+        - "Low - Minor issue, workaround available"
+        - "Medium - Affects functionality but not critical"
+        - "High - Major functionality broken"
+        - "Critical - System crash or data loss"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the system is affected?
+      options:
+        - "ANSF Phase 1 (Memory-Critical)"
+        - "ANSF Phase 2 (Enhanced Mode)"
+        - "ANSF Phase 3 (Optimal Mode)" 
+        - "Neural Networks / ML Models"
+        - "Multi-Swarm Coordination"
+        - "Monitoring Dashboard"
+        - "Configuration System"
+        - "Flow Nexus Challenges"
+        - "Documentation"
+        - "Unknown / Not Sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: What happened? What did you expect to happen?
+      placeholder: |
+        Describe the bug clearly and concisely...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Start the ANSF system with...
+        2. Execute command...
+        3. Observe error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should have happened instead?
+      placeholder: |
+        The system should have...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: |
+        Instead, the system...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Error Logs / Output
+      description: Include any error messages, logs, or console output
+      placeholder: |
+        ```
+        Paste error logs here...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: System information where the bug occurred
+      placeholder: |
+        - OS: 
+        - Python version:
+        - Node.js version:
+        - Memory available:
+        - ANSF system version/commit:
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: impact-checklist
+    attributes:
+      label: Impact Assessment
+      description: How does this bug affect the system?
+      options:
+        - label: "Affects coordination accuracy"
+        - label: "Causes performance degradation"
+        - label: "Memory usage issues"
+        - label: "Monitoring/dashboard problems"
+        - label: "Neural network functionality"
+        - label: "Multi-swarm communication"
+        - label: "System crashes or hangs"
+        - label: "Data loss or corruption"
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: Is there a temporary workaround for this issue?
+      placeholder: |
+        If you found a way to work around this bug, please describe it...
+    validations:
+      required: false

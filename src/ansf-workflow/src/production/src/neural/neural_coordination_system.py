@@ -185,6 +185,15 @@ class NeuralCoordinationSystem:
             self.predictive_scaler = None
         
         logger.info("All neural coordination components initialized")
+        
+        # Initialize model registry for production deployment
+        try:
+            from .model_registry import create_model_registry
+            self.model_registry = create_model_registry(Path('model_registry'))
+            logger.info("Model registry initialized")
+        except Exception as e:
+            logger.warning(f"Model registry initialization failed: {e}")
+            self.model_registry = None
     
     async def start_system(self, port: int = 8765) -> Dict[str, Any]:
         """Start the complete neural coordination system"""
