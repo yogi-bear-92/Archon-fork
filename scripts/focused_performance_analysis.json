@@ -1,0 +1,119 @@
+{
+  "timestamp": 1757083490.6158578,
+  "infrastructure_analysis": {
+    "api_server_status": "unavailable: All connection attempts failed",
+    "connection_available": false,
+    "estimated_latency_ms": 0.0,
+    "service_architecture": "local_development"
+  },
+  "tag_complexity_analysis": {
+    "total_sources": 5,
+    "total_tags_applied": 251,
+    "average_tags_per_source": 50.2,
+    "tag_distribution": {
+      "56cb969b4f4e75d5": 53,
+      "65516ba46d606b01": 53,
+      "92913be64b1ead25": 49,
+      "a51526d65470cb31": 49,
+      "ccbb49fd5eb8b6a3": 47
+    },
+    "complexity_score": 10.0,
+    "indexing_impact": {
+      "index_size_estimate_mb": 12.55,
+      "indexing_time_estimate_ms": 502,
+      "memory_overhead_mb": 2.5100000000000002,
+      "impact_level": "moderate"
+    },
+    "search_performance_impact": {
+      "single_tag_query_ms": 25.1,
+      "multi_tag_query_ms": 60.24,
+      "tag_intersection_complexity": "moderate",
+      "recommended_indexing_strategy": "btree_gin"
+    }
+  },
+  "memory_usage_analysis": {
+    "tag_data_size_mb": 0.251,
+    "memory_per_query_kb": 15.0,
+    "estimated_peak_memory_mb": 0.397484375,
+    "memory_efficiency_score": 8.5,
+    "gc_pressure": "low",
+    "memory_optimization_potential": 15
+  },
+  "bottleneck_identification": [
+    {
+      "type": "database_queries",
+      "severity": "medium",
+      "description": "Tag-based queries may become slower with 250+ tags without proper indexing",
+      "impact": "20-40% slower queries without optimization",
+      "probability": 0.7
+    },
+    {
+      "type": "index_size",
+      "severity": "low",
+      "description": "Large tag indexes may impact memory usage and startup time",
+      "impact": "5-10% increase in memory usage",
+      "probability": 0.5
+    },
+    {
+      "type": "tag_intersection",
+      "severity": "medium",
+      "description": "Multi-tag queries with 3+ tags may have increased complexity",
+      "impact": "30-50% slower multi-tag queries",
+      "probability": 0.6
+    },
+    {
+      "type": "cache_misses",
+      "severity": "medium",
+      "description": "High tag diversity may reduce cache hit rates",
+      "impact": "15-25% more database queries",
+      "probability": 0.8
+    }
+  ],
+  "optimization_recommendations": [
+    {
+      "category": "database_optimization",
+      "priority": "high",
+      "title": "Implement Specialized Tag Indexing",
+      "description": "Create GIN or GiST indexes specifically for tag arrays to optimize tag-based queries",
+      "implementation": "CREATE INDEX CONCURRENTLY idx_knowledge_items_tags_gin ON knowledge_items USING gin(tags);",
+      "expected_improvement": "50-70% faster tag queries",
+      "effort_level": "medium"
+    },
+    {
+      "category": "caching",
+      "priority": "high",
+      "title": "Implement Tag-Aware Caching",
+      "description": "Add Redis caching layer with tag-based cache keys and invalidation",
+      "implementation": "Redis with tag-based keys: 'tags:{tag1}:{tag2}' and smart invalidation",
+      "expected_improvement": "60-80% reduction in repeated queries",
+      "effort_level": "medium"
+    },
+    {
+      "category": "query_optimization",
+      "priority": "medium",
+      "title": "Optimize Multi-Tag Query Strategy",
+      "description": "Use tag frequency analysis to reorder query conditions from most to least selective",
+      "implementation": "Pre-calculate tag frequencies and optimize query order",
+      "expected_improvement": "25-40% faster multi-tag queries",
+      "effort_level": "low"
+    },
+    {
+      "category": "memory_optimization",
+      "priority": "medium",
+      "title": "Implement Tag Interning",
+      "description": "Use string interning for tag storage to reduce memory usage",
+      "implementation": "Store tags in normalized form with reference counting",
+      "expected_improvement": "15-20% memory usage reduction",
+      "effort_level": "low"
+    },
+    {
+      "category": "monitoring",
+      "priority": "medium",
+      "title": "Add Tag Performance Monitoring",
+      "description": "Implement metrics for tag query performance and cache hit rates",
+      "implementation": "Add Prometheus/Grafana dashboards for tag-specific metrics",
+      "expected_improvement": "Proactive performance issue detection",
+      "effort_level": "medium"
+    }
+  ]
+}
