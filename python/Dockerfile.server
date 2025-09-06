@@ -63,19 +63,24 @@ COPY src/server/ src/server/
 COPY src/__init__.py src/
 COPY tests/ tests/
 
-# Install Claude Flow globally and verify installation
-RUN npm install -g claude-flow@alpha \
+# Verify Node.js installation and install Claude Flow
+RUN echo "=== Verifying Node.js installation ===" \
+    && which node || echo "ERROR: node not found" \
+    && which npm || echo "ERROR: npm not found" \
+    && which npx || echo "ERROR: npx not found" \
+    && ls -la /usr/bin/ | grep -E "(node|npm)" || echo "ERROR: No Node.js tools in /usr/bin" \
+    && echo "=== Installing Claude Flow ===" \
+    && npm install -g claude-flow@alpha \
     && npm list -g claude-flow \
-    && which node \
-    && which npm \
-    && which npx \
+    && echo "=== Final verification ===" \
     && node --version \
-    && npm --version
+    && npm --version \
+    && npx --version
 
 # Set environment variables
 ENV PYTHONPATH="/app:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
-ENV PATH="/venv/bin:$PATH"
+ENV PATH="/venv/bin:/usr/bin:/usr/local/bin:$PATH"
 
 # Expose Server port
 ARG ARCHON_SERVER_PORT=8181

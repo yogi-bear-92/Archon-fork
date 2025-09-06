@@ -28,6 +28,8 @@ from .api_routes.knowledge_api import router as knowledge_router
 from .api_routes.mcp_api import router as mcp_router
 from .api_routes.progress_api import router as progress_router
 from .api_routes.projects_api import router as projects_router
+from .api_routes.serena_api import router as serena_router
+from .api_routes.serena_coordination_api import serena_coordination_router
 
 # Import modular API routers
 from .api_routes.settings_api import router as settings_router
@@ -203,6 +205,8 @@ app.include_router(projects_router)
 app.include_router(progress_router)
 app.include_router(agent_chat_router)
 app.include_router(claude_flow_router)
+app.include_router(serena_router)
+app.include_router(serena_coordination_router)
 app.include_router(ai_tagging_router)
 app.include_router(internal_router)
 app.include_router(bug_report_router)
