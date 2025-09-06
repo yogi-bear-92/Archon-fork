@@ -1,6 +1,24 @@
 # ULTIMATE INTEGRATED AI DEVELOPMENT PLATFORM
 ## Serena + Archon PRP + Claude Flow + Memory-Optimized Coordination
 
+## 🔄 GIT CHECKPOINT INTEGRATION
+
+**ENABLE AUTOMATIC GIT CHECKPOINTS:**
+```bash
+# Enable Claude Code git checkpoint feature
+git config --local claude-code.auto-checkpoint true
+git config --local claude-code.checkpoint-frequency "after-major-changes"
+git config --local claude-code.checkpoint-message-template "🔄 Auto-checkpoint: {description}"
+```
+
+**CHECKPOINT TRIGGERS:**
+- Major feature implementations
+- Significant refactoring operations  
+- Before/after cleanup operations
+- Multi-agent coordination milestones
+- Error recovery points
+- Memory-critical operation boundaries
+
 ## 🚨 CRITICAL SYSTEM-LEVEL MEMORY MANAGEMENT (99.5% USAGE)
 
 **EMERGENCY MEMORY PROTOCOLS (MANDATORY):**
