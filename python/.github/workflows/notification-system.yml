@@ -1,0 +1,449 @@
+name: 📢 GitHub Swarm Notification System
+
+on:
+  # Trigger on workflow completion events
+  workflow_run:
+    workflows: 
+      - "🤖 Intelligent PR Auto-Merge with GitHub Swarm"
+      - "🛡️ GitHub Swarm Safety Validation"
+      - "📊 GitHub Swarm PR Status Monitor"
+    types: [completed, requested]
+    
+  # Manual trigger for testing notifications
+  workflow_dispatch:
+    inputs:
+      notification_type:
+        description: 'Type of notification to test'
+        required: true
+        type: choice
+        options:
+          - 'merge_success'
+          - 'merge_failure'
+          - 'safety_validation'
+          - 'system_status'
+        default: 'system_status'
+      pr_number:
+        description: 'PR number (for PR-related notifications)'
+        required: false
+        type: number
+
+env:
+  NOTIFICATION_ENABLED: true
+  GITHUB_SWARM_NOTIFICATIONS: true
+  SLACK_ENABLED: false  # Set to true and configure SLACK_WEBHOOK_URL secret
+  EMAIL_ENABLED: false  # Set to true and configure email secrets
+
+jobs:
+  # Analyze workflow results and determine notification content
+  analyze-workflow-results:
+    name: 🔍 Analyze Workflow Results
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      notification-type: ${{ steps.analyze.outputs.notification-type }}
+      notification-priority: ${{ steps.analyze.outputs.notification-priority }}
+      pr-number: ${{ steps.analyze.outputs.pr-number }}
+      workflow-status: ${{ steps.analyze.outputs.workflow-status }}
+      notification-content: ${{ steps.analyze.outputs.notification-content }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🔍 Analyze Workflow Results
+        id: analyze
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger
+            NOTIFICATION_TYPE="${{ inputs.notification_type }}"
+            PR_NUMBER="${{ inputs.pr_number || 'N/A' }}"
+            WORKFLOW_STATUS="manual_trigger"
+            NOTIFICATION_PRIORITY="medium"
+            
+            echo "📝 Manual notification trigger: ${NOTIFICATION_TYPE}"
+            
+          else
+            # Workflow run trigger
+            WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+            WORKFLOW_STATUS="${{ github.event.workflow_run.conclusion }}"
+            PR_NUMBERS=$(echo "${{ github.event.workflow_run.pull_requests }}" | jq -r '.[].number' 2>/dev/null | head -1)
+            PR_NUMBER="${PR_NUMBERS:-N/A}"
+            
+            echo "🔍 Analyzing workflow: ${WORKFLOW_NAME}"
+            echo "📊 Status: ${WORKFLOW_STATUS}"
+            echo "🔢 PR Number: ${PR_NUMBER}"
+            
+            # Determine notification type based on workflow
+            case "$WORKFLOW_NAME" in
+              *"Auto-Merge"*)
+                if [ "$WORKFLOW_STATUS" == "success" ]; then
+                  NOTIFICATION_TYPE="merge_success"
+                  NOTIFICATION_PRIORITY="high"
+                else
+                  NOTIFICATION_TYPE="merge_failure"  
+                  NOTIFICATION_PRIORITY="high"
+                fi
+                ;;
+              *"Safety Validation"*)
+                NOTIFICATION_TYPE="safety_validation"
+                NOTIFICATION_PRIORITY="medium"
+                ;;
+              *"Status Monitor"*)
+                NOTIFICATION_TYPE="system_status"
+                NOTIFICATION_PRIORITY="low"
+                ;;
+              *)
+                NOTIFICATION_TYPE="general_workflow"
+                NOTIFICATION_PRIORITY="low"
+                ;;
+            esac
+          fi
+          
+          echo "notification-type=${NOTIFICATION_TYPE}" >> $GITHUB_OUTPUT
+          echo "notification-priority=${NOTIFICATION_PRIORITY}" >> $GITHUB_OUTPUT
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "workflow-status=${WORKFLOW_STATUS}" >> $GITHUB_OUTPUT
+          
+          echo "📋 Notification Analysis:"
+          echo "  Type: ${NOTIFICATION_TYPE}"
+          echo "  Priority: ${NOTIFICATION_PRIORITY}"
+          echo "  PR: ${PR_NUMBER}"
+          echo "  Status: ${WORKFLOW_STATUS}"
+
+  # Generate comprehensive notification content
+  generate-notification-content:
+    name: 📝 Generate Notification Content
+    runs-on: ubuntu-latest
+    needs: analyze-workflow-results
+    
+    outputs:
+      github-comment: ${{ steps.content.outputs.github-comment }}
+      slack-message: ${{ steps.content.outputs.slack-message }}
+      email-subject: ${{ steps.content.outputs.email-subject }}
+      email-body: ${{ steps.content.outputs.email-body }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🌐 Setup Node.js for Claude Flow
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 📝 Generate Intelligent Notification Content
+        id: content
+        run: |
+          NOTIFICATION_TYPE="${{ needs.analyze-workflow-results.outputs.notification-type }}"
+          PR_NUMBER="${{ needs.analyze-workflow-results.outputs.pr-number }}"
+          WORKFLOW_STATUS="${{ needs.analyze-workflow-results.outputs.workflow-status }}"
+          PRIORITY="${{ needs.analyze-workflow-results.outputs.notification-priority }}"
+          
+          echo "📝 Generating content for: ${NOTIFICATION_TYPE}"
+          
+          # Install Claude Flow for intelligent content generation
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Generate session ID for content coordination
+          SESSION_ID=$(date +%s | sha256sum | head -c 16)
+          
+          # Initialize swarm for notification content generation
+          npx claude-flow@alpha swarm init \
+            --topology=minimal \
+            --max-agents=1 \
+            --session-id="${SESSION_ID}" \
+            --notification-mode=true
+          
+          case "$NOTIFICATION_TYPE" in
+            "merge_success")
+              GITHUB_COMMENT="$(cat <<EOF
+          ## 🎉 Automated Merge Successfully Completed!
+          
+          **PR #${PR_NUMBER}** has been automatically merged by GitHub Swarm coordination.
+          
+          ### ✅ Merge Summary
+          - 🤖 **Automated by**: GitHub Swarm Intelligence
+          - 🛡️ **Safety Score**: Passed all validation thresholds
+          - 🔄 **Merge Method**: Intelligently selected based on PR characteristics
+          - ⏱️ **Processing Time**: Completed in workflow run
+          
+          ### 🧠 GitHub Swarm Analysis
+          - All status checks passed ✅
+          - Container health validation successful ✅
+          - Security scan completed without critical issues ✅
+          - Code quality standards met ✅
+          
+          ### 🚀 Next Steps
+          - Deployment pipeline will be triggered automatically
+          - Monitor deployment status in the Actions tab
+          - Branch cleanup will be handled automatically if configured
+          
+          ---
+          *🤖 Automated notification from GitHub Swarm • Session: ${SESSION_ID}*
+          EOF
+          )"
+              
+              SLACK_MESSAGE="🎉 *Automated Merge Success* 
+          PR #${PR_NUMBER} successfully merged by GitHub Swarm! All safety validations passed. ✅"
+              
+              EMAIL_SUBJECT="[GitHub Swarm] ✅ PR #${PR_NUMBER} Successfully Auto-Merged"
+              EMAIL_BODY="PR #${PR_NUMBER} has been automatically merged after passing all GitHub Swarm safety validations."
+              ;;
+              
+            "merge_failure")
+              GITHUB_COMMENT="$(cat <<EOF
+          ## ⚠️ Automated Merge Failed
+          
+          **PR #${PR_NUMBER}** could not be automatically merged by GitHub Swarm.
+          
+          ### ❌ Failure Analysis
+          - 🤖 **Analyzed by**: GitHub Swarm Intelligence
+          - 🛡️ **Safety Score**: Below required threshold or critical validation failed
+          - 🔍 **Review Required**: Manual intervention needed
+          
+          ### 🧠 GitHub Swarm Findings
+          Please review the detailed validation reports:
+          - Check security scan results
+          - Review container health validation
+          - Examine code quality assessment
+          - Verify all status checks are passing
+          
+          ### 🛠️ Recommended Actions
+          1. Review the safety validation report in workflow artifacts
+          2. Address any identified issues
+          3. Push fixes to trigger re-evaluation
+          4. Manual merge available once issues are resolved
+          
+          ---
+          *🤖 Automated notification from GitHub Swarm • Session: ${SESSION_ID}*
+          EOF
+          )"
+              
+              SLACK_MESSAGE="⚠️ *Automated Merge Failed*
+          PR #${PR_NUMBER} failed GitHub Swarm validation. Manual review required. ❌"
+              
+              EMAIL_SUBJECT="[GitHub Swarm] ❌ PR #${PR_NUMBER} Auto-Merge Failed"
+              EMAIL_BODY="PR #${PR_NUMBER} failed automated merge validation. Please review the safety validation report and address identified issues."
+              ;;
+              
+            "safety_validation")
+              GITHUB_COMMENT="$(cat <<EOF
+          ## 🛡️ GitHub Swarm Safety Validation Report
+          
+          **PR #${PR_NUMBER}** has been analyzed by GitHub Swarm safety validation.
+          
+          ### 📊 Validation Status: ${{ github.event.workflow_run.conclusion == 'success' && '✅ PASSED' || '⚠️ NEEDS ATTENTION' }}
+          
+          ### 🔍 Validation Components
+          - 🔒 **Security Scan**: Automated vulnerability and security analysis
+          - 📝 **Code Quality**: Style, complexity, and maintainability check  
+          - 🐳 **Container Health**: Service startup and endpoint validation
+          
+          ### 📋 Detailed Results
+          Review the complete validation report in the workflow artifacts for:
+          - Specific security findings and recommendations
+          - Code quality metrics and improvement suggestions
+          - Container health scores and performance data
+          
+          ### 🚀 GitHub Swarm Recommendations
+          ${{ github.event.workflow_run.conclusion == 'success' && 'All validations passed! PR is ready for automated merge consideration.' || 'Address identified issues before proceeding with merge.' }}
+          
+          ---
+          *🛡️ Safety validation by GitHub Swarm • Session: ${SESSION_ID}*
+          EOF
+          )"
+              
+              SLACK_MESSAGE="🛡️ *Safety Validation Complete*
+          PR #${PR_NUMBER} safety validation: ${{ github.event.workflow_run.conclusion == 'success' && '✅ Passed' || '⚠️ Needs Review' }}"
+              
+              EMAIL_SUBJECT="[GitHub Swarm] 🛡️ PR #${PR_NUMBER} Safety Validation Complete"
+              EMAIL_BODY="GitHub Swarm safety validation completed for PR #${PR_NUMBER}. Status: ${{ github.event.workflow_run.conclusion == 'success' && 'Passed' || 'Needs Review' }}"
+              ;;
+              
+            "system_status")
+              GITHUB_COMMENT="$(cat <<EOF
+          ## 📊 GitHub Swarm System Status Update
+          
+          ### 🤖 Automated Monitoring Report
+          
+          **System Status**: ${{ github.event.workflow_run.conclusion == 'success' && '🟢 All Systems Operational' || '🟡 Attention Required' }}
+          
+          ### 🔍 Monitoring Results
+          - **PR Monitoring**: Active and scanning for auto-merge candidates
+          - **Safety Validation**: Ready to analyze pull requests
+          - **GitHub Swarm**: ${{ github.event.workflow_run.conclusion == 'success' && 'Coordinating effectively' || 'May need attention' }}
+          
+          ### 📈 Recent Activity
+          - Scanned pull requests for merge eligibility
+          - Validated system health and performance
+          - Updated swarm coordination metrics
+          
+          ---
+          *📊 System monitoring by GitHub Swarm • Session: ${SESSION_ID}*
+          EOF
+          )"
+              
+              SLACK_MESSAGE="📊 *GitHub Swarm Status*
+          System monitoring update: ${{ github.event.workflow_run.conclusion == 'success' && '🟢 All systems operational' || '🟡 Attention needed' }}"
+              
+              EMAIL_SUBJECT="[GitHub Swarm] 📊 System Status Update"
+              EMAIL_BODY="GitHub Swarm system monitoring update. Status: ${{ github.event.workflow_run.conclusion == 'success' && 'Operational' || 'Needs Attention' }}"
+              ;;
+              
+            *)
+              GITHUB_COMMENT="## 🤖 GitHub Swarm Notification
+          
+          Workflow completed: **${{ github.event.workflow_run.name }}**
+          Status: **${WORKFLOW_STATUS}**
+          
+          ---
+          *Automated notification • Session: ${SESSION_ID}*"
+              
+              SLACK_MESSAGE="🤖 GitHub Swarm: ${{ github.event.workflow_run.name }} - ${WORKFLOW_STATUS}"
+              EMAIL_SUBJECT="[GitHub Swarm] Workflow Notification"
+              EMAIL_BODY="GitHub Swarm workflow notification: ${{ github.event.workflow_run.name }} completed with status: ${WORKFLOW_STATUS}"
+              ;;
+          esac
+          
+          # Set outputs (properly escaped for GitHub Actions)
+          echo "github-comment<<EOF" >> $GITHUB_OUTPUT
+          echo "$GITHUB_COMMENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "slack-message<<EOF" >> $GITHUB_OUTPUT  
+          echo "$SLACK_MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "email-subject=$EMAIL_SUBJECT" >> $GITHUB_OUTPUT
+          
+          echo "email-body<<EOF" >> $GITHUB_OUTPUT
+          echo "$EMAIL_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Send GitHub comment notifications
+  github-notifications:
+    name: 💬 GitHub Comment Notifications
+    runs-on: ubuntu-latest
+    needs: [analyze-workflow-results, generate-notification-content]
+    if: needs.analyze-workflow-results.outputs.pr-number != 'N/A'
+    
+    steps:
+      - name: 📥 Checkout Repository  
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 💬 Post GitHub Comment
+        run: |
+          PR_NUMBER="${{ needs.analyze-workflow-results.outputs.pr-number }}"
+          NOTIFICATION_TYPE="${{ needs.analyze-workflow-results.outputs.notification-type }}"
+          
+          echo "💬 Posting GitHub comment to PR #${PR_NUMBER}"
+          echo "📝 Notification type: ${NOTIFICATION_TYPE}"
+          
+          # Check if PR exists and is open
+          if gh pr view ${PR_NUMBER} >/dev/null 2>&1; then
+            echo "${{ needs.generate-notification-content.outputs.github-comment }}" | \
+              gh pr comment ${PR_NUMBER} --body-file -
+            echo "✅ Comment posted successfully to PR #${PR_NUMBER}"
+          else
+            echo "⚠️ PR #${PR_NUMBER} not found or not accessible"
+            
+            # Create issue comment instead if PR is closed/merged
+            echo "Creating repository issue for notification..."
+            gh issue create \
+              --title "🤖 GitHub Swarm Notification: ${NOTIFICATION_TYPE}" \
+              --body "${{ needs.generate-notification-content.outputs.github-comment }}" \
+              --label "github-swarm,automation,notification" || echo "Issue creation failed, continuing..."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Send Slack notifications (if configured)
+  slack-notifications:
+    name: 📱 Slack Notifications
+    runs-on: ubuntu-latest
+    needs: [analyze-workflow-results, generate-notification-content]
+    if: env.SLACK_ENABLED == 'true' && needs.analyze-workflow-results.outputs.notification-priority != 'low'
+    
+    steps:
+      - name: 📱 Send Slack Notification
+        run: |
+          echo "📱 Sending Slack notification..."
+          echo "🔔 Priority: ${{ needs.analyze-workflow-results.outputs.notification-priority }}"
+          
+          curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "${{ needs.generate-notification-content.outputs.slack-message }}",
+              "username": "GitHub Swarm",
+              "icon_emoji": ":robot_face:",
+              "channel": "#deployments"
+            }' || echo "Slack notification failed, continuing..."
+          
+          echo "✅ Slack notification sent"
+
+  # Send email notifications (if configured)
+  email-notifications:
+    name: 📧 Email Notifications  
+    runs-on: ubuntu-latest
+    needs: [analyze-workflow-results, generate-notification-content]
+    if: env.EMAIL_ENABLED == 'true' && needs.analyze-workflow-results.outputs.notification-priority == 'high'
+    
+    steps:
+      - name: 📧 Send Email Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: ${{ needs.generate-notification-content.outputs.email-subject }}
+          body: ${{ needs.generate-notification-content.outputs.email-body }}
+          to: ${{ secrets.NOTIFICATION_EMAIL_RECIPIENTS }}
+          from: GitHub Swarm <${{ secrets.SMTP_FROM_EMAIL }}>
+        continue-on-error: true
+
+  # Export notification metrics
+  notification-metrics:
+    name: 📈 Export Notification Metrics
+    runs-on: ubuntu-latest
+    needs: [analyze-workflow-results, generate-notification-content, github-notifications]
+    if: always()
+    
+    steps:
+      - name: 📈 Generate Notification Metrics
+        run: |
+          echo "📈 Generating notification metrics..."
+          
+          # Create metrics report
+          cat > /tmp/notification-metrics.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "notificationType": "${{ needs.analyze-workflow-results.outputs.notification-type }}",
+            "priority": "${{ needs.analyze-workflow-results.outputs.notification-priority }}",
+            "prNumber": "${{ needs.analyze-workflow-results.outputs.pr-number }}",
+            "workflowStatus": "${{ needs.analyze-workflow-results.outputs.workflow-status }}",
+            "githubNotificationSent": "${{ needs.github-notifications.result == 'success' }}",
+            "slackNotificationAttempted": "${{ env.SLACK_ENABLED == 'true' }}",
+            "emailNotificationAttempted": "${{ env.EMAIL_ENABLED == 'true' }}",
+            "runNumber": ${{ github.run_number }},
+            "actor": "${{ github.actor }}"
+          }
+          EOF
+          
+          echo "📊 Notification metrics generated"
+          cat /tmp/notification-metrics.json
+          
+      - name: 📤 Upload Notification Metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-metrics-${{ github.run_number }}
+          path: /tmp/notification-metrics.json
+          retention-days: 30

@@ -1,0 +1,600 @@
+name: 🛡️ GitHub Swarm Safety Validation
+
+on:
+  # Trigger on all PR events for comprehensive validation
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, development]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, development]
+    
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to validate'
+        required: true
+        type: number
+      validation_level:
+        description: 'Validation level'
+        required: false
+        type: choice
+        options:
+          - 'standard'
+          - 'comprehensive'
+          - 'maximum'
+        default: 'comprehensive'
+
+env:
+  SAFETY_VALIDATION_LEVEL: maximum
+  CONTAINER_VALIDATION: true
+  SECURITY_SCANNING: true
+  PERFORMANCE_VALIDATION: true
+
+jobs:
+  # Comprehensive Security Validation
+  security-validation:
+    name: 🔒 Security & Vulnerability Scanning
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      security-score: ${{ steps.security-scan.outputs.security-score }}
+      vulnerabilities-found: ${{ steps.security-scan.outputs.vulnerabilities-found }}
+      security-passed: ${{ steps.security-scan.outputs.security-passed }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: 🔍 Install Security Scanning Tools
+        run: |
+          pip install --upgrade pip
+          pip install bandit safety semgrep
+          
+      - name: 🔒 Run Bandit Security Analysis
+        id: bandit-scan
+        run: |
+          echo "🔍 Running Bandit security analysis..."
+          
+          cd python
+          bandit -r src/ -f json -o /tmp/bandit-report.json || BANDIT_EXIT_CODE=$?
+          
+          # Parse results
+          if [ -f /tmp/bandit-report.json ]; then
+            BANDIT_ISSUES=$(jq '.results | length' /tmp/bandit-report.json)
+            BANDIT_SEVERITY=$(jq -r '.results[].issue_severity' /tmp/bandit-report.json | sort | uniq -c | sort -nr)
+            
+            echo "bandit-issues=${BANDIT_ISSUES}" >> $GITHUB_OUTPUT
+            echo "🔒 Bandit found ${BANDIT_ISSUES} potential security issues"
+            
+            if [ "$BANDIT_ISSUES" -gt 0 ]; then
+              echo "⚠️ Bandit Security Issues Found:"
+              echo "$BANDIT_SEVERITY"
+            fi
+          else
+            echo "bandit-issues=0" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🛡️ Run Safety Dependency Check
+        id: safety-check
+        run: |
+          echo "🛡️ Running Safety dependency vulnerability check..."
+          
+          cd python
+          safety check --json --output /tmp/safety-report.json || SAFETY_EXIT_CODE=$?
+          
+          if [ -f /tmp/safety-report.json ]; then
+            SAFETY_VULNS=$(jq '. | length' /tmp/safety-report.json)
+            echo "safety-vulnerabilities=${SAFETY_VULNS}" >> $GITHUB_OUTPUT
+            echo "🛡️ Safety found ${SAFETY_VULNS} known vulnerabilities"
+            
+            if [ "$SAFETY_VULNS" -gt 0 ]; then
+              echo "⚠️ Known Vulnerabilities Found:"
+              jq -r '.[].advisory' /tmp/safety-report.json
+            fi
+          else
+            echo "safety-vulnerabilities=0" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🔍 Run Semgrep Code Analysis
+        id: semgrep-scan
+        run: |
+          echo "🔍 Running Semgrep code analysis..."
+          
+          cd python
+          semgrep --config=auto --json --output=/tmp/semgrep-report.json src/ || SEMGREP_EXIT_CODE=$?
+          
+          if [ -f /tmp/semgrep-report.json ]; then
+            SEMGREP_FINDINGS=$(jq '.results | length' /tmp/semgrep-report.json)
+            echo "semgrep-findings=${SEMGREP_FINDINGS}" >> $GITHUB_OUTPUT
+            echo "🔍 Semgrep found ${SEMGREP_FINDINGS} code analysis findings"
+          else
+            echo "semgrep-findings=0" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 📊 Calculate Security Score
+        id: security-scan
+        run: |
+          BANDIT_ISSUES=${{ steps.bandit-scan.outputs.bandit-issues || 0 }}
+          SAFETY_VULNS=${{ steps.safety-check.outputs.safety-vulnerabilities || 0 }}
+          SEMGREP_FINDINGS=${{ steps.semgrep-scan.outputs.semgrep-findings || 0 }}
+          
+          echo "📊 Security Scan Results:"
+          echo "  Bandit Issues: ${BANDIT_ISSUES}"
+          echo "  Safety Vulnerabilities: ${SAFETY_VULNS}"
+          echo "  Semgrep Findings: ${SEMGREP_FINDINGS}"
+          
+          # Calculate security score (100 = perfect, 0 = many issues)
+          SECURITY_SCORE=100
+          
+          # Deduct points for findings
+          SECURITY_SCORE=$((SECURITY_SCORE - (BANDIT_ISSUES * 5)))
+          SECURITY_SCORE=$((SECURITY_SCORE - (SAFETY_VULNS * 10)))
+          SECURITY_SCORE=$((SECURITY_SCORE - (SEMGREP_FINDINGS * 2)))
+          
+          # Minimum score is 0
+          if [ $SECURITY_SCORE -lt 0 ]; then
+            SECURITY_SCORE=0
+          fi
+          
+          TOTAL_VULNERABILITIES=$((BANDIT_ISSUES + SAFETY_VULNS + SEMGREP_FINDINGS))
+          
+          echo "🛡️ Security Score: ${SECURITY_SCORE}/100"
+          echo "security-score=${SECURITY_SCORE}" >> $GITHUB_OUTPUT
+          echo "vulnerabilities-found=${TOTAL_VULNERABILITIES}" >> $GITHUB_OUTPUT
+          
+          # Pass threshold: 70/100
+          if [ $SECURITY_SCORE -ge 70 ]; then
+            echo "✅ Security validation passed"
+            echo "security-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Security validation failed"
+            echo "security-passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Comprehensive Code Quality Validation
+  code-quality-validation:
+    name: 📝 Code Quality & Standards
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      quality-score: ${{ steps.quality-analysis.outputs.quality-score }}
+      quality-passed: ${{ steps.quality-analysis.outputs.quality-passed }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: 📝 Install Code Quality Tools
+        run: |
+          pip install --upgrade pip
+          pip install flake8 black isort mypy pylint radon complexity
+          
+      - name: 🎨 Run Code Formatting Check
+        id: formatting-check
+        run: |
+          echo "🎨 Checking code formatting with Black..."
+          
+          cd python
+          black --check --diff src/ > /tmp/black-report.txt || BLACK_EXIT_CODE=$?
+          
+          if [ "${BLACK_EXIT_CODE:-0}" -ne 0 ]; then
+            FORMATTING_ISSUES=$(wc -l < /tmp/black-report.txt)
+            echo "formatting-issues=${FORMATTING_ISSUES}" >> $GITHUB_OUTPUT
+            echo "⚠️ Found ${FORMATTING_ISSUES} formatting issues"
+          else
+            echo "formatting-issues=0" >> $GITHUB_OUTPUT
+            echo "✅ Code formatting is correct"
+          fi
+          
+      - name: 📦 Run Import Sorting Check
+        id: import-check
+        run: |
+          echo "📦 Checking import sorting with isort..."
+          
+          cd python
+          isort --check-only --diff src/ > /tmp/isort-report.txt || ISORT_EXIT_CODE=$?
+          
+          if [ "${ISORT_EXIT_CODE:-0}" -ne 0 ]; then
+            IMPORT_ISSUES=$(wc -l < /tmp/isort-report.txt)
+            echo "import-issues=${IMPORT_ISSUES}" >> $GITHUB_OUTPUT
+            echo "⚠️ Found ${IMPORT_ISSUES} import sorting issues"
+          else
+            echo "import-issues=0" >> $GITHUB_OUTPUT
+            echo "✅ Import sorting is correct"
+          fi
+          
+      - name: 🔍 Run Flake8 Linting
+        id: flake8-check
+        run: |
+          echo "🔍 Running Flake8 linting..."
+          
+          cd python
+          flake8 src/ --output-file=/tmp/flake8-report.txt --statistics || FLAKE8_EXIT_CODE=$?
+          
+          if [ -f /tmp/flake8-report.txt ] && [ -s /tmp/flake8-report.txt ]; then
+            FLAKE8_ISSUES=$(wc -l < /tmp/flake8-report.txt)
+            echo "flake8-issues=${FLAKE8_ISSUES}" >> $GITHUB_OUTPUT
+            echo "⚠️ Found ${FLAKE8_ISSUES} linting issues"
+          else
+            echo "flake8-issues=0" >> $GITHUB_OUTPUT
+            echo "✅ No linting issues found"
+          fi
+          
+      - name: 🏗️ Run Complexity Analysis
+        id: complexity-check
+        run: |
+          echo "🏗️ Analyzing code complexity with Radon..."
+          
+          cd python
+          radon cc src/ -s --json > /tmp/complexity-report.json || COMPLEXITY_EXIT_CODE=$?
+          
+          if [ -f /tmp/complexity-report.json ]; then
+            # Count complex functions (complexity > 10)
+            COMPLEX_FUNCTIONS=$(jq '[.. | objects | select(.complexity > 10)] | length' /tmp/complexity-report.json)
+            echo "complex-functions=${COMPLEX_FUNCTIONS}" >> $GITHUB_OUTPUT
+            echo "🏗️ Found ${COMPLEX_FUNCTIONS} overly complex functions"
+          else
+            echo "complex-functions=0" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 📊 Calculate Code Quality Score
+        id: quality-analysis
+        run: |
+          FORMATTING_ISSUES=${{ steps.formatting-check.outputs.formatting-issues || 0 }}
+          IMPORT_ISSUES=${{ steps.import-check.outputs.import-issues || 0 }}
+          FLAKE8_ISSUES=${{ steps.flake8-check.outputs.flake8-issues || 0 }}
+          COMPLEX_FUNCTIONS=${{ steps.complexity-check.outputs.complex-functions || 0 }}
+          
+          echo "📊 Code Quality Analysis Results:"
+          echo "  Formatting Issues: ${FORMATTING_ISSUES}"
+          echo "  Import Issues: ${IMPORT_ISSUES}"
+          echo "  Linting Issues: ${FLAKE8_ISSUES}"
+          echo "  Complex Functions: ${COMPLEX_FUNCTIONS}"
+          
+          # Calculate quality score (100 = perfect)
+          QUALITY_SCORE=100
+          
+          # Deduct points for issues
+          QUALITY_SCORE=$((QUALITY_SCORE - (FORMATTING_ISSUES * 1)))
+          QUALITY_SCORE=$((QUALITY_SCORE - (IMPORT_ISSUES * 1)))
+          QUALITY_SCORE=$((QUALITY_SCORE - (FLAKE8_ISSUES * 2)))
+          QUALITY_SCORE=$((QUALITY_SCORE - (COMPLEX_FUNCTIONS * 5)))
+          
+          # Minimum score is 0
+          if [ $QUALITY_SCORE -lt 0 ]; then
+            QUALITY_SCORE=0
+          fi
+          
+          echo "📝 Code Quality Score: ${QUALITY_SCORE}/100"
+          echo "quality-score=${QUALITY_SCORE}" >> $GITHUB_OUTPUT
+          
+          # Pass threshold: 75/100
+          if [ $QUALITY_SCORE -ge 75 ]; then
+            echo "✅ Code quality validation passed"
+            echo "quality-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Code quality validation failed"
+            echo "quality-passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Container and Service Validation
+  container-validation:
+    name: 🐳 Container & Service Health
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      container-score: ${{ steps.container-health.outputs.container-score }}
+      container-passed: ${{ steps.container-health.outputs.container-passed }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: 📦 Install Dependencies
+        run: |
+          cd python
+          pip install --upgrade pip
+          pip install -r requirements.txt 2>/dev/null || pip install uvicorn fastapi httpx pytest aiohttp
+          
+      - name: 🚀 Start Main Archon Service
+        id: start-main-service
+        run: |
+          echo "🚀 Starting main Archon service..."
+          
+          cd python
+          timeout 120s python -m uvicorn src.server.main:app --host 0.0.0.0 --port 8080 --workers 1 &
+          MAIN_SERVICE_PID=$!
+          echo "main-service-pid=${MAIN_SERVICE_PID}" >> $GITHUB_OUTPUT
+          
+          # Wait for service to start
+          for i in {1..24}; do
+            if curl -s http://localhost:8080/health >/dev/null 2>&1; then
+              echo "✅ Main service started successfully (attempt $i)"
+              echo "main-service-status=healthy" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for main service to start (attempt $i/24)"
+            sleep 5
+          done
+          
+          if ! curl -s http://localhost:8080/health >/dev/null 2>&1; then
+            echo "❌ Main service failed to start"
+            echo "main-service-status=failed" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🚀 Start Unified Archon Service
+        id: start-unified-service
+        run: |
+          echo "🚀 Starting unified Archon service..."
+          
+          cd python
+          timeout 120s python -m uvicorn src.server.unified_archon_service:unified_app --host 0.0.0.0 --port 8182 --workers 1 &
+          UNIFIED_SERVICE_PID=$!
+          echo "unified-service-pid=${UNIFIED_SERVICE_PID}" >> $GITHUB_OUTPUT
+          
+          # Wait for service to start
+          for i in {1..24}; do
+            if curl -s http://localhost:8182/health >/dev/null 2>&1; then
+              echo "✅ Unified service started successfully (attempt $i)"
+              echo "unified-service-status=healthy" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for unified service to start (attempt $i/24)"
+            sleep 5
+          done
+          
+          if ! curl -s http://localhost:8182/health >/dev/null 2>&1; then
+            echo "❌ Unified service failed to start"
+            echo "unified-service-status=failed" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🔍 Test Service Endpoints
+        id: endpoint-testing
+        run: |
+          echo "🔍 Testing service endpoints..."
+          
+          ENDPOINT_TESTS_PASSED=0
+          ENDPOINT_TESTS_TOTAL=6
+          
+          # Test main service endpoints
+          if curl -s http://localhost:8080/health | grep -q "healthy\|ok"; then
+            echo "✅ Main service health check passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Main service health check failed"
+          fi
+          
+          if curl -s http://localhost:8080/api/status >/dev/null 2>&1; then
+            echo "✅ Main service status endpoint passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Main service status endpoint failed"
+          fi
+          
+          # Test unified service endpoints
+          if curl -s http://localhost:8182/health | grep -q "healthy\|ok"; then
+            echo "✅ Unified service health check passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Unified service health check failed"
+          fi
+          
+          if curl -s http://localhost:8182/api/status >/dev/null 2>&1; then
+            echo "✅ Unified service status endpoint passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Unified service status endpoint failed"
+          fi
+          
+          # Test performance under load
+          if timeout 30s bash -c 'for i in {1..10}; do curl -s http://localhost:8080/health >/dev/null; done'; then
+            echo "✅ Load test passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Load test failed"
+          fi
+          
+          # Test concurrent requests
+          if timeout 30s bash -c 'curl -s http://localhost:8080/health & curl -s http://localhost:8182/health & wait'; then
+            echo "✅ Concurrent requests test passed"
+            ENDPOINT_TESTS_PASSED=$((ENDPOINT_TESTS_PASSED + 1))
+          else
+            echo "❌ Concurrent requests test failed"
+          fi
+          
+          echo "endpoint-tests-passed=${ENDPOINT_TESTS_PASSED}" >> $GITHUB_OUTPUT
+          echo "endpoint-tests-total=${ENDPOINT_TESTS_TOTAL}" >> $GITHUB_OUTPUT
+          
+      - name: 📊 Calculate Container Health Score
+        id: container-health
+        run: |
+          MAIN_STATUS="${{ steps.start-main-service.outputs.main-service-status }}"
+          UNIFIED_STATUS="${{ steps.start-unified-service.outputs.unified-service-status }}"
+          ENDPOINT_TESTS_PASSED=${{ steps.endpoint-testing.outputs.endpoint-tests-passed }}
+          ENDPOINT_TESTS_TOTAL=${{ steps.endpoint-testing.outputs.endpoint-tests-total }}
+          
+          echo "📊 Container Health Analysis:"
+          echo "  Main Service: ${MAIN_STATUS}"
+          echo "  Unified Service: ${UNIFIED_STATUS}"
+          echo "  Endpoint Tests: ${ENDPOINT_TESTS_PASSED}/${ENDPOINT_TESTS_TOTAL}"
+          
+          # Calculate container score (100 = perfect)
+          CONTAINER_SCORE=0
+          
+          # Service startup scores (40 points each)
+          if [ "$MAIN_STATUS" == "healthy" ]; then
+            CONTAINER_SCORE=$((CONTAINER_SCORE + 40))
+          fi
+          
+          if [ "$UNIFIED_STATUS" == "healthy" ]; then
+            CONTAINER_SCORE=$((CONTAINER_SCORE + 40))
+          fi
+          
+          # Endpoint tests score (20 points total)
+          ENDPOINT_SCORE=$((ENDPOINT_TESTS_PASSED * 20 / ENDPOINT_TESTS_TOTAL))
+          CONTAINER_SCORE=$((CONTAINER_SCORE + ENDPOINT_SCORE))
+          
+          echo "🐳 Container Health Score: ${CONTAINER_SCORE}/100"
+          echo "container-score=${CONTAINER_SCORE}" >> $GITHUB_OUTPUT
+          
+          # Pass threshold: 70/100
+          if [ $CONTAINER_SCORE -ge 70 ]; then
+            echo "✅ Container validation passed"
+            echo "container-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Container validation failed"
+            echo "container-passed=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🧹 Cleanup Services
+        if: always()
+        run: |
+          echo "🧹 Cleaning up services..."
+          
+          # Kill services if they're still running
+          MAIN_PID=${{ steps.start-main-service.outputs.main-service-pid }}
+          UNIFIED_PID=${{ steps.start-unified-service.outputs.unified-service-pid }}
+          
+          if [ -n "$MAIN_PID" ]; then
+            kill $MAIN_PID 2>/dev/null || true
+          fi
+          
+          if [ -n "$UNIFIED_PID" ]; then
+            kill $UNIFIED_PID 2>/dev/null || true
+          fi
+          
+          # Kill any remaining python processes on our ports
+          pkill -f "uvicorn.*8080" || true
+          pkill -f "uvicorn.*8182" || true
+
+  # Comprehensive Safety Score Calculation
+  safety-score-calculation:
+    name: 🎯 Calculate Overall Safety Score
+    runs-on: ubuntu-latest
+    needs: [security-validation, code-quality-validation, container-validation]
+    if: always()
+    
+    outputs:
+      overall-safety-score: ${{ steps.calculate-score.outputs.overall-safety-score }}
+      safety-validation-passed: ${{ steps.calculate-score.outputs.safety-validation-passed }}
+      detailed-report: ${{ steps.generate-report.outputs.detailed-report }}
+      
+    steps:
+      - name: 📊 Calculate Overall Safety Score
+        id: calculate-score
+        run: |
+          # Get individual scores (default to 0 if failed)
+          SECURITY_SCORE=${{ needs.security-validation.outputs.security-score || 0 }}
+          QUALITY_SCORE=${{ needs.code-quality-validation.outputs.quality-score || 0 }}
+          CONTAINER_SCORE=${{ needs.container-validation.outputs.container-score || 0 }}
+          
+          # Get pass/fail status
+          SECURITY_PASSED=${{ needs.security-validation.outputs.security-passed }}
+          QUALITY_PASSED=${{ needs.code-quality-validation.outputs.quality-passed }}
+          CONTAINER_PASSED=${{ needs.container-validation.outputs.container-passed }}
+          
+          echo "📊 Individual Validation Scores:"
+          echo "  🔒 Security: ${SECURITY_SCORE}/100 (${SECURITY_PASSED})"
+          echo "  📝 Code Quality: ${QUALITY_SCORE}/100 (${QUALITY_PASSED})"
+          echo "  🐳 Container Health: ${CONTAINER_SCORE}/100 (${CONTAINER_PASSED})"
+          
+          # Calculate weighted overall score
+          # Security: 40%, Quality: 30%, Container: 30%
+          OVERALL_SCORE=$(( (SECURITY_SCORE * 40 + QUALITY_SCORE * 30 + CONTAINER_SCORE * 30) / 100 ))
+          
+          echo "🎯 Overall Safety Score: ${OVERALL_SCORE}/100"
+          echo "overall-safety-score=${OVERALL_SCORE}" >> $GITHUB_OUTPUT
+          
+          # Overall validation passes if score >= 75 AND all critical validations pass
+          if [ $OVERALL_SCORE -ge 75 ] && [ "$SECURITY_PASSED" == "true" ] && [ "$CONTAINER_PASSED" == "true" ]; then
+            echo "✅ OVERALL SAFETY VALIDATION PASSED"
+            echo "safety-validation-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ OVERALL SAFETY VALIDATION FAILED"
+            echo "safety-validation-passed=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 📋 Generate Detailed Report
+        id: generate-report
+        run: |
+          # Create comprehensive safety report
+          REPORT="$(cat <<EOF
+          ## 🛡️ GitHub Swarm Safety Validation Report
+          
+          ### 📊 Overall Score: ${{ steps.calculate-score.outputs.overall-safety-score }}/100
+          
+          **Status**: ${{ steps.calculate-score.outputs.safety-validation-passed == 'true' && '✅ PASSED' || '❌ FAILED' }}
+          
+          ### 🔍 Detailed Validation Results
+          
+          #### 🔒 Security Validation
+          - **Score**: ${{ needs.security-validation.outputs.security-score || 0 }}/100
+          - **Status**: ${{ needs.security-validation.outputs.security-passed == 'true' && '✅ Passed' || '❌ Failed' }}
+          - **Vulnerabilities**: ${{ needs.security-validation.outputs.vulnerabilities-found || 0 }} found
+          
+          #### 📝 Code Quality Validation  
+          - **Score**: ${{ needs.code-quality-validation.outputs.quality-score || 0 }}/100
+          - **Status**: ${{ needs.code-quality-validation.outputs.quality-passed == 'true' && '✅ Passed' || '❌ Failed' }}
+          
+          #### 🐳 Container Health Validation
+          - **Score**: ${{ needs.container-validation.outputs.container-score || 0 }}/100  
+          - **Status**: ${{ needs.container-validation.outputs.container-passed == 'true' && '✅ Passed' || '❌ Failed' }}
+          
+          ### 🎯 Safety Thresholds
+          - **Minimum Overall Score**: 75/100
+          - **Required**: Security AND Container validations must pass
+          - **Code Quality**: Recommended but not blocking
+          
+          ---
+          *Generated by GitHub Swarm Safety Validation*
+          EOF
+          )"
+          
+          echo "$REPORT"
+          
+          # Save report to file for artifact upload
+          echo "$REPORT" > /tmp/safety-validation-report.md
+          
+          # Set output (escape for GitHub Actions)
+          echo "detailed-report<<EOF" >> $GITHUB_OUTPUT
+          echo "$REPORT" >> $GITHUB_OUTPUT  
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: 📤 Upload Safety Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-validation-report-${{ github.event.pull_request.number || github.run_number }}
+          path: /tmp/safety-validation-report.md
+          retention-days: 30
