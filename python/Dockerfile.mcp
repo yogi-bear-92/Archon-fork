@@ -38,5 +38,5 @@ ARG ARCHON_MCP_PORT=8051
 ENV ARCHON_MCP_PORT=${ARCHON_MCP_PORT}
 EXPOSE ${ARCHON_MCP_PORT}
 
-# Run the MCP server
-CMD ["python", "-m", "src.mcp_server.mcp_server"]
+# Run the HTTP-based MCP server for Docker
+CMD ["python", "-m", "src.mcp_server.http_mcp_server"]
