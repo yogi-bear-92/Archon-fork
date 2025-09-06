@@ -113,22 +113,6 @@ function loadMCPXConfig() {
       ]
     },
     
-    'flow-nexus': {
-      name: 'Flow-Nexus Workflows',
-      transport: 'http',
-      baseUrl: 'http://localhost:8051',
-      mcpEndpoint: '/mcp/v1',
-      enabled: true,
-      priority: 4,
-      retries: 2,
-      timeout: 5000,
-      tags: ['workflow', 'automation', 'pipeline'],
-      tools: [
-        'flow_nexus_workflow_create',
-        'flow_nexus_workflow_execute',
-        'flow_nexus_pipeline_status'
-      ]
-    }
   },
   
   // Traffic and Policy Configuration (Lunar-style)
@@ -664,7 +648,15 @@ class MCPXServerManager extends EventEmitter {
     // Test HTTP connectivity
     try {
       const healthUrl = `${config.baseUrl}${config.healthEndpoint || '/health'}`;
-      const response = await fetch(healthUrl, { timeout: config.timeout || 5000 });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.timeout || 5000);
+      const startTime = Date.now();
+      
+      const response = await fetch(healthUrl, { 
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Lunar-MCPX-Gateway/1.0' }
+      });
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         this.servers.set(serverId, {
@@ -676,14 +668,19 @@ class MCPXServerManager extends EventEmitter {
         this.healthStates.set(serverId, { 
           healthy: true, 
           lastCheck: new Date(),
-          latency: Date.now() - response.startTime
+          latency: Date.now() - startTime
         });
         
         console.log(`✅ HTTP server ${serverId} initialized`);
         return true;
+      } else {
+        throw new Error(`Health check returned ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      throw new Error(`HTTP server unreachable: ${error.message}`);
+      if (error.name === 'AbortError') {
+        throw new Error(`HTTP server unreachable: Connection timeout after ${config.timeout || 5000}ms`);
+      }
+      throw new Error(`HTTP server unreachable: ${error.message || 'Unknown error'}`);
     }
     
     return false;
@@ -692,13 +689,13 @@ class MCPXServerManager extends EventEmitter {
   async initializeStdioServer(serverId, config) {
     // Spawn stdio MCP server process
     try {
-      const process = spawn(config.command[0], config.command.slice(1), {
+      const childProcess = spawn(config.command[0], config.command.slice(1), {
         stdio: ['pipe', 'pipe', 'inherit'],
         cwd: config.cwd || process.cwd(),
         env: { ...process.env, ...config.env }
       });
 
-      process.on('error', (error) => {
+      childProcess.on('error', (error) => {
         console.error(`❌ ${serverId} process error:`, error.message);
         this.healthStates.set(serverId, { healthy: false, error: error.message });
         this.emit('serverFailed', serverId, error);
@@ -710,14 +707,14 @@ class MCPXServerManager extends EventEmitter {
           reject(new Error('Process startup timeout'));
         }, config.timeout || 10000);
 
-        process.stdout.once('data', () => {
+        childProcess.stdout.once('data', () => {
           clearTimeout(timeout);
           resolve();
         });
       });
 
-      this.processes.set(serverId, process);
-      this.servers.set(serverId, { ...config, type: 'stdio', process });
+      this.processes.set(serverId, childProcess);
+      this.servers.set(serverId, { ...config, type: 'stdio', process: childProcess });
       this.healthStates.set(serverId, { healthy: true, lastCheck: new Date() });
       
       console.log(`✅ Stdio server ${serverId} initialized`);
@@ -790,10 +787,20 @@ class MCPXServerManager extends EventEmitter {
       switch (config.type) {
         case 'http':
           const healthUrl = `${config.baseUrl}${config.healthEndpoint || '/health'}`;
-          const response = await fetch(healthUrl, { 
-            timeout: MCPX_CONFIG.aggregation.healthCheck.timeout 
-          });
-          healthy = response.ok;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), MCPX_CONFIG.aggregation.healthCheck.timeout);
+          
+          try {
+            const response = await fetch(healthUrl, { 
+              signal: controller.signal,
+              headers: { 'User-Agent': 'Lunar-MCPX-Gateway/1.0' }
+            });
+            clearTimeout(timeoutId);
+            healthy = response.ok;
+          } catch (fetchError) {
+            clearTimeout(timeoutId);
+            healthy = false;
+          }
           break;
           
         case 'stdio':
