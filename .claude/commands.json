@@ -1,0 +1,54 @@
+{
+  "commands": {
+    "continue-task": {
+      "description": "Seamlessly transition work to new conversation when context reaches capacity",
+      "script": "commands/continue-task.js",
+      "usage": "/continue-task <task_id> [context_summary]",
+      "examples": [
+        "/continue-task 517fa818-d76b-4c65-a2ee-4db963dc65a7",
+        "/continue-task 517fa818-d76b-4c65-a2ee-4db963dc65a7 \"Worked on GitHub integration\"",
+        "/continue-task --list",
+        "/continue-task --help"
+      ],
+      "category": "task-management",
+      "requirements": [
+        "Archon server running on port 8181",
+        "Valid task ID from Archon project management system"
+      ],
+      "outputs": [
+        "Creates .continue-task-prompt.md with continuation instructions",
+        "Displays formatted continuation prompt for copying"
+      ],
+      "aliases": ["ct", "continue"]
+    },
+    "continue-task-auto": {
+      "description": "🆕 ENHANCED: Automatically start new Claude session with task continuation context",
+      "script": "commands/continue-task-auto.js",
+      "usage": "/continue-task-auto <task_id> [context_summary]",
+      "examples": [
+        "/continue-task-auto 517fa818-d76b-4c65-a2ee-4db963dc65a7",
+        "/continue-task-auto 517fa818-d76b-4c65-a2ee-4db963dc65a7 \"GitHub integration ready for testing\"",
+        "/continue-task-auto --list",
+        "/continue-task-auto --help"
+      ],
+      "category": "task-management",
+      "features": [
+        "🪄 Automatic session start - launches new Claude Code session",
+        "🔄 Context preservation - transfers all task and project context",
+        "⚡ Zero manual steps - no copy/paste required",
+        "🛡️ Fallback support - auto-fallback to manual mode if needed"
+      ],
+      "requirements": [
+        "Claude CLI available (claude command)",
+        "Archon server running on port 8181",
+        "Valid task ID from Archon project management system"
+      ],
+      "outputs": [
+        "Automatically launches new Claude Code session",
+        "Transfers complete task and project context",
+        "Fallback to manual mode if auto-session fails"
+      ],
+      "aliases": ["cta", "auto-continue"]
+    }
+  }
+}
