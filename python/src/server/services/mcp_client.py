@@ -31,6 +31,7 @@ class ArchonMCPClient:
         self.mcp_url = f"{self.base_url}/mcp"
         self.timeout = httpx.Timeout(30.0)
         self._session_id = None
+        self._initialized = False
         
     def _generate_request_id(self) -> str:
         """Generate a unique request ID"""
@@ -56,10 +57,19 @@ class ArchonMCPClient:
                 "Content-Type": "application/json"
             }
             
+            # Add session ID if we have one
+            if self._session_id:
+                headers["mcp-session-id"] = self._session_id
+            
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 # Send POST request with proper headers
                 async with client.stream("POST", self.mcp_url, json=request, headers=headers) as response:
                     response.raise_for_status()
+                    
+                    # Capture session ID from response if this is initialization
+                    if request.get("method") == "initialize" and "mcp-session-id" in response.headers:
+                        self._session_id = response.headers["mcp-session-id"]
+                        api_logger.info(f"MCP session established: {self._session_id}")
                     
                     # Read SSE response
                     async for line in response.aiter_lines():
@@ -112,6 +122,9 @@ class ArchonMCPClient:
     
     async def initialize(self) -> bool:
         """Initialize connection with MCP server"""
+        if self._initialized:
+            return True
+            
         try:
             # Send initialize request
             init_request = self._create_mcp_request("initialize", {
@@ -132,23 +145,23 @@ class ArchonMCPClient:
                 api_logger.error(f"MCP initialize failed: {response['error']}")
                 return False
                 
-            # Send initialized notification
+            # Send initialized notification with session ID
             initialized_request = {
                 "jsonrpc": "2.0",
                 "method": "notifications/initialized"
             }
             
-            # For notifications, we don't wait for response
+            headers = {"Content-Type": "application/json"}
+            if self._session_id:
+                headers["mcp-session-id"] = self._session_id
+            
             try:
                 async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    await client.post(
-                        self.mcp_url,
-                        json=initialized_request,
-                        headers={"Content-Type": "application/json"}
-                    )
-            except:
-                pass  # Notifications don't require response
+                    await client.post(self.mcp_url, json=initialized_request, headers=headers)
+            except Exception as e:
+                api_logger.warning(f"Failed to send initialized notification: {e}")
             
+            self._initialized = True
             api_logger.info("MCP client initialized successfully")
             return True
             
@@ -159,18 +172,28 @@ class ArchonMCPClient:
     async def list_tools(self) -> Dict[str, Any]:
         """Get list of available tools from MCP server"""
         try:
-            request = self._create_mcp_request("tools/list")
-            response = await self._send_mcp_request(request)
+            # Use the get_available_tools tool instead of the built-in method
+            result = await self.call_tool("get_available_tools", {})
             
-            if "error" in response:
-                api_logger.error(f"MCP tools/list failed: {response['error']}")
+            if not result["success"]:
+                api_logger.error(f"MCP get_available_tools failed: {result['error']}")
                 return {
                     "tools": [],
                     "count": 0,
-                    "error": response["error"]["message"]
+                    "error": result["error"]
                 }
             
-            tools = response.get("result", {}).get("tools", [])
+            # Parse the JSON response from the tool
+            tool_data = json.loads(result["result"]["content"][0]["text"])
+            
+            if not tool_data.get("success", False):
+                return {
+                    "tools": [],
+                    "count": 0,
+                    "error": tool_data.get("error", "Unknown error")
+                }
+            
+            tools = tool_data.get("tools", [])
             
             # Transform tools to our expected format
             formatted_tools = []
