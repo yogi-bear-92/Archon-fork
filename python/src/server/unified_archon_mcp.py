@@ -30,9 +30,12 @@ except ImportError:
     print("Error: MCP not installed. Install with: pip install mcp")
     sys.exit(1)
 
-from server.config.logfire_config import get_logger
-from server.services.serena_service import serena_service
-from server.services.claude_flow_service import claude_flow_service
+from config.logfire_config import get_logger
+from services.serena_service import serena_service
+from services.claude_flow_service import claude_flow_service
+from services.url_detection_service import get_url_detection_service
+from agents.url_decision_agent import get_url_decision_agent, URLDecisionContext
+from services.cli_tool_discovery_service import cli_discovery_service
 
 logger = get_logger(__name__)
 
@@ -51,10 +54,19 @@ class ArchonMCPCoordinator:
         try:
             logger.info("🚀 Initializing Unified Archon MCP services...")
             
+            # Start CLI discovery service
+            logger.info("Starting CLI Tool Discovery Service...")
+            await cli_discovery_service.start()
+            
             # Check service availability
             services_status = {
                 "serena": await serena_service.get_service_status(),
                 "claude_flow": await claude_flow_service.get_swarm_status(),
+                "cli_discovery": {
+                    "running": cli_discovery_service.running,
+                    "available_tools": len([s for s in cli_discovery_service.get_tool_status().values() if s.available]),
+                    "total_commands": len(cli_discovery_service.get_discovered_commands())
+                }
             }
             
             self.services_ready = True
@@ -83,6 +95,10 @@ class ArchonMCPCoordinator:
         # Code-related operations → Serena
         elif any(keyword in tool_name for keyword in ["code", "semantic", "completion", "refactor"]):
             return "serena"
+        
+        # URL detection and management → URL Detection Service
+        elif any(keyword in tool_name for keyword in ["url", "detect", "suggestion"]):
+            return "url_detection"
         
         # Project/Task operations → FastAPI Backend
         elif any(keyword in tool_name for keyword in ["project", "task", "knowledge", "search", "rag"]):
@@ -791,6 +807,292 @@ Use the tools above to leverage intelligent code analysis, semantic task creatio
             
         except Exception as e:
             return {"status": "error", "error": str(e)}
+    
+    # ========================================================================
+    # URL DETECTION AND MANAGEMENT
+    # ========================================================================
+    
+    async def detect_urls_in_text(
+        self, 
+        text: str, 
+        context: str = "", 
+        auto_process: bool = True
+    ) -> Dict[str, Any]:
+        """Detect URLs in text and optionally process them for knowledge base addition."""
+        try:
+            url_detection_service = get_url_detection_service()
+            
+            detected_urls = await url_detection_service.detect_urls_in_text(
+                text, context, auto_process
+            )
+            
+            if not detected_urls:
+                return {
+                    "status": "success",
+                    "urls_detected": 0,
+                    "urls": [],
+                    "message": "No URLs detected in the provided text"
+                }
+            
+            # Process URLs if auto_process is enabled
+            processing_results = []
+            if auto_process:
+                for url in detected_urls:
+                    try:
+                        analysis = await url_detection_service.analyze_url(url, f"mcp_detect:{context}")
+                        processing_results.append({
+                            "url": url,
+                            "overall_score": analysis.overall_score,
+                            "recommended_action": analysis.recommended_action,
+                            "reasoning": analysis.reasoning
+                        })
+                    except Exception as e:
+                        processing_results.append({
+                            "url": url,
+                            "error": str(e)
+                        })
+            
+            return {
+                "status": "success",
+                "urls_detected": len(detected_urls),
+                "urls": detected_urls,
+                "auto_processed": auto_process,
+                "processing_results": processing_results,
+                "message": f"Detected {len(detected_urls)} URLs in text"
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error detecting URLs: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    async def analyze_url_with_ai(
+        self, 
+        url: str, 
+        context: str = "", 
+        source: str = "manual"
+    ) -> Dict[str, Any]:
+        """Analyze a specific URL using AI decision agent."""
+        try:
+            url_decision_agent = get_url_decision_agent()
+            
+            # Create decision context
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            domain = parsed.netloc
+            
+            decision_context = URLDecisionContext(
+                url=url,
+                domain=domain,
+                source_context=context,
+                detected_in=source
+            )
+            
+            # Perform AI analysis
+            decision_result = await url_decision_agent.analyze_url_decision(decision_context)
+            
+            return {
+                "status": "success",
+                "url": url,
+                "analysis": {
+                    "confidence_score": decision_result.confidence_score,
+                    "relevance_score": decision_result.relevance_score,
+                    "quality_score": decision_result.quality_score,
+                    "risk_score": decision_result.risk_score,
+                    "overall_assessment": {
+                        "recommended_action": decision_result.recommended_action,
+                        "reasoning": decision_result.reasoning,
+                        "estimated_value": decision_result.estimated_value,
+                        "content_type_prediction": decision_result.content_type_prediction
+                    },
+                    "key_factors": decision_result.key_factors,
+                    "suggested_tags": decision_result.suggested_tags
+                },
+                "message": f"AI analysis complete: {decision_result.recommended_action} (confidence: {decision_result.confidence_score:.2f})"
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error analyzing URL with AI: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    async def get_url_suggestions(
+        self, 
+        limit: int = 10, 
+        min_score: float = 0.0, 
+        status: str = "pending"
+    ) -> Dict[str, Any]:
+        """Get URL suggestions that require user review."""
+        try:
+            import httpx
+            
+            # Call the API endpoint
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                params = {
+                    "limit": limit,
+                    "min_score": min_score,
+                    "status": status
+                }
+                
+                response = await client.get(
+                    f"{self.base_url}/api/url-suggestions/",
+                    params=params
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return {
+                        "status": "success",
+                        "suggestions": data["suggestions"],
+                        "total_count": data["total_count"],
+                        "pending_count": data["pending_count"],
+                        "high_score_count": data["high_score_count"],
+                        "message": f"Found {len(data['suggestions'])} suggestions"
+                    }
+                else:
+                    return {
+                        "status": "error", 
+                        "error": f"API request failed with status {response.status_code}"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"❌ Error getting URL suggestions: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    async def approve_url_suggestion(
+        self, 
+        url: Optional[str] = None, 
+        suggestion_ids: Optional[List[str]] = None,
+        add_tags: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Approve URL suggestion(s) and add to knowledge base."""
+        try:
+            import httpx
+            
+            # If URL is provided, find its suggestion ID
+            if url and not suggestion_ids:
+                # First get suggestions to find the ID
+                suggestions_response = await self.get_url_suggestions(limit=100, status="pending")
+                if suggestions_response["status"] == "success":
+                    for suggestion in suggestions_response["suggestions"]:
+                        if suggestion["url"] == url:
+                            suggestion_ids = [suggestion["id"]]
+                            break
+                
+                if not suggestion_ids:
+                    return {
+                        "status": "error",
+                        "error": f"No pending suggestion found for URL: {url}"
+                    }
+            
+            if not suggestion_ids:
+                return {
+                    "status": "error",
+                    "error": "Either url or suggestion_ids must be provided"
+                }
+            
+            # Call the approval API
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                request_data = {
+                    "suggestion_ids": suggestion_ids
+                }
+                if add_tags:
+                    request_data["add_tags"] = add_tags
+                
+                response = await client.post(
+                    f"{self.base_url}/api/url-suggestions/approve",
+                    json=request_data
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return {
+                        "status": "success",
+                        "approved_count": data["approved_count"],
+                        "failed_count": data["failed_count"],
+                        "approved_urls": data["approved_urls"],
+                        "message": data["message"]
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "error": f"Approval request failed with status {response.status_code}"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"❌ Error approving URL suggestion: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    async def manage_url_detection_settings(
+        self, 
+        action: str = "get",
+        enabled: Optional[bool] = None,
+        auto_add_threshold: Optional[float] = None,
+        suggest_threshold: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """Get or update URL detection system settings."""
+        try:
+            import httpx
+            
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                if action == "get":
+                    # Get current settings
+                    response = await client.get(f"{self.base_url}/api/url-suggestions/settings")
+                    
+                    if response.status_code == 200:
+                        settings = response.json()
+                        return {
+                            "status": "success",
+                            "settings": settings,
+                            "message": "Current URL detection settings retrieved"
+                        }
+                    else:
+                        return {
+                            "status": "error",
+                            "error": f"Failed to get settings: {response.status_code}"
+                        }
+                
+                elif action == "update":
+                    # Update settings
+                    update_data = {}
+                    if enabled is not None:
+                        update_data["enabled"] = enabled
+                    if auto_add_threshold is not None:
+                        update_data["auto_add_threshold"] = auto_add_threshold
+                    if suggest_threshold is not None:
+                        update_data["suggest_threshold"] = suggest_threshold
+                    
+                    if not update_data:
+                        return {
+                            "status": "error",
+                            "error": "No update parameters provided"
+                        }
+                    
+                    response = await client.post(
+                        f"{self.base_url}/api/url-suggestions/settings",
+                        json=update_data
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        return {
+                            "status": "success",
+                            "settings": data["settings"],
+                            "message": data["message"]
+                        }
+                    else:
+                        return {
+                            "status": "error",
+                            "error": f"Failed to update settings: {response.status_code}"
+                        }
+                
+                else:
+                    return {
+                        "status": "error",
+                        "error": f"Unknown action: {action}. Use 'get' or 'update'"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"❌ Error managing URL detection settings: {e}")
+            return {"status": "error", "error": str(e)}
 
 
 # Initialize coordinator
@@ -803,8 +1105,10 @@ coordinator = ArchonMCPCoordinator()
 
 @server.list_tools()
 async def list_tools() -> List[Tool]:
-    """List all available Archon MCP tools."""
-    return [
+    """List all available Archon MCP tools including discovered CLI tools."""
+    
+    # Base Archon MCP tools
+    base_tools = [
         Tool(
             name="archon_status",
             description="Get comprehensive status of all Archon services",
@@ -929,8 +1233,105 @@ async def list_tools() -> List[Tool]:
                 },
                 "required": ["project_title"]
             }
+        ),
+        Tool(
+            name="archon_detect_urls",
+            description="Detect and analyze URLs in text for potential knowledge base addition",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "Text to scan for URLs"},
+                    "context": {"type": "string", "default": "", "description": "Context about where the text came from"},
+                    "auto_process": {"type": "boolean", "default": True, "description": "Automatically process detected URLs"}
+                },
+                "required": ["text"]
+            }
+        ),
+        Tool(
+            name="archon_analyze_url",
+            description="Perform intelligent analysis of a specific URL using AI decision agent",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL to analyze"},
+                    "context": {"type": "string", "default": "", "description": "Context about the URL"},
+                    "source": {"type": "string", "default": "manual", "description": "Source of the URL (agent_response, task, etc.)"}
+                },
+                "required": ["url"]
+            }
+        ),
+        Tool(
+            name="archon_get_url_suggestions",
+            description="Get URL suggestions that require user review for knowledge base addition",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer", "default": 10, "description": "Maximum number of suggestions to return"},
+                    "min_score": {"type": "number", "default": 0.0, "description": "Minimum overall score filter"},
+                    "status": {"type": "string", "default": "pending", "description": "Filter by status: pending, approved, rejected"}
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="archon_approve_url",
+            description="Approve URL suggestion(s) and add to knowledge base automatically",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL to approve (alternative to suggestion_ids)"},
+                    "suggestion_ids": {"type": "array", "items": {"type": "string"}, "description": "List of suggestion IDs to approve"},
+                    "add_tags": {"type": "array", "items": {"type": "string"}, "description": "Additional tags to add"}
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="archon_url_settings",
+            description="Get or update URL detection system settings",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "enum": ["get", "update"], "default": "get", "description": "Action to perform"},
+                    "enabled": {"type": "boolean", "description": "Enable/disable URL detection"},
+                    "auto_add_threshold": {"type": "number", "description": "Threshold for automatic addition (0.0-1.0)"},
+                    "suggest_threshold": {"type": "number", "description": "Threshold for suggestions (0.0-1.0)"}
+                },
+                "required": ["action"]
+            }
         )
     ]
+    
+    # Add dynamically discovered CLI tools
+    cli_tools = []
+    try:
+        if cli_discovery_service.running:
+            cli_commands = cli_discovery_service.get_discovered_commands()
+            for cmd_name, cmd_info in cli_commands.items():
+                # Create MCP tool for each CLI command
+                cli_tool = Tool(
+                    name=f"cli_{cmd_name.replace('__', '_')}",
+                    description=f"CLI Tool: {cmd_info.description} (from {cmd_info.tool})",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            **{opt_name: {
+                                "type": "string", 
+                                "description": opt_desc
+                            } for opt_name, opt_desc in cmd_info.options.items()},
+                            "additional_args": {
+                                "type": "object",
+                                "description": "Additional CLI arguments as key-value pairs"
+                            }
+                        },
+                        "required": []
+                    }
+                )
+                cli_tools.append(cli_tool)
+    except Exception as e:
+        logger.warning(f"Failed to add CLI tools to MCP list: {e}")
+    
+    return base_tools + cli_tools
 
 
 @server.call_tool()
@@ -987,6 +1388,26 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         elif name == "archon_complete_setup":
             result = await coordinator.complete_project_setup(**arguments)
         
+        # URL Detection Tools
+        elif name == "archon_detect_urls":
+            result = await coordinator.detect_urls_in_text(**arguments)
+        elif name == "archon_analyze_url":
+            result = await coordinator.analyze_url_with_ai(**arguments)
+        elif name == "archon_get_url_suggestions":
+            result = await coordinator.get_url_suggestions(**arguments)
+        elif name == "archon_approve_url":
+            result = await coordinator.approve_url_suggestion(**arguments)
+        elif name == "archon_url_settings":
+            result = await coordinator.manage_url_detection_settings(**arguments)
+        
+        elif name.startswith("cli_"):
+            # Handle CLI tool calls
+            cli_command_name = name[4:].replace("_", "__", 1)  # Remove "cli_" prefix and restore format
+            additional_args = arguments.pop("additional_args", {})
+            # Combine standard arguments with additional_args
+            all_args = {**arguments, **additional_args}
+            result = await cli_discovery_service.execute_command(cli_command_name, all_args)
+            
         else:
             result = {"status": "error", "error": f"Unknown tool: {name}"}
         
