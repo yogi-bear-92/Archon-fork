@@ -310,7 +310,7 @@ jobs:
         fi
         
     - name: Upload Performance Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-results-${{ matrix.optimization_type }}-${{ matrix.parallelization_level }}
         path: .performance-results/
@@ -372,7 +372,7 @@ jobs:
         cat performance-summary.md
         
     - name: Upload Performance Summary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-analysis-summary
         path: performance-summary.md
