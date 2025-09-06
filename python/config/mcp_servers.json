@@ -1,0 +1,51 @@
+{
+  "claude-flow": {
+    "name": "claude-flow",
+    "command": "npx",
+    "args": ["claude-flow@alpha", "mcp", "start"],
+    "transport": "stdio",
+    "auto_start": true,
+    "health_check_interval": 30,
+    "retry_attempts": 3,
+    "timeout": 10
+  },
+  "ruv-swarm": {
+    "name": "ruv-swarm",
+    "command": "npx",
+    "args": ["ruv-swarm", "mcp", "start"],
+    "transport": "stdio", 
+    "auto_start": true,
+    "health_check_interval": 30,
+    "retry_attempts": 3,
+    "timeout": 10
+  },
+  "flow-nexus": {
+    "name": "flow-nexus",
+    "command": "npx",
+    "args": ["flow-nexus@latest", "mcp", "start"],
+    "transport": "stdio",
+    "auto_start": true,
+    "health_check_interval": 30,
+    "retry_attempts": 3,
+    "timeout": 10
+  },
+  "serena": {
+    "name": "serena",
+    "command": "uvx",
+    "args": [
+      "--from",
+      "git+https://github.com/oraios/serena",
+      "serena",
+      "start-mcp-server",
+      "--context",
+      "ide-assistant", 
+      "--project",
+      "/Users/yogi/Projects/Archon-fork"
+    ],
+    "transport": "stdio",
+    "auto_start": true,
+    "health_check_interval": 30,
+    "retry_attempts": 3,
+    "timeout": 10
+  }
+}

@@ -23,6 +23,8 @@ from .api_routes.agent_chat_api import router as agent_chat_router
 from .api_routes.ai_tagging_api import ai_tagging_router
 from .api_routes.bug_report_api import router as bug_report_router
 from .api_routes.claude_flow_api import router as claude_flow_router
+from .api_routes.hook_management_api import router as hook_management_router
+from .api_routes.interactive_task_api import router as interactive_task_router
 from .api_routes.internal_api import router as internal_router
 from .api_routes.knowledge_api import router as knowledge_router
 from .api_routes.mcp_api import router as mcp_router
@@ -30,6 +32,9 @@ from .api_routes.progress_api import router as progress_router
 from .api_routes.projects_api import router as projects_router
 from .api_routes.serena_api import router as serena_router
 from .api_routes.serena_coordination_api import serena_coordination_router
+from .api_routes.url_suggestion_api import router as url_suggestion_router
+from .api_routes.github_integration import router as github_integration_router
+from .api_routes.mcp_proxy_api import router as mcp_proxy_router
 
 # Import modular API routers
 from .api_routes.settings_api import router as settings_router
@@ -41,6 +46,9 @@ from .services.crawler_manager import cleanup_crawler, initialize_crawler
 
 # Import utilities and core classes
 from .services.credential_service import initialize_credentials
+
+# Import URL detection middleware
+from .middleware.url_detection_middleware import URLDetectionMiddleware
 
 # Import missing dependencies that the modular APIs need
 try:
@@ -122,6 +130,42 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             api_logger.warning(f"Could not set main event loop: {e}")
 
+        # Initialize URL detection service
+        try:
+            from .services.url_detection_service import get_url_detection_service
+            
+            url_detection_service = get_url_detection_service()
+            api_logger.info("✅ URL detection service initialized")
+        except Exception as e:
+            api_logger.warning(f"Could not initialize URL detection service: {e}")
+
+        # Initialize hook integration service
+        try:
+            from .services.hook_integration_service import get_hook_integration_service
+            
+            hook_service = get_hook_integration_service()
+            api_logger.info("✅ Hook integration service initialized")
+        except Exception as e:
+            api_logger.warning(f"Could not initialize hook integration service: {e}")
+
+        # Initialize interactive task service
+        try:
+            from .services.interactive_task_service import get_interactive_task_service
+            
+            interactive_task_service = get_interactive_task_service()
+            api_logger.info("✅ Interactive task service initialized")
+        except Exception as e:
+            api_logger.warning(f"Could not initialize interactive task service: {e}")
+
+        # Initialize GitHub monitoring service
+        try:
+            from .services.github_monitoring_service import get_github_monitoring_service
+            
+            github_monitoring_service = get_github_monitoring_service()
+            api_logger.info("✅ GitHub monitoring service initialized")
+        except Exception as e:
+            api_logger.warning(f"Could not initialize GitHub monitoring service: {e}")
+
         # MCP Client functionality removed from architecture
         # Agents now use MCP tools directly
 
@@ -178,6 +222,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add URL detection middleware
+try:
+    # URL detection is enabled by default but can be disabled via settings
+    url_detection_enabled = os.getenv("URL_DETECTION_ENABLED", "true").lower() == "true"
+    app.add_middleware(URLDetectionMiddleware, enabled=url_detection_enabled)
+    
+    if url_detection_enabled:
+        api_logger.info("✅ URL detection middleware enabled")
+    else:
+        api_logger.info("ℹ️ URL detection middleware disabled")
+except Exception as e:
+    api_logger.warning(f"⚠️ Could not initialize URL detection middleware: {e}")
+
 
 # Add middleware to skip logging for health checks
 @app.middleware("http")
@@ -210,6 +267,11 @@ app.include_router(serena_coordination_router)
 app.include_router(ai_tagging_router)
 app.include_router(internal_router)
 app.include_router(bug_report_router)
+app.include_router(url_suggestion_router)
+app.include_router(hook_management_router)
+app.include_router(interactive_task_router)
+app.include_router(github_integration_router)
+app.include_router(mcp_proxy_router)
 
 
 # Root endpoint
@@ -221,7 +283,7 @@ async def root():
         "version": "1.0.0",
         "description": "Backend API for knowledge management and project automation",
         "status": "healthy",
-        "modules": ["settings", "mcp", "mcp-clients", "knowledge", "projects"],
+        "modules": ["settings", "mcp", "knowledge", "projects", "url-detection"],
     }
 
 
