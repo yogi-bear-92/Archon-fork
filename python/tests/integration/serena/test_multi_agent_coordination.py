@@ -1,3 +1,7 @@
+import pytest
+import asyncio
+import json
+from datetime import datetime, timedelta
 """
 Integration tests for multi-agent coordination workflows with Serena Claude Flow Expert Agent.
 
@@ -5,54 +9,43 @@ Tests the interaction between Serena and other agents through Claude Flow
 coordination protocols, message passing, and shared memory systems.
 """
 
-import pytest
-import asyncio
-import json
-import uuid
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, AsyncMock, patch
-from typing import Dict, Any, List
-
-from tests.fixtures.serena.test_fixtures import (
     SerenaTestData,
     serena_memory_context,
     serena_coordination_messages,
     mock_claude_flow_coordination
 )
-from tests.mocks.serena.mock_serena_tools import (
     MockSerenaTools,
     MockClaudeFlowCoordination,
     create_performance_monitor
 )
 
-
 class TestSerenaAgentCoordination:
     """Test coordination between Serena and other specialized agents."""
-    
+
     @pytest.mark.asyncio
     async def test_serena_coder_coordination(self, mock_claude_flow_coordination):
         """Test coordination between Serena and coder agent."""
         mock_serena = MockSerenaTools()
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Initialize swarm with Serena as master and coder as worker
         swarm_result = await mock_coordination.swarm_init("hierarchical", 3)
         swarm_id = swarm_result["swarm_id"]
-        
+
         # Spawn Serena claude flow expert agent
         serena_agent = await mock_coordination.agent_spawn(
-            "serena_master", 
+            "serena_master",
             ["semantic_analysis", "code_intelligence", "coordination"]
         )
         serena_id = serena_agent["agent_id"]
-        
+
         # Spawn coder agent
         coder_agent = await mock_coordination.agent_spawn(
             "coder",
             ["code_generation", "refactoring", "optimization"]
         )
         coder_id = coder_agent["agent_id"]
-        
+
         # Simulate Serena providing semantic context to coder
         semantic_context = {
             "target_function": "calculate_fibonacci",
@@ -66,13 +59,13 @@ class TestSerenaAgentCoordination:
             "dependencies": [],
             "test_patterns": ["input_validation", "edge_cases", "performance"]
         }
-        
+
         # Serena stores analysis results in memory
         await mock_coordination.memory_store(
             f"serena/{serena_id}/analysis",
             semantic_context
         )
-        
+
         # Send coordination message from Serena to Coder
         coordination_msg = await mock_coordination.send_coordination_message(
             serena_id,
@@ -85,7 +78,7 @@ class TestSerenaAgentCoordination:
                 "expected_completion": "15_minutes"
             }
         )
-        
+
         # Coder acknowledges and requests additional context
         response_msg = await mock_coordination.send_coordination_message(
             coder_id,
@@ -97,7 +90,7 @@ class TestSerenaAgentCoordination:
                 "focus": "edge_cases_and_performance"
             }
         )
-        
+
         # Serena provides additional context
         test_context = {
             "edge_cases": [
@@ -113,12 +106,12 @@ class TestSerenaAgentCoordination:
             "test_framework": "pytest",
             "mocking_requirements": []
         }
-        
+
         await mock_coordination.memory_store(
             f"serena/{serena_id}/test_context",
             test_context
         )
-        
+
         # Final coordination message with test context
         await mock_coordination.send_coordination_message(
             serena_id,
@@ -130,37 +123,37 @@ class TestSerenaAgentCoordination:
                 "integration_key": f"serena/{serena_id}/test_context"
             }
         )
-        
+
         # Verify coordination workflow
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['coordination_messages'] == 3
         assert metrics['operations']['agent_spawns'] == 2
         assert metrics['operations']['memory_operations'] == 2
-        
+
         # Verify message flow
         assert len(mock_coordination.message_queue) == 3
-        
+
         # Check message types
         message_types = [msg['message']['type'] for msg in mock_coordination.message_queue]
         assert 'semantic_context' in message_types
         assert 'context_request' in message_types
         assert 'test_context' in message_types
-        
+
         # Verify stored contexts
         analysis_result = await mock_coordination.memory_retrieve(f"serena/{serena_id}/analysis")
         assert analysis_result['status'] == 'retrieved'
         assert analysis_result['value']['target_function'] == 'calculate_fibonacci'
-        
+
         test_result = await mock_coordination.memory_retrieve(f"serena/{serena_id}/test_context")
         assert test_result['status'] == 'retrieved'
         assert len(test_result['value']['edge_cases']) == 3
-    
+
     @pytest.mark.asyncio
     async def test_serena_reviewer_coordination(self, mock_claude_flow_coordination):
         """Test coordination between Serena and reviewer agent."""
         mock_serena = MockSerenaTools()
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Initialize agents
         serena_agent = await mock_coordination.agent_spawn(
             "serena_master",
@@ -170,10 +163,10 @@ class TestSerenaAgentCoordination:
             "reviewer",
             ["code_review", "quality_analysis", "security_audit"]
         )
-        
+
         serena_id = serena_agent["agent_id"]
         reviewer_id = reviewer_agent["agent_id"]
-        
+
         # Serena performs semantic analysis
         code_analysis = {
             "files_analyzed": ["src/main.py", "src/utils.py"],
@@ -207,13 +200,13 @@ class TestSerenaAgentCoordination:
                 }
             ]
         }
-        
+
         # Store analysis in shared memory
         await mock_coordination.memory_store(
             f"shared/code_analysis/{datetime.now().isoformat()}",
             code_analysis
         )
-        
+
         # Serena requests comprehensive review
         review_request = await mock_coordination.send_coordination_message(
             serena_id,
@@ -230,7 +223,7 @@ class TestSerenaAgentCoordination:
                 "review_depth": "detailed"
             }
         )
-        
+
         # Reviewer processes request and asks for additional context
         context_request = await mock_coordination.send_coordination_message(
             reviewer_id,
@@ -242,7 +235,7 @@ class TestSerenaAgentCoordination:
                 "focus": "external_dependencies_security"
             }
         )
-        
+
         # Serena provides dependency analysis
         dependency_analysis = {
             "external_dependencies": [
@@ -268,12 +261,12 @@ class TestSerenaAgentCoordination:
                 }
             ]
         }
-        
+
         await mock_coordination.memory_store(
             f"serena/{serena_id}/dependency_analysis",
             dependency_analysis
         )
-        
+
         # Send dependency context to reviewer
         dependency_response = await mock_coordination.send_coordination_message(
             serena_id,
@@ -285,31 +278,31 @@ class TestSerenaAgentCoordination:
                 "integration_key": f"serena/{serena_id}/dependency_analysis"
             }
         )
-        
+
         # Verify coordination metrics
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['coordination_messages'] == 3
         assert metrics['operations']['memory_operations'] == 2
-        
+
         # Verify message sequence
         messages = mock_coordination.message_queue
         assert len(messages) == 3
         assert messages[0]['message']['type'] == 'review_request'
         assert messages[1]['message']['type'] == 'context_request'
         assert messages[2]['message']['type'] == 'dependency_context'
-        
+
         # Verify semantic context was passed correctly
         review_msg = messages[0]['message']
         assert 'semantic_context' in review_msg
         assert len(review_msg['semantic_context']['security_concerns']) == 1
         assert len(review_msg['semantic_context']['performance_hotspots']) == 1
-    
+
     @pytest.mark.asyncio
     async def test_serena_tester_coordination(self, mock_claude_flow_coordination):
         """Test coordination between Serena and tester agent."""
         mock_serena = MockSerenaTools()
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Initialize agents
         serena_agent = await mock_coordination.agent_spawn(
             "serena_master",
@@ -319,10 +312,10 @@ class TestSerenaAgentCoordination:
             "tester",
             ["test_generation", "coverage_analysis", "test_automation"]
         )
-        
+
         serena_id = serena_agent["agent_id"]
         tester_id = tester_agent["agent_id"]
-        
+
         # Serena analyzes code for test strategy
         test_strategy = {
             "target_functions": [
@@ -334,7 +327,7 @@ class TestSerenaAgentCoordination:
                     "coverage_target": 100
                 },
                 {
-                    "name": "DataProcessor.process_items", 
+                    "name": "DataProcessor.process_items",
                     "complexity": "high",
                     "test_categories": ["unit", "integration", "error_handling"],
                     "mocking_needs": ["file_system", "external_api"],
@@ -349,19 +342,19 @@ class TestSerenaAgentCoordination:
             },
             "test_data_requirements": [
                 "valid_inputs",
-                "invalid_inputs", 
+                "invalid_inputs",
                 "edge_cases",
                 "large_datasets",
                 "empty_datasets"
             ]
         }
-        
+
         # Store test strategy
         await mock_coordination.memory_store(
             f"serena/{serena_id}/test_strategy",
             test_strategy
         )
-        
+
         # Request test implementation
         test_request = await mock_coordination.send_coordination_message(
             serena_id,
@@ -373,13 +366,13 @@ class TestSerenaAgentCoordination:
                 "timeline": "30_minutes",
                 "deliverables": [
                     "unit_tests",
-                    "integration_tests", 
+                    "integration_tests",
                     "performance_tests",
                     "coverage_report"
                 ]
             }
         )
-        
+
         # Tester requests specific test data
         data_request = await mock_coordination.send_coordination_message(
             tester_id,
@@ -391,7 +384,7 @@ class TestSerenaAgentCoordination:
                 "data_types": ["valid_inputs", "edge_cases", "error_conditions"]
             }
         )
-        
+
         # Serena generates test data based on semantic analysis
         test_datasets = {
             "calculate_fibonacci": {
@@ -425,12 +418,12 @@ class TestSerenaAgentCoordination:
                 ]
             }
         }
-        
+
         await mock_coordination.memory_store(
             f"serena/{serena_id}/test_datasets",
             test_datasets
         )
-        
+
         # Send test data to tester
         data_response = await mock_coordination.send_coordination_message(
             serena_id,
@@ -442,36 +435,35 @@ class TestSerenaAgentCoordination:
                 "integration_key": f"serena/{serena_id}/test_datasets"
             }
         )
-        
+
         # Verify coordination
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['coordination_messages'] == 3
         assert metrics['operations']['memory_operations'] == 2
-        
+
         # Verify message flow
         messages = mock_coordination.message_queue
         assert messages[0]['message']['type'] == 'test_request'
         assert messages[1]['message']['type'] == 'data_request'
         assert messages[2]['message']['type'] == 'test_data'
-        
+
         # Verify test strategy content
         strategy_msg = messages[0]['message']['strategy']
         assert len(strategy_msg['target_functions']) == 2
         assert 'pytest' in strategy_msg['test_framework_recommendations']['primary']
 
-
 class TestSerenaSwarmCoordination:
     """Test Serena's role in larger swarm coordination scenarios."""
-    
+
     @pytest.mark.asyncio
     async def test_full_development_swarm(self, mock_claude_flow_coordination):
         """Test Serena coordinating a full development swarm."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Initialize large swarm
         swarm = await mock_coordination.swarm_init("mesh", 8)
         swarm_id = swarm["swarm_id"]
-        
+
         # Spawn complete development team
         agents = {}
         agent_types = [
@@ -484,11 +476,11 @@ class TestSerenaSwarmCoordination:
             ("security_auditor", ["security_analysis", "vulnerability_assessment"]),
             ("documenter", ["documentation_generation", "api_documentation"])
         ]
-        
+
         for agent_type, capabilities in agent_types:
             agent = await mock_coordination.agent_spawn(agent_type, capabilities)
             agents[agent_type] = agent["agent_id"]
-        
+
         # Serena creates project coordination plan
         project_plan = {
             "project_phase": "implementation",
@@ -513,10 +505,10 @@ class TestSerenaSwarmCoordination:
                 "performance_benchmarks"
             ]
         }
-        
+
         # Store coordination plan
         await mock_coordination.memory_store("swarm/coordination_plan", project_plan)
-        
+
         # Serena broadcasts coordination plan to all agents
         for agent_type, agent_id in agents.items():
             if agent_type != "serena_master":
@@ -531,7 +523,7 @@ class TestSerenaSwarmCoordination:
                         "shared_resources": project_plan["shared_resources"]
                     }
                 )
-        
+
         # Simulate agent acknowledgments
         for agent_type, agent_id in agents.items():
             if agent_type != "serena_master":
@@ -545,37 +537,37 @@ class TestSerenaSwarmCoordination:
                         "dependencies": []
                     }
                 )
-        
+
         # Verify swarm coordination
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['agent_spawns'] == 8
         assert metrics['operations']['coordination_messages'] == 14  # 7 out + 7 back
         assert metrics['operations']['memory_operations'] == 1
-        
+
         # Verify all agents received coordination plan
         coordination_messages = [
-            msg for msg in mock_coordination.message_queue 
+            msg for msg in mock_coordination.message_queue
             if msg['message']['type'] == 'coordination_plan'
         ]
         assert len(coordination_messages) == 7  # All except Serena master
-        
+
         # Verify acknowledgments
         acknowledgments = [
             msg for msg in mock_coordination.message_queue
             if msg['message']['type'] == 'acknowledgment'
         ]
         assert len(acknowledgments) == 7
-    
+
     @pytest.mark.asyncio
     async def test_dynamic_agent_spawning(self, mock_claude_flow_coordination):
         """Test Serena dynamically spawning agents based on analysis."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Start with minimal swarm
         swarm = await mock_coordination.swarm_init("adaptive", 5)
         serena = await mock_coordination.agent_spawn("serena_master", ["semantic_analysis"])
         serena_id = serena["agent_id"]
-        
+
         # Serena analyzes project and determines need for specialized agents
         project_analysis = {
             "complexity_assessment": "high",
@@ -600,13 +592,13 @@ class TestSerenaSwarmCoordination:
                 }
             ]
         }
-        
+
         # Store analysis
         await mock_coordination.memory_store(
             f"serena/{serena_id}/project_analysis",
             project_analysis
         )
-        
+
         # Serena spawns specialized agents based on analysis
         spawned_specialists = {}
         for recommendation in project_analysis["recommended_agents"]:
@@ -619,7 +611,7 @@ class TestSerenaSwarmCoordination:
                 "priority": recommendation["priority"],
                 "reason": recommendation["reason"]
             }
-        
+
         # Serena coordinates with each specialist
         for specialist_type, specialist_info in spawned_specialists.items():
             specialist_context = {
@@ -632,7 +624,7 @@ class TestSerenaSwarmCoordination:
                     "timeline": "immediate" if specialist_info["priority"] == "high" else "within_hour"
                 }
             }
-            
+
             await mock_coordination.send_coordination_message(
                 serena_id,
                 specialist_info["agent_id"],
@@ -642,84 +634,83 @@ class TestSerenaSwarmCoordination:
                     "context": specialist_context
                 }
             )
-        
+
         # Verify dynamic spawning
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['agent_spawns'] == 4  # 1 serena + 3 specialists
         assert metrics['operations']['coordination_messages'] == 3
-        
+
         # Verify specialist types
         all_agents = mock_coordination.agents
         agent_types = [agent["type"] for agent in all_agents.values()]
         assert "ml_specialist" in agent_types
-        assert "web_security_expert" in agent_types  
+        assert "web_security_expert" in agent_types
         assert "performance_optimizer" in agent_types
-
 
 class TestSerenaMemoryCoordination:
     """Test memory-based coordination and context sharing."""
-    
+
     @pytest.mark.asyncio
     async def test_context_persistence_across_agents(self, serena_memory_context):
         """Test context persistence and sharing across multiple agents."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Create agents
         serena = await mock_coordination.agent_spawn("serena_master", ["memory_management"])
         coder = await mock_coordination.agent_spawn("coder", ["code_generation"])
-        
+
         serena_id = serena["agent_id"]
         coder_id = coder["agent_id"]
-        
+
         # Serena stores rich context
         context_data = serena_memory_context
-        
+
         # Store different aspects of context
         await mock_coordination.memory_store("shared/project_metadata", context_data["shared_memory"]["project_metadata"])
         await mock_coordination.memory_store("shared/coordination_state", context_data["shared_memory"]["coordination_state"])
         await mock_coordination.memory_store(f"serena/{serena_id}/symbols_cache", context_data["agent_contexts"]["serena_master"]["symbols_cache"])
-        
+
         # Coder retrieves relevant context
         project_metadata = await mock_coordination.memory_retrieve("shared/project_metadata")
         symbols_cache = await mock_coordination.memory_retrieve(f"serena/{serena_id}/symbols_cache")
-        
+
         # Verify context retrieval
         assert project_metadata["status"] == "retrieved"
         assert project_metadata["value"]["language"] == "python"
         assert project_metadata["value"]["framework"] == "fastapi"
-        
+
         assert symbols_cache["status"] == "retrieved"
         assert "calculate_fibonacci" in symbols_cache["value"]["functions"]
         assert "MathUtils" in symbols_cache["value"]["classes"]
-        
+
         # Coder updates context after work
         updated_context = symbols_cache["value"].copy()
         updated_context["functions"].append("fibonacci_optimized")
         updated_context["last_updated"] = datetime.now().isoformat()
-        
+
         await mock_coordination.memory_store(f"coder/{coder_id}/work_results", {
             "implemented_functions": ["fibonacci_optimized"],
             "optimizations_applied": ["memoization", "iterative_approach"],
             "performance_improvement": "exponential_to_linear"
         })
-        
+
         # Serena retrieves updated context
         work_results = await mock_coordination.memory_retrieve(f"coder/{coder_id}/work_results")
-        
+
         assert work_results["status"] == "retrieved"
         assert "fibonacci_optimized" in work_results["value"]["implemented_functions"]
         assert "memoization" in work_results["value"]["optimizations_applied"]
-        
+
         # Verify memory operations
         metrics = mock_coordination.get_performance_metrics()
         assert metrics['operations']['memory_operations'] == 5  # 4 stores + 1 retrieve
         assert metrics['memory_items'] == 4
-    
+
     @pytest.mark.asyncio
     async def test_cross_session_memory_persistence(self):
         """Test memory persistence across coordination sessions."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Session 1: Store semantic analysis
         session_1_data = {
             "session_id": "session_1",
@@ -731,26 +722,26 @@ class TestSerenaMemoryCoordination:
             },
             "timestamp": datetime.now().isoformat()
         }
-        
+
         await mock_coordination.memory_store("persistent/semantic_analysis", session_1_data)
-        
+
         # Simulate session end and new session start
         mock_coordination.reset()  # Clear non-persistent data
-        
+
         # Session 2: Retrieve previous analysis
         retrieved_analysis = await mock_coordination.memory_retrieve("persistent/semantic_analysis")
-        
+
         # Should still be available (simulating persistence)
         if retrieved_analysis["status"] == "not_found":
             # Re-store for test (simulating persistence layer)
             await mock_coordination.memory_store("persistent/semantic_analysis", session_1_data)
             retrieved_analysis = await mock_coordination.memory_retrieve("persistent/semantic_analysis")
-        
+
         assert retrieved_analysis["status"] == "retrieved"
         session_data = retrieved_analysis["value"]
         assert session_data["session_id"] == "session_1"
         assert session_data["analysis_results"]["functions_analyzed"] == 15
-        
+
         # Session 2: Build upon previous analysis
         session_2_update = session_data["analysis_results"].copy()
         session_2_update.update({
@@ -758,32 +749,31 @@ class TestSerenaMemoryCoordination:
             "performance_improvements": 5,
             "session_2_additions": True
         })
-        
+
         await mock_coordination.memory_store("persistent/semantic_analysis", {
             "session_id": "session_2",
             "analysis_results": session_2_update,
             "previous_session": session_data["session_id"],
             "timestamp": datetime.now().isoformat()
         })
-        
+
         # Verify incremental updates
         final_analysis = await mock_coordination.memory_retrieve("persistent/semantic_analysis")
         final_data = final_analysis["value"]
-        
+
         assert final_data["session_id"] == "session_2"
         assert final_data["analysis_results"]["functions_analyzed"] == 18
         assert final_data["analysis_results"]["session_2_additions"] is True
         assert final_data["previous_session"] == "session_1"
 
-
 class TestSerenaCoordinationProtocols:
     """Test coordination protocol implementations and message handling."""
-    
+
     @pytest.mark.asyncio
     async def test_coordination_message_routing(self, serena_coordination_messages):
         """Test proper routing and handling of coordination messages."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Create agent network
         agents = {
             "serena": await mock_coordination.agent_spawn("serena_master", ["coordination"]),
@@ -791,62 +781,62 @@ class TestSerenaCoordinationProtocols:
             "reviewer": await mock_coordination.agent_spawn("reviewer", ["review"]),
             "tester": await mock_coordination.agent_spawn("tester", ["testing"])
         }
-        
+
         agent_ids = {name: agent["agent_id"] for name, agent in agents.items()}
-        
+
         # Process test coordination messages
         test_messages = serena_coordination_messages
-        
+
         for message in test_messages:
             # Map agent names to IDs
             from_agent = agent_ids.get(message["from_agent"].split("_")[0], message["from_agent"])
             to_agent = agent_ids.get(message["to_agent"].split("_")[0], message["to_agent"])
-            
+
             await mock_coordination.send_coordination_message(
                 from_agent,
                 to_agent,
                 message["content"]
             )
-        
+
         # Verify message routing
         sent_messages = mock_coordination.message_queue
         assert len(sent_messages) == len(test_messages)
-        
+
         # Verify message types and content
         semantic_messages = [
-            msg for msg in sent_messages 
+            msg for msg in sent_messages
             if msg["message"]["action"] == "provide_context"
         ]
         assert len(semantic_messages) == 1
-        
+
         request_messages = [
             msg for msg in sent_messages
             if msg["message"]["action"] == "request_analysis"
         ]
         assert len(request_messages) == 1
-        
+
         review_messages = [
             msg for msg in sent_messages
             if msg["message"]["action"] == "review_code"
         ]
         assert len(review_messages) == 1
-        
+
         # Verify semantic context in messages
         semantic_msg = semantic_messages[0]
         context = semantic_msg["message"]["context"]
         assert "symbols" in context
         assert "optimization_hints" in context
         assert "memoization_candidate" in context["optimization_hints"]
-    
+
     @pytest.mark.asyncio
     async def test_coordination_error_handling(self):
         """Test error handling in coordination protocols."""
         mock_coordination = MockClaudeFlowCoordination()
-        
+
         # Create agents
         serena = await mock_coordination.agent_spawn("serena_master", ["coordination"])
         serena_id = serena["agent_id"]
-        
+
         # Test sending to non-existent agent
         try:
             await mock_coordination.send_coordination_message(
@@ -858,7 +848,7 @@ class TestSerenaCoordinationProtocols:
             assert True
         except Exception as e:
             pytest.fail(f"Coordination should handle non-existent agents gracefully: {e}")
-        
+
         # Test malformed message
         try:
             result = await mock_coordination.send_coordination_message(
@@ -870,19 +860,19 @@ class TestSerenaCoordinationProtocols:
             assert result["status"] == "sent"
         except Exception as e:
             pytest.fail(f"Should handle malformed messages: {e}")
-    
+
     @pytest.mark.asyncio
     async def test_coordination_performance_monitoring(self):
         """Test performance monitoring of coordination operations."""
         async with create_performance_monitor() as monitor:
             mock_coordination = MockClaudeFlowCoordination()
-            
+
             # Create multiple agents and generate coordination traffic
             agents = []
             for i in range(5):
                 agent = await mock_coordination.agent_spawn(f"agent_{i}", [f"capability_{i}"])
                 agents.append(agent["agent_id"])
-            
+
             # Generate cross-agent communication
             for i, sender in enumerate(agents):
                 for j, receiver in enumerate(agents):
@@ -896,13 +886,13 @@ class TestSerenaCoordinationProtocols:
                                 "data": f"message_{i}_to_{j}"
                             }
                         )
-        
+
         # Check performance metrics
         performance = monitor.get_metrics()
-        
+
         # Should complete efficiently
         assert performance["execution_time_ms"] < 1000  # Under 1 second
-        
+
         # Check coordination metrics
         coord_metrics = mock_coordination.get_performance_metrics()
         assert coord_metrics["operations"]["coordination_messages"] == 20  # 5x4 messages
