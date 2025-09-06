@@ -31,3 +31,15 @@ claude-flow
 claude-flow.bat
 claude-flow.ps1
 hive-mind-prompt-*.txt
+
+# Cleanup patterns
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+*.backup
+*.old
+test_*.py
+debug_*.py
+example_*.py
+demo_*.py
