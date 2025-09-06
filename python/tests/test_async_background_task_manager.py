@@ -1,3 +1,8 @@
+import asyncio
+from typing import Any
+from unittest.mock import AsyncMock
+import pytest
+        import asyncio
 """
 Comprehensive Tests for Async Background Task Manager
 
@@ -5,18 +10,10 @@ Tests the pure async background task manager after removal of ThreadPoolExecutor
 Focuses on async task execution, concurrency control, and progress tracking.
 """
 
-import asyncio
-from typing import Any
-from unittest.mock import AsyncMock
-
-import pytest
-
-from src.server.services.background_task_manager import (
     BackgroundTaskManager,
     cleanup_task_manager,
     get_task_manager,
 )
-
 
 class TestAsyncBackgroundTaskManager:
     """Test suite for async background task manager"""
@@ -317,12 +314,10 @@ class TestAsyncBackgroundTaskManager:
     def test_set_main_loop_deprecated(self, task_manager):
         """Test that set_main_loop is deprecated but doesn't break"""
         # Should not raise an exception but may log a warning
-        import asyncio
 
         loop = asyncio.new_event_loop()
         task_manager.set_main_loop(loop)
         loop.close()
-
 
 class TestGlobalTaskManager:
     """Test the global task manager functions"""
@@ -353,7 +348,6 @@ class TestGlobalTaskManager:
         # Verify it was cleaned up - getting a new one should be different
         new_manager = get_task_manager()
         assert new_manager is not manager
-
 
 class TestAsyncTaskPatterns:
     """Test various async task patterns and edge cases"""

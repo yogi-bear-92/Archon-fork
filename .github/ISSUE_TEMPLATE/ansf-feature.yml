@@ -1,0 +1,116 @@
+name: 🚀 ANSF System Feature Request
+description: Request a new feature for the ANSF coordination system
+title: "[ANSF] "
+labels: ["enhancement", "ansf-system"]
+projects: ["Archon-fork/1"]
+assignees:
+  - yogi-bear-92
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🤖 ANSF System Feature Request
+        
+        Thank you for contributing to the Archon Neural Semantic Flow (ANSF) system!
+        Please provide details about the feature you'd like to see implemented.
+
+  - type: dropdown
+    id: ansf-phase
+    attributes:
+      label: ANSF Phase
+      description: Which phase of the ANSF system does this feature relate to?
+      options:
+        - "Phase 1 (Memory-Critical Mode)"
+        - "Phase 2 (Enhanced Mode)"
+        - "Phase 3 (Optimal Mode)"
+        - "Future Phase (Autonomous Mode)"
+        - "Cross-Phase Enhancement"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: System Component
+      description: Which component would this feature enhance?
+      options:
+        - "Multi-Swarm Coordination"
+        - "Neural Networks & ML"
+        - "Monitoring & Analytics"
+        - "Performance Optimization"
+        - "Cross-Swarm Intelligence"
+        - "Predictive Scaling"
+        - "Real-time Dashboard"
+        - "Configuration Management"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: Describe the feature you'd like to see implemented
+      placeholder: |
+        Example: Add support for dynamic neural model switching based on workload patterns...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case / Problem
+      description: What problem would this feature solve?
+      placeholder: |
+        Describe the specific use case or problem this feature addresses...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to work?
+      placeholder: |
+        Describe your proposed implementation approach...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How critical is this feature?
+      options:
+        - "Low - Nice to have"
+        - "Medium - Would improve workflow"
+        - "High - Important for productivity"
+        - "Critical - Blocking current work"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact-areas
+    attributes:
+      label: Impact Areas
+      description: Which areas would this feature impact? (Select all that apply)
+      options:
+        - label: "Performance (coordination accuracy, response time)"
+        - label: "Scalability (agent capacity, swarm coordination)"
+        - label: "Memory Optimization (resource management)"
+        - label: "Monitoring & Observability"
+        - label: "Developer Experience"
+        - label: "Production Deployment"
+        - label: "Neural Network Performance"
+        - label: "Cross-System Integration"
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or examples that would help
+      placeholder: |
+        Add any additional context, related issues, or examples...
+    validations:
+      required: false

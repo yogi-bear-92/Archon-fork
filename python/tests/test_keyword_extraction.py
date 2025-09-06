@@ -1,15 +1,12 @@
+import pytest
 """
 Tests for keyword extraction and improved hybrid search
 """
 
-import pytest
-
-from src.server.services.search.keyword_extractor import (
     KeywordExtractor,
     build_search_terms,
     extract_keywords,
 )
-
 
 class TestKeywordExtractor:
     """Test keyword extraction functionality"""
@@ -120,7 +117,6 @@ class TestKeywordExtractor:
         assert "jwt" in keywords
         assert "sql" in keywords
 
-
 class TestSearchTermBuilder:
     """Test search term building with variations"""
 
@@ -153,7 +149,6 @@ class TestSearchTermBuilder:
 
         # Should have unique terms only
         assert len(terms) == len(set(terms))
-
 
 class TestIntegration:
     """Integration tests for keyword extraction in search context"""

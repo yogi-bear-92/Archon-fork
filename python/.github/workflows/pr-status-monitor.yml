@@ -1,0 +1,136 @@
+name: 📊 GitHub Swarm PR Status Monitor
+
+on:
+  # Monitor all PR-related events
+  pull_request_target:
+    types: [opened, synchronize, reopened, closed, ready_for_review, converted_to_draft]
+    branches: [main, development]
+  pull_request_review:
+    types: [submitted, dismissed]
+  check_run:
+    types: [completed, rerequested]
+  status: {}
+  
+  # Scheduled monitoring every 15 minutes
+  schedule:
+    - cron: '*/15 * * * *'
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      monitor_all:
+        description: 'Monitor all open PRs'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  GITHUB_SWARM_MONITORING: true
+  PR_MONITORING_INTERVAL: 15
+  AUTO_MERGE_ENABLED: true
+
+jobs:
+  swarm-pr-monitor:
+    name: 🤖 GitHub Swarm PR Monitoring
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🌐 Setup Node.js for Claude Flow
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 🚀 Initialize GitHub Swarm Monitoring
+        id: swarm-init
+        run: |
+          # Install Claude Flow for monitoring
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Create monitoring session
+          MONITOR_SESSION_ID=$(date +%s | sha256sum | head -c 16)
+          echo "monitor-session-id=${MONITOR_SESSION_ID}" >> $GITHUB_OUTPUT
+          
+          # Initialize swarm for PR monitoring
+          npx claude-flow@alpha swarm init \
+            --topology=mesh \
+            --max-agents=5 \
+            --session-id="${MONITOR_SESSION_ID}" \
+            --github-integration=true \
+            --monitoring-mode=true
+            
+          echo "✅ GitHub Swarm monitoring initialized: ${MONITOR_SESSION_ID}"
+          
+      - name: 📊 Monitor All Open PRs
+        id: pr-monitoring
+        run: |
+          echo "📊 Scanning all open PRs for auto-merge candidates"
+          
+          # Get all open PRs
+          OPEN_PRS=$(gh pr list --json number,title,state,mergeable,draft,baseRefName,headRefName,statusCheckRollup --limit 50)
+          
+          echo "Found $(echo "$OPEN_PRS" | jq '. | length') open PRs"
+          
+          # Process each PR for auto-merge eligibility
+          echo "$OPEN_PRS" | jq -c '.[]' | while read PR; do
+            PR_NUMBER=$(echo "$PR" | jq -r '.number')
+            PR_TITLE=$(echo "$PR" | jq -r '.title')
+            IS_MERGEABLE=$(echo "$PR" | jq -r '.mergeable')
+            IS_DRAFT=$(echo "$PR" | jq -r '.draft')
+            BASE_BRANCH=$(echo "$PR" | jq -r '.baseRefName')
+            
+            echo "🔍 Analyzing PR #${PR_NUMBER}: ${PR_TITLE}"
+            
+            # Check if PR is auto-merge candidate
+            if [ "$IS_MERGEABLE" == "MERGEABLE" ] && [ "$IS_DRAFT" == "false" ]; then
+              # Check status checks
+              STATUS_CHECKS=$(echo "$PR" | jq -r '.statusCheckRollup[]?')
+              FAILED_CHECKS=$(echo "$PR" | jq -r '.statusCheckRollup[]? | select(.conclusion != "SUCCESS") | .name' 2>/dev/null)
+              
+              if [ -z "$FAILED_CHECKS" ] && [ -n "$STATUS_CHECKS" ]; then
+                echo "✅ PR #${PR_NUMBER} is auto-merge candidate"
+                
+                # Trigger auto-merge workflow
+                echo "🚀 Triggering auto-merge for PR #${PR_NUMBER}"
+                gh workflow run "intelligent-pr-auto-merge.yml" \
+                  --field pr_number="${PR_NUMBER}" \
+                  --field force_merge=false
+              else
+                echo "⏳ PR #${PR_NUMBER} not ready (failed checks or no checks)"
+              fi
+            else
+              echo "⏳ PR #${PR_NUMBER} not ready (not mergeable or draft)"
+            fi
+          done
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📈 Export Monitoring Metrics
+        run: |
+          MONITOR_SESSION_ID=${{ steps.swarm-init.outputs.monitor-session-id }}
+          
+          echo "📈 Exporting GitHub Swarm monitoring metrics"
+          
+          # Create monitoring report
+          cat > /tmp/pr-monitoring-report.json << EOF
+          {
+            "sessionId": "${MONITOR_SESSION_ID}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "triggerEvent": "${{ github.event_name }}",
+            "monitoringActive": true,
+            "autoMergeEnabled": true
+          }
+          EOF
+          
+      - name: 📤 Upload Monitoring Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-monitoring-report-${{ github.run_number }}
+          path: /tmp/pr-monitoring-report.json
+          retention-days: 7

@@ -1,0 +1,301 @@
+name: Branch Protection Enforcement
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  repository_dispatch:
+    types: [setup-branch-protection]
+
+jobs:
+  enforce-branch-protection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      administration: write
+      pull-requests: write
+    
+    steps:
+      - name: Setup Branch Protection Rules
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = 'main';
+            
+            console.log('🛡️ Setting up branch protection rules for main branch...');
+            
+            const protectionRules = {
+              required_status_checks: {
+                strict: true,
+                contexts: [
+                  'branch-protection-enforcement',
+                  'auto-assign-reviewers'
+                ]
+              },
+              enforce_admins: false,
+              required_pull_request_reviews: {
+                required_approving_review_count: 1,
+                dismiss_stale_reviews: true,
+                require_code_owner_reviews: false,
+                dismissal_restrictions: {},
+                require_last_push_approval: false
+              },
+              restrictions: null,
+              required_linear_history: false,
+              allow_force_pushes: false,
+              allow_deletions: false,
+              required_conversation_resolution: true
+            };
+            
+            try {
+              const { data: existingProtection } = await github.rest.repos.getBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: branch
+              }).catch(() => ({ data: null }));
+              
+              if (existingProtection) {
+                console.log('📋 Updating existing branch protection...');
+                await github.rest.repos.updateBranchProtection({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  branch: branch,
+                  ...protectionRules
+                });
+              } else {
+                console.log('🆕 Creating new branch protection...');
+                await github.rest.repos.updateBranchProtection({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  branch: branch,
+                  ...protectionRules
+                });
+              }
+              
+              console.log('✅ Branch protection rules updated successfully');
+              
+              // Create status check
+              if (context.eventName === 'pull_request') {
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: context.payload.pull_request.head.sha,
+                  state: 'success',
+                  context: 'branch-protection-enforcement',
+                  description: 'Branch protection rules verified'
+                });
+              }
+              
+            } catch (error) {
+              console.log(`⚠️ Branch protection setup: ${error.message}`);
+              if (error.message.includes('403')) {
+                console.log('💡 Note: Admin permissions required for branch protection');
+              }
+            }
+
+      - name: Validate Feature Branch Naming
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const baseBranch = context.payload.pull_request.base.ref;
+            
+            console.log(`🔍 Validating branch: ${branchName} -> ${baseBranch}`);
+            
+            // Check if trying to merge into main
+            if (baseBranch === 'main') {
+              const validPrefixes = [
+                'feature/',
+                'feat/',
+                'fix/',
+                'hotfix/',
+                'bugfix/',
+                'enhancement/',
+                'refactor/',
+                'docs/',
+                'chore/',
+                'test/',
+                'ci/',
+                'perf/'
+              ];
+              
+              const isValidBranch = validPrefixes.some(prefix => branchName.startsWith(prefix));
+              
+              if (!isValidBranch) {
+                const comment = `## ❌ Invalid Branch Name
+                
+**Branch**: \`${branchName}\`
+**Target**: \`${baseBranch}\`
+
+### ⚠️ Branch Protection Policy Violation
+
+To merge into \`main\`, your branch must follow the naming convention:
+
+**Valid Prefixes:**
+- \`feature/\` - New features (e.g., \`feature/user-authentication\`)
+- \`fix/\` or \`bugfix/\` - Bug fixes (e.g., \`fix/memory-leak\`)
+- \`hotfix/\` - Critical production fixes
+- \`enhancement/\` - Improvements to existing features
+- \`refactor/\` - Code refactoring
+- \`docs/\` - Documentation updates
+- \`chore/\` - Maintenance tasks
+- \`test/\` - Test additions/improvements
+- \`ci/\` - CI/CD improvements
+- \`perf/\` - Performance improvements
+
+### 🔧 How to Fix:
+1. Rename your branch: \`git branch -m ${branchName} feature/your-feature-name\`
+2. Force push: \`git push origin -u feature/your-feature-name\`
+3. Update this PR to use the new branch name
+
+### 🤖 ANSF-Specific Suggestions:
+${branchName.includes('ansf') || branchName.includes('phase') ? 
+  '- Consider: `feature/ansf-phase3-optimization`\n- Consider: `enhancement/ansf-neural-validation`' : 
+  '- If working on ANSF system: `feature/ansf-[component]`'}
+
+*This check ensures consistent branch naming and helps with automated workflows.*`;
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+                
+                // Fail the check
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: context.payload.pull_request.head.sha,
+                  state: 'failure',
+                  context: 'branch-protection-enforcement',
+                  description: 'Invalid branch name for main branch'
+                });
+                
+                core.setFailed('Branch name does not follow required naming convention');
+              } else {
+                console.log('✅ Branch name follows naming convention');
+                
+                // Success status
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: context.payload.pull_request.head.sha,
+                  state: 'success',
+                  context: 'branch-protection-enforcement',
+                  description: 'Branch name follows naming convention'
+                });
+              }
+            } else {
+              console.log('ℹ️ Not merging into main, skipping branch name validation');
+            }
+
+      - name: Direct Push to Main Protection
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🚨 Direct push to main branch detected!');
+            
+            const commits = context.payload.commits || [];
+            const pusher = context.payload.pusher?.name || 'unknown';
+            
+            if (commits.length > 0) {
+              const commitMessages = commits.map(c => `- ${c.message}`).join('\n');
+              
+              const warning = `## 🚨 Direct Push to Main Branch Detected
+              
+**Pusher**: ${pusher}
+**Commits**: ${commits.length}
+
+### Commits pushed directly:
+${commitMessages}
+
+### ⚠️ Policy Reminder:
+- All changes to \`main\` should go through Pull Requests
+- This ensures code review and quality gates
+- Consider using feature branches for future changes
+
+### 📋 Recommended Workflow:
+1. Create feature branch: \`git checkout -b feature/your-feature\`
+2. Make changes and commit
+3. Push branch: \`git push origin feature/your-feature\`
+4. Create Pull Request through GitHub UI
+5. Get review and merge
+
+*This is a policy reminder - no action required for this push.*`;
+              
+              // Create an issue for tracking
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Direct push to main by ${pusher}`,
+                body: warning,
+                labels: ['policy-reminder', 'workflow']
+              });
+            }
+
+      - name: Setup CODEOWNERS
+        uses: actions/github-script@v7
+        if: github.event_name == 'repository_dispatch'
+        with:
+          script: |
+            const codeownersContent = `# CODEOWNERS file for Archon Fork
+            # Global ownership - all files require review
+            * @yogi-bear-92
+            
+            # ANSF System files - require specialized review
+            src/ansf-workflow/ @yogi-bear-92
+            docs/ML_ENHANCED_ANSF_DEPLOYMENT_REPORT.md @yogi-bear-92
+            docs/PHASE3_OPTIMAL_MODE_REPORT.md @yogi-bear-92
+            
+            # Claude Flow configuration
+            .claude-flow/ @yogi-bear-92
+            CLAUDE.md @yogi-bear-92
+            
+            # GitHub Actions and CI/CD
+            .github/ @yogi-bear-92
+            
+            # Production and deployment files
+            Dockerfile* @yogi-bear-92
+            docker-compose*.yml @yogi-bear-92
+            
+            # Neural networks and ML models
+            **/*neural* @yogi-bear-92
+            **/*ml_* @yogi-bear-92
+            **/*transformer* @yogi-bear-92
+            
+            # Critical system files
+            src/production/ @yogi-bear-92
+            */monitoring/ @yogi-bear-92`;
+            
+            try {
+              // Check if CODEOWNERS exists
+              let sha;
+              try {
+                const { data: existing } = await github.rest.repos.getContent({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  path: '.github/CODEOWNERS'
+                });
+                sha = existing.sha;
+              } catch (error) {
+                // File doesn't exist, that's okay
+              }
+              
+              await github.rest.repos.createOrUpdateFileContents({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: '.github/CODEOWNERS',
+                message: 'feat: Add CODEOWNERS file for automated review assignment',
+                content: Buffer.from(codeownersContent).toString('base64'),
+                sha: sha
+              });
+              
+              console.log('✅ CODEOWNERS file created/updated');
+            } catch (error) {
+              console.log('⚠️ Could not create CODEOWNERS:', error.message);
+            }

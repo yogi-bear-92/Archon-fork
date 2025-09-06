@@ -1,0 +1,50 @@
+{
+  "name": "archon-fork",
+  "version": "2.0.0-alpha",
+  "description": "Archon V2 Alpha - Progressive Refinement Knowledge Management with SPARC Integration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "docker-compose up --build",
+    "dev:frontend": "cd archon-ui-main && npm run dev",
+    "dev:backend": "cd python && uv run python -m src.server.main",
+    "build": "cd archon-ui-main && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd python && uv run pytest",
+    "test:frontend": "cd archon-ui-main && npm run test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd python && uv run ruff check && uv run mypy src/",
+    "lint:frontend": "cd archon-ui-main && npm run lint",
+    "sparc": "npx claude-flow sparc",
+    "sparc:modes": "npx claude-flow sparc modes",
+    "sparc:run": "npx claude-flow sparc run",
+    "sparc:tdd": "npx claude-flow sparc tdd",
+    "sparc:batch": "npx claude-flow sparc batch",
+    "sparc:pipeline": "npx claude-flow sparc pipeline",
+    "swarm:init": "npx claude-flow swarm init",
+    "swarm:status": "npx claude-flow swarm status",
+    "swarm:monitor": "npx claude-flow swarm monitor"
+  },
+  "devDependencies": {
+    "claude-flow": "^2.0.0-alpha.101"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/archon-fork.git"
+  },
+  "keywords": [
+    "archon",
+    "progressive-refinement",
+    "sparc",
+    "claude-flow",
+    "knowledge-management",
+    "ai-agents",
+    "pydanticai"
+  ],
+  "author": "Archon Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

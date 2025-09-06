@@ -1,0 +1,108 @@
+{
+  "agents": {
+    "sparc_coord": {
+      "description": "SPARC methodology orchestrator with Archon integration",
+      "capabilities": ["specification", "pseudocode", "architecture", "refinement", "completion"],
+      "priority": "high",
+      "archon_integration": {
+        "task_management": true,
+        "required_workflow": ["check_archon_tasks", "research_with_rag", "implement", "update_archon_status"],
+        "mcp_tools": ["archon:manage_task", "archon:perform_rag_query", "archon:search_code_examples"]
+      }
+    },
+    "archon_prp": {
+      "description": "Archon Progressive Refinement Protocol agent - PRIMARY task coordinator",
+      "capabilities": ["document_agent", "rag_agent", "task_agent"],
+      "integration": "fastapi",
+      "priority": "highest",
+      "archon_first": true,
+      "mandatory_checks": {
+        "pre_work": "archon:manage_task(action='list')",
+        "during_work": "archon:manage_task(action='update')",
+        "post_work": "archon:manage_task(action='update', status='review')"
+      }
+    },
+    "backend_dev": {
+      "description": "FastAPI backend development specialist",
+      "capabilities": ["api_design", "pydanticai_integration", "supabase_operations"],
+      "priority": "medium",
+      "archon_integration": {
+        "task_management": true,
+        "research_first": true,
+        "required_tools": ["archon:search_code_examples", "archon:perform_rag_query"]
+      }
+    },
+    "system_architect": {
+      "description": "System architecture and design expert",
+      "capabilities": ["microservices", "distributed_systems", "performance_optimization"],
+      "priority": "medium",
+      "archon_integration": {
+        "task_management": true,
+        "research_focus": "high_level_patterns"
+      }
+    },
+    "code_review_swarm": {
+      "description": "Distributed code review coordination",
+      "capabilities": ["quality_analysis", "security_review", "performance_review"],
+      "priority": "medium",
+      "archon_integration": {
+        "task_management": true,
+        "update_tasks_with_findings": true
+      }
+    },
+    "ml_developer": {
+      "description": "Machine learning model development",
+      "capabilities": ["embedding_generation", "vector_operations", "model_training"],
+      "priority": "medium",
+      "archon_integration": {
+        "task_management": true,
+        "specialized_research": ["ml_patterns", "vector_operations", "embeddings"]
+      }
+    },
+    "tdd_london_swarm": {
+      "description": "Test-driven development with London School approach",
+      "capabilities": ["mock_driven_development", "unit_testing", "integration_testing"],
+      "priority": "medium",
+      "archon_integration": {
+        "task_management": true,
+        "test_status_updates": true
+      }
+    }
+  },
+  "coordination_patterns": {
+    "archon_first_workflow": {
+      "coordinator": "archon_prp",
+      "agents": ["sparc_coord", "system_architect", "backend_dev", "tdd_london_swarm", "code_review_swarm"],
+      "mandatory_sequence": [
+        "check_archon_mcp_server",
+        "get_current_tasks", 
+        "research_with_archon_tools",
+        "implement_with_task_updates",
+        "complete_with_status_update"
+      ]
+    },
+    "sparc_with_archon": {
+      "coordinator": "sparc_coord", 
+      "agents": ["archon_prp", "system_architect", "backend_dev", "tdd_london_swarm", "code_review_swarm"],
+      "integration": "archon_mcp_required"
+    },
+    "full_stack_archon": {
+      "coordinator": "archon_prp",
+      "agents": ["system_architect", "backend_dev", "ml_developer", "tdd_london_swarm", "code_review_swarm"],
+      "archon_workflow": "task_driven_development"
+    }
+  },
+  "critical_rules": {
+    "archon_first_enforcement": {
+      "description": "ALWAYS check Archon MCP server before TodoWrite",
+      "violation_action": "stop_and_restart",
+      "all_agents_must_comply": true,
+      "required_workflow": [
+        "archon:manage_task(action='list')",
+        "archon:perform_rag_query()",
+        "implement_with_research",
+        "archon:manage_task(action='update')"
+      ]
+    }
+  }
+}

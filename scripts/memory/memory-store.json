@@ -1,0 +1,16 @@
+{
+  "default": [
+    {
+      "key": "research/metrics",
+      "value": "Knowledge base tagging effectiveness analysis: 5 main sources, 244+ tags total, 30-40% expected search improvement",
+      "namespace": "default",
+      "timestamp": 1757083344598
+    },
+    {
+      "key": "research/gaps",
+      "value": "Memory bottleneck: 99%+ utilization critical. Need optimization for tagging system performance",
+      "namespace": "default",
+      "timestamp": 1757083346880
+    }
+  ]
+}

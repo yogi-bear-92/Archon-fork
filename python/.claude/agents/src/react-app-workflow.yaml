@@ -1,0 +1,287 @@
+agents:
+  backend-developer:
+    capabilities:
+    - nodejs
+    - express
+    - api-development
+    - database-integration
+    deliverables:
+    - server/app.js
+    - server/routes/
+    - server/models/
+    - server/middleware/
+    responsibilities:
+    - Implement Express.js API server
+    - Create RESTful endpoints
+    - Database integration and ORM setup
+    - Middleware and error handling
+    type: coder
+  database-engineer:
+    capabilities:
+    - postgresql
+    - query-optimization
+    - database-design
+    deliverables:
+    - migrations/
+    - database/schema.sql
+    - database/indexes.sql
+    responsibilities:
+    - Design PostgreSQL database schema
+    - Create optimized queries and indexes
+    - Setup database migrations
+    type: specialist
+  devops-engineer:
+    capabilities:
+    - docker
+    - ci-cd
+    - deployment
+    - monitoring
+    deliverables:
+    - Dockerfile
+    - docker-compose.yml
+    - .github/workflows/
+    - deployment/
+    responsibilities:
+    - Container setup with Docker
+    - CI/CD pipeline configuration
+    - Deployment automation
+    - Production monitoring
+    type: specialist
+  performance-analyst:
+    capabilities:
+    - performance-analysis
+    - monitoring
+    - optimization
+    - profiling
+    deliverables:
+    - performance-report.md
+    - monitoring/dashboards/
+    - optimization-plan.md
+    responsibilities:
+    - Performance monitoring setup
+    - Identify bottlenecks
+    - Optimization recommendations
+    - Load testing
+    type: optimizer
+  react-developer:
+    capabilities:
+    - react
+    - typescript
+    - state-management
+    - ui-components
+    deliverables:
+    - src/App.tsx
+    - src/components/
+    - src/hooks/
+    - src/store/
+    responsibilities:
+    - Build React frontend application
+    - Implement state management (Redux/Context)
+    - Create reusable UI components
+    - Integrate with backend API
+    type: coder
+  security-specialist:
+    capabilities:
+    - authentication
+    - authorization
+    - security-audit
+    deliverables:
+    - auth/strategies.js
+    - middleware/auth.js
+    - security-audit-report.md
+    responsibilities:
+    - Implement JWT authentication
+    - Design authorization patterns
+    - Security audit and hardening
+    type: specialist
+  system-architect:
+    capabilities:
+    - system-design
+    - api-specification
+    - database-modeling
+    deliverables:
+    - architecture-diagram.md
+    - api-specification.yaml
+    - database-schema.sql
+    responsibilities:
+    - Design overall system architecture
+    - Create API specifications
+    - Define data models and relationships
+    type: architect
+  test-engineer:
+    capabilities:
+    - jest
+    - cypress
+    - testing-strategies
+    - coverage-analysis
+    deliverables:
+    - tests/unit/
+    - tests/integration/
+    - cypress/e2e/
+    - coverage-report.html
+    responsibilities:
+    - Create unit test suites
+    - Implement integration tests
+    - E2E testing with Cypress
+    - Achieve 90%+ code coverage
+    type: tester
+archon_integration:
+  knowledge_base:
+    sources:
+    - react_patterns
+    - api_best_practices
+    - security_guidelines
+    - performance_optimization
+  progressive_refinement:
+    cycles: 4
+    enabled: true
+    strategies:
+    - contextual_embeddings
+    - hybrid_search
+    - agentic_rag
+    - reranking
+  realtime_coordination:
+    events:
+    - progress
+    - blockers
+    - completions
+    rooms:
+    - architects
+    - developers
+    - testers
+    socket_io: enabled
+coordination:
+  hooks:
+    during-task:
+    - progress-update
+    - memory-sync
+    - coordination-notification
+    post-task:
+    - deliverable-validation
+    - memory-update
+    - next-phase-preparation
+    pre-task:
+    - session-restore
+    - knowledge-sync
+    - dependency-check
+  memory_structure:
+    api/: API contracts and specifications
+    auth/: Authentication and authorization
+    backend/: Server implementation details
+    data/: Data models and database schemas
+    frontend/: React components and state
+    performance/: Performance metrics and optimizations
+    tests/: Testing strategies and results
+description: Multi-agent orchestration for building a React app with backend API
+knowledge_integration:
+  queries:
+  - React best practices and modern patterns
+  - Node.js API security and authentication
+  - PostgreSQL performance optimization
+  - Full-stack application architecture
+  - Testing strategies for React applications
+  refinement_cycles:
+    1: Basic implementation with core features
+    2: Security hardening and authentication
+    3: Performance optimization and caching
+    4: Production readiness and monitoring
+metrics:
+  code_coverage: 90%+ test coverage
+  coordination_efficiency: < 5% coordination overhead
+  development_speed: 2.8-4.4x improvement target
+  maintainability: < 500 lines per file
+  performance: < 200ms API response time
+  security: Zero critical vulnerabilities
+name: Full-Stack React Application Workflow
+phases:
+  1-planning:
+    agents:
+    - system-architect
+    - database-engineer
+    - security-specialist
+    deliverables:
+    - System architecture document
+    - API specification
+    - Database schema design
+    - Security implementation plan
+    duration: 2-3 days
+    name: Architecture & Planning
+    parallel: true
+  2-development:
+    agents:
+    - react-developer
+    - backend-developer
+    coordination:
+      hooks:
+      - pre-component-creation
+      - post-api-endpoint
+      - api-contract-validation
+      memory_keys:
+      - api/contracts
+      - data/models
+      - auth/tokens
+    dependencies:
+    - 1-planning
+    duration: 1-2 weeks
+    name: Parallel Development
+    parallel: true
+  3-integration:
+    agents:
+    - test-engineer
+    - performance-analyst
+    deliverables:
+    - Comprehensive test suite
+    - Performance analysis
+    - Integration validation
+    dependencies:
+    - 2-development
+    duration: 3-5 days
+    name: Integration & Testing
+    parallel: true
+  4-deployment:
+    agents:
+    - devops-engineer
+    deliverables:
+    - Production deployment
+    - Monitoring dashboards
+    - CI/CD pipeline
+    dependencies:
+    - 3-integration
+    duration: 2-3 days
+    name: Deployment & Production
+swarm:
+  coordination:
+    hooks: enabled
+    memory: enabled
+    realtime: enabled
+  maxAgents: 8
+  strategy: adaptive
+  topology: mesh
+tech_stack:
+  backend:
+  - Node.js
+  - Express.js
+  - TypeScript
+  - Prisma ORM
+  - JWT Authentication
+  database:
+  - PostgreSQL
+  - pgvector (for embeddings)
+  - Redis (caching)
+  deployment:
+  - Docker
+  - GitHub Actions
+  - Vercel/Railway
+  - PostgreSQL Cloud
+  frontend:
+  - React 18+
+  - TypeScript
+  - Redux Toolkit / Zustand
+  - React Query
+  - Tailwind CSS
+  testing:
+  - Jest
+  - React Testing Library
+  - Cypress
+  - Supertest
+version: 2.0.0

@@ -222,7 +222,11 @@ MCP_INSTRUCTIONS = """
 ## 🏗️ Project Management
 
 ### Project Functions
-- `create_project(title, description, github_repo=None)`
+- `create_project(title, description, github_repo=None)` - Auto-detects GitHub repo if not provided
+- `check_duplicate_projects(title, github_repo=None)` - Check for existing similar projects
+- `merge_duplicate_projects(primary_project_id, duplicate_project_ids, merge_strategy="consolidate")` - Merge duplicate projects
+- `cleanup_empty_projects(dry_run=False)` - Delete projects with no tasks
+- `auto_detect_github_path(project_title, base_path=None)` - Auto-detect GitHub repository path
 - `list_projects()`
 - `get_project(project_id)`
 - `update_project(project_id, title=None, description=None, ...)`
@@ -371,6 +375,90 @@ async def session_info(ctx: Context) -> str:
         })
 
 
+# Create a special tool that lists all other tools
+@mcp.tool()
+async def get_available_tools(ctx: Context) -> str:
+    """
+    Get list of all available tools in this MCP server.
+    This provides the functionality of tools/list as a regular tool.
+    
+    Returns:
+        JSON list of tools with their names, descriptions, and parameters
+    """
+    try:
+        tools_info = []
+        
+        # Get all registered tools from FastMCP
+        if hasattr(mcp, '_tools') and mcp._tools:
+            for tool_name, tool_func in mcp._tools.items():
+                # Skip this tool to avoid recursion
+                if tool_name == 'get_available_tools':
+                    continue
+                    
+                # Extract tool info
+                tool_info = {
+                    "name": tool_name,
+                    "description": getattr(tool_func, '__doc__', 'No description available').strip().split('\n')[0],
+                    "inputSchema": {
+                        "type": "object", 
+                        "properties": {},
+                        "required": []
+                    }
+                }
+                
+                # Try to get parameter info from function signature
+                import inspect
+                try:
+                    sig = inspect.signature(tool_func)
+                    properties = {}
+                    required = []
+                    
+                    for param_name, param in sig.parameters.items():
+                        if param_name in ['ctx', 'context']:  # Skip context parameters
+                            continue
+                            
+                        param_info = {"type": "string"}  # Default type
+                        
+                        # Check if parameter is required
+                        if param.default == inspect.Parameter.empty:
+                            required.append(param_name)
+                        
+                        # Try to infer type from annotation
+                        if param.annotation != inspect.Parameter.empty:
+                            if param.annotation == int:
+                                param_info["type"] = "integer"
+                            elif param.annotation == float:
+                                param_info["type"] = "number"
+                            elif param.annotation == bool:
+                                param_info["type"] = "boolean"
+                                
+                        properties[param_name] = param_info
+                    
+                    tool_info["inputSchema"]["properties"] = properties
+                    tool_info["inputSchema"]["required"] = required
+                    
+                except Exception as e:
+                    logger.debug(f"Could not inspect tool {tool_name}: {e}")
+                
+                tools_info.append(tool_info)
+        
+        return json.dumps({
+            "success": True,
+            "tools": tools_info,
+            "count": len(tools_info),
+            "source": "mcp_server"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing tools: {e}")
+        return json.dumps({
+            "success": False,
+            "error": f"Failed to list tools: {str(e)}",
+            "tools": [],
+            "count": 0
+        })
+
+
 # Import and register modules
 def register_modules():
     """Register all MCP tool modules."""
@@ -480,6 +568,34 @@ def register_modules():
         raise
     except Exception as e:
         logger.error(f"✗ Failed to register feature tools: {e}")
+        logger.error(traceback.format_exc())
+
+    # Claude Flow Integration Tools
+    try:
+        from src.mcp_server.features.claude_flow import register_claude_flow_tools
+        from src.server.services.mcp_service_client import get_mcp_service_client
+        
+        # Get HTTP client for Claude Flow service calls
+        service_client = get_mcp_service_client()
+        register_claude_flow_tools(mcp)
+        modules_registered += 1
+        logger.info("✓ Claude Flow integration tools registered")
+    except ImportError as e:
+        logger.warning(f"⚠ Claude Flow tools not available: {e}")
+    except Exception as e:
+        logger.error(f"✗ Failed to register Claude Flow tools: {e}")
+        logger.error(traceback.format_exc())
+
+    # AI Tagging Tools
+    try:
+        from src.mcp_server.features.ai_tagging.ai_tagging_tools import register_ai_tagging_tools
+
+        register_ai_tagging_tools(mcp)
+        modules_registered += 1
+        logger.info("✓ AI Tagging tools registered")
+
+    except Exception as e:
+        logger.error(f"✗ Failed to register AI Tagging tools: {e}")
         logger.error(traceback.format_exc())
 
     logger.info(f"📦 Total modules registered: {modules_registered}")

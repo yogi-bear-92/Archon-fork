@@ -153,6 +153,11 @@ class CredentialService:
 
         except Exception as e:
             logger.error(f"Error loading credentials: {e}")
+            # Initialize with empty cache if database is unavailable
+            if not self._cache_initialized:
+                self._cache = {}
+                self._cache_initialized = True
+                logger.info("Initialized with empty credentials cache due to database unavailability")
             raise
 
     async def get_credential(self, key: str, default: Any = None, decrypt: bool = True) -> Any:
@@ -493,7 +498,13 @@ async def set_credential(
 
 async def initialize_credentials() -> None:
     """Initialize the credential service by loading all credentials and setting environment variables."""
-    await credential_service.load_all_credentials()
+    try:
+        await credential_service.load_all_credentials()
+        logger.info("✅ Credentials loaded successfully from database")
+    except Exception as e:
+        logger.warning(f"⚠️  Failed to load credentials from database: {e}")
+        logger.info("🔄 Continuing with default/environment-based configuration")
+        # Don't raise the exception - allow server to start with minimal config
 
     # Only set infrastructure/startup credentials as environment variables
     # RAG settings will be looked up on-demand from the credential service

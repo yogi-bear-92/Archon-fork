@@ -7,7 +7,7 @@ Handles batch crawling of multiple URLs in parallel.
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from crawl4ai import CacheMode, CrawlerRunConfig, MemoryAdaptiveDispatcher
+from crawl4ai import CacheMode, CrawlerRunConfig
 
 from ....config.logfire_config import get_logger
 from ...credential_service import credential_service
@@ -95,34 +95,28 @@ class BatchCrawlStrategy:
             # Use generic documentation selectors for batch crawling
             crawl_config = CrawlerRunConfig(
                 cache_mode=CacheMode.BYPASS,
-                stream=True,  # Enable streaming for faster parallel processing
                 markdown_generator=self.markdown_generator,
                 wait_until=settings.get("CRAWL_WAIT_STRATEGY", "domcontentloaded"),
                 page_timeout=int(settings.get("CRAWL_PAGE_TIMEOUT", "30000")),
                 delay_before_return_html=float(settings.get("CRAWL_DELAY_BEFORE_HTML", "1.0")),
                 wait_for_images=False,  # Skip images for faster crawling
                 scan_full_page=True,  # Trigger lazy loading
-                exclude_all_images=False,
+                exclude_external_images=True,  # Updated parameter name
                 remove_overlay_elements=True,
                 process_iframes=True,
+                semaphore_count=max_concurrent,  # Concurrency control
             )
         else:
             # Configuration for regular batch crawling
             crawl_config = CrawlerRunConfig(
                 cache_mode=CacheMode.BYPASS,
-                stream=True,  # Enable streaming
                 markdown_generator=self.markdown_generator,
                 wait_until=settings.get("CRAWL_WAIT_STRATEGY", "domcontentloaded"),
                 page_timeout=int(settings.get("CRAWL_PAGE_TIMEOUT", "45000")),
                 delay_before_return_html=float(settings.get("CRAWL_DELAY_BEFORE_HTML", "0.5")),
                 scan_full_page=True,
+                semaphore_count=max_concurrent,  # Concurrency control now handled by config
             )
-
-        dispatcher = MemoryAdaptiveDispatcher(
-            memory_threshold_percent=memory_threshold,
-            check_interval=check_interval,
-            max_session_permit=max_concurrent,
-        )
 
         async def report_progress(progress_val: int, message: str, **kwargs):
             """Helper to report progress if callback is available"""
@@ -182,7 +176,7 @@ class BatchCrawlStrategy:
                 f"Starting parallel crawl of batch {batch_start + 1}-{batch_end} ({len(batch_urls)} URLs)"
             )
             batch_results = await self.crawler.arun_many(
-                urls=batch_urls, config=crawl_config, dispatcher=dispatcher
+                urls=batch_urls, config=crawl_config
             )
 
             # Handle streaming results

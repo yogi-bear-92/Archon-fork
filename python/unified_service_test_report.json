@@ -1,0 +1,130 @@
+{
+  "overall_score": 100.0,
+  "system_ready": true,
+  "test_results": {
+    "cli_tools_integration": {
+      "commands": [
+        "claude-flow__swarm",
+        "claude-flow__agent",
+        "claude-flow__sparc",
+        "claude-flow__memory",
+        "claude-flow__coordination",
+        "claude-flow__analysis",
+        "claude-flow__monitoring",
+        "flow-nexus__deploy",
+        "flow-nexus__orchestrate"
+      ],
+      "status": "PASSED",
+      "tools": {
+        "claude-flow": {
+          "available": true,
+          "version": "2.0.0-alpha"
+        },
+        "flow-nexus": {
+          "available": true,
+          "version": "0.1.111"
+        },
+        "ruv-swarm": {
+          "available": false,
+          "version": null
+        }
+      }
+    },
+    "memory_optimization": {
+      "optimizations": {
+        "cli_discovery": {
+          "commands_count": 9,
+          "tools_count": 3
+        },
+        "process_pool": {
+          "active_processes": 0,
+          "max_processes": 5,
+          "memory_limit_mb": 100
+        },
+        "serena_footprint": "~10MB"
+      },
+      "status": "PASSED"
+    },
+    "process_management": {
+      "executions": [
+        {
+          "command": "echo test 1",
+          "output": "Process pool test 1",
+          "success": true
+        },
+        {
+          "command": "echo test 2",
+          "reused": false,
+          "success": true
+        }
+      ],
+      "final_stats": {
+        "processes_created": 2,
+        "total_executions": 2,
+        "total_processes": 2
+      },
+      "status": "PASSED"
+    },
+    "serena_wrapper": {
+      "operations": [
+        {
+          "operation": "get_service_status",
+          "result": {
+            "available_via": null,
+            "cache_entries": 0,
+            "memory_footprint": "~10MB",
+            "status": "mock_mode",
+            "type": "lightweight_wrapper"
+          },
+          "success": true
+        },
+        {
+          "mock_mode": false,
+          "operation": "analyze_code_structure",
+          "success": true
+        },
+        {
+          "operation": "detect_code_patterns",
+          "patterns_count": 2,
+          "success": true
+        }
+      ],
+      "status": "PASSED"
+    },
+    "service_initialization": {
+      "services": {
+        "CLI Discovery": "STARTED",
+        "Process Pool": "STARTED",
+        "Serena Wrapper": "STARTED"
+      },
+      "status": "PASSED"
+    },
+    "system_health": {
+      "health_checks": {
+        "active_services": {
+          "count": 3,
+          "healthy": true,
+          "services": [
+            "Serena Wrapper",
+            "CLI Discovery",
+            "Process Pool"
+          ]
+        },
+        "memory_efficiency": {
+          "footprint": "~10MB",
+          "serena_optimized": true
+        },
+        "tool_availability": {
+          "available": 2,
+          "ratio": 0.6666666666666666,
+          "total": 3
+        }
+      },
+      "health_score": 100,
+      "status": "PASSED"
+    }
+  },
+  "tests_passed": 6,
+  "tests_total": 6,
+  "timestamp": 1757154315.811152
+}

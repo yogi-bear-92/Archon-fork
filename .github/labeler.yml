@@ -1,0 +1,99 @@
+# Auto-labeling configuration for Archon ANSF system
+
+# ANSF System Components
+ansf-system:
+  - 'src/ansf-workflow/**/*'
+  - 'ansf*'
+
+phase-1:
+  - 'src/ansf-workflow/**/*phase1*'
+  - '**/ansf-phase1-*'
+
+phase-2: 
+  - 'src/ansf-workflow/**/*phase2*'
+  - '**/ansf-phase2-*'
+
+phase-3:
+  - 'src/ansf-workflow/**/*phase3*'
+  - '**/ansf-phase3-*'
+
+# Neural & ML Components
+neural-ml:
+  - '**/*neural*'
+  - '**/*ml_*'
+  - '**/coordination_hooks*'
+  - 'neural-model-app/**/*'
+
+# Production & Deployment
+production:
+  - '**/production/**/*'
+  - '**/deploy*'
+  - 'Dockerfile*'
+  - 'docker-compose*'
+
+# Monitoring & Metrics
+monitoring:
+  - '**/*monitoring*'
+  - '**/*dashboard*'
+  - '**/*metrics*'
+  - '.claude-flow/metrics/**/*'
+
+# Flow Nexus Challenges
+challenges:
+  - 'flow-nexus-challenges/**/*'
+
+beginner:
+  - 'flow-nexus-challenges/beginner/**/*'
+
+intermediate:
+  - 'flow-nexus-challenges/intermediate/**/*'
+
+advanced:
+  - 'flow-nexus-challenges/advanced/**/*'
+
+expert:
+  - 'flow-nexus-challenges/expert/**/*'
+
+# Documentation
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+  - 'README*'
+
+# Configuration
+configuration:
+  - '.github/**/*'
+  - '**/*config*'
+  - '**/*.json'
+  - '**/*.yml'
+  - '**/*.yaml'
+  - '.claude-flow/**/*'
+  - 'CLAUDE.md'
+
+# Language-specific
+python:
+  - '**/*.py'
+  - 'requirements*.txt'
+  - 'setup.py'
+
+javascript:
+  - '**/*.js'
+  - '**/*.ts' 
+  - 'package*.json'
+  - 'tsconfig.json'
+
+# Priority Labels
+high-priority:
+  - '**/production/**/*'
+  - '**/*phase3*'
+  - '**/*critical*'
+
+enhancement:
+  - '**/*feature*'
+  - '**/*enhance*'
+  - '**/*improve*'
+
+bug-fix:
+  - '**/*fix*'
+  - '**/*bug*'
+  - '**/*patch*'

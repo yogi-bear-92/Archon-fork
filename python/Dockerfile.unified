@@ -1,0 +1,53 @@
+FROM python:3.11-slim
+
+LABEL maintainer="Archon Team"
+LABEL description="Unified Archon Service - Memory Optimized"
+LABEL version="2.0.0"
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for CLI tools and lightweight services
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    npm \
+    nodejs \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Node.js tools for CLI integrations
+RUN npm install -g \
+    claude-flow@alpha \
+    ruv-swarm@latest \
+    flow-nexus@latest \
+    serena@latest
+
+# Copy requirements first for better Docker layer caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create cache directories with proper permissions
+RUN mkdir -p /app/.cache \
+    && mkdir -p /app/.serena-cache \
+    && mkdir -p /app/.claude-flow \
+    && chmod -R 755 /app/.cache /app/.serena-cache /app/.claude-flow
+
+# Set Python path
+ENV PYTHONPATH=/app/src
+
+# Expose unified service ports
+EXPOSE 8181 8051
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8181/health || exit 1
+
+# Start unified service
+CMD ["python", "-m", "uvicorn", "src.server.unified_archon_service:unified_app", "--host", "0.0.0.0", "--port", "8181", "--workers", "1", "--loop", "asyncio"]

@@ -1,0 +1,47 @@
+# CODEOWNERS - Automated Review Assignment
+# This file defines who should review specific files/directories
+
+# Global ownership - all files require review
+* @yogi-bear-92
+
+# ANSF System files - require specialized review  
+src/ansf-workflow/ @yogi-bear-92
+docs/ML_ENHANCED_ANSF_DEPLOYMENT_REPORT.md @yogi-bear-92
+docs/PHASE3_OPTIMAL_MODE_REPORT.md @yogi-bear-92
+
+# Claude Flow configuration and hooks
+.claude-flow/ @yogi-bear-92  
+CLAUDE.md @yogi-bear-92
+
+# GitHub Actions and CI/CD workflows
+.github/ @yogi-bear-92
+
+# Production and deployment files
+Dockerfile* @yogi-bear-92
+docker-compose*.yml @yogi-bear-92
+
+# Neural networks and ML models  
+**/*neural* @yogi-bear-92
+**/*ml_* @yogi-bear-92
+**/*transformer* @yogi-bear-92
+**/*embedding* @yogi-bear-92
+
+# Critical system files
+src/production/ @yogi-bear-92
+*/monitoring/ @yogi-bear-92
+*/dashboard/ @yogi-bear-92
+
+# Configuration files that affect system behavior
+*.env @yogi-bear-92
+*config*.json @yogi-bear-92
+*config*.yml @yogi-bear-92
+
+# Documentation that requires technical review
+docs/ @yogi-bear-92
+README*.md @yogi-bear-92
+
+# Package and dependency files
+package*.json @yogi-bear-92
+requirements*.txt @yogi-bear-92
+Cargo.toml @yogi-bear-92
+go.mod @yogi-bear-92

@@ -1,0 +1,10 @@
+{
+  "default": [
+    {
+      "key": "coordination/decisions",
+      "value": "{\"objective\": \"Test basic Archon functionality\", \"approach\": \"read-only analysis\", \"architecture_discovered\": {\"main_server\": \"FastAPI port 8181\", \"mcp_server\": \"HTTP-based port 8051\", \"agents_service\": \"PydanticAI port 8052\", \"frontend\": \"React port 3737\", \"database\": \"Supabase PostgreSQL + pgvector\", \"polling\": \"HTTP polling replaces Socket.IO\"}, \"test_areas_identified\": [\"API endpoints\", \"HTTP polling architecture\", \"MCP server tools\", \"Database operations\", \"Service integration\", \"Frontend-backend communication\"]}",
+      "namespace": "default",
+      "timestamp": 1757073482742
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "emergency_protocols": {
+    "memory_threshold_critical": 60,
+    "memory_threshold_high": 100,
+    "memory_threshold_normal": 200,
+    "memory_threshold_optimal": 500
+  },
+  "hook_configurations": {
+    "emergency_mode": {
+      "max_memory_mb": 10,
+      "cache_enabled": false,
+      "neural_predictions": "fallback_only",
+      "agent_limit": 1,
+      "cleanup_aggressive": true,
+      "streaming_required": true
+    },
+    "limited_mode": {
+      "max_memory_mb": 25,
+      "cache_enabled": true,
+      "cache_limit_mb": 15,
+      "neural_predictions": "basic",
+      "agent_limit": 2,
+      "cleanup_interval": 30
+    },
+    "standard_mode": {
+      "max_memory_mb": 50,
+      "cache_enabled": true,
+      "cache_limit_mb": 30,
+      "neural_predictions": "full",
+      "agent_limit": 5,
+      "cleanup_interval": 60
+    }
+  },
+  "ansf_integration": {
+    "phase1_memory_budget": 15,
+    "phase2_memory_budget": 25,
+    "phase3_memory_budget": 35,
+    "coordination_accuracy_target": 0.97,
+    "response_time_target_ms": 245,
+    "system_efficiency_target": 0.94
+  },
+  "performance_monitoring": {
+    "memory_check_interval": 5,
+    "gc_trigger_threshold": 90,
+    "emergency_cleanup_threshold": 95,
+    "metrics_export_compressed": true
+  },
+  "tool_coordination": {
+    "claude_code_priority": 1,
+    "serena_activation_threshold": 100,
+    "archon_activation_threshold": 200, 
+    "claude_flow_activation_threshold": 500,
+    "coordination_timeout_ms": 5000
+  }
+}

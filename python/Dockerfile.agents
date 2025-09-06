@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir uv
 COPY pyproject.toml .
 
 # Install only agents dependencies using uv
-RUN uv pip install --system --group agents
+RUN uv pip install -e . --system --group agents
 
 # Copy agents code - no dependencies on server code
 # Agents use MCP tools for all operations

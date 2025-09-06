@@ -1,0 +1,81 @@
+{
+  "ml_model": {
+    "model_path": null,
+    "model_type": "classification",
+    "target_accuracy": 0.887,
+    "classes": 5,
+    "feature_count": 10,
+    "prediction_confidence_threshold": 0.7,
+    "enable_retraining": true
+  },
+  "ansf_integration": {
+    "enable_phase2_integration": true,
+    "semantic_cache_budget_mb": 100,
+    "target_coordination_accuracy": 0.947,
+    "lsp_integration_enabled": true,
+    "neural_learning_enabled": true
+  },
+  "serena_integration": {
+    "enable_serena_integration": true,
+    "coordination_api_endpoint": "http://localhost:8080/serena/coordination",
+    "hook_phases": [
+      "pre_task",
+      "post_task",
+      "pre_edit",
+      "post_edit",
+      "memory_sync",
+      "performance_monitor",
+      "error_recovery"
+    ],
+    "coordination_levels": [
+      "individual",
+      "pairwise",
+      "group",
+      "swarm",
+      "ecosystem"
+    ]
+  },
+  "claude_flow_integration": {
+    "enable_claude_flow": true,
+    "swarm_topologies": [
+      "mesh",
+      "hierarchical",
+      "ring",
+      "star",
+      "adaptive"
+    ],
+    "max_agents": 8,
+    "performance_monitoring": true
+  },
+  "performance": {
+    "target_metrics": {
+      "coordination_efficiency": 0.947,
+      "task_completion_rate": 0.95,
+      "error_rate": 0.02,
+      "memory_efficiency": 0.85,
+      "cpu_utilization": 0.7,
+      "cache_hit_ratio": 0.8,
+      "semantic_accuracy": 0.9,
+      "neural_prediction_accuracy": 0.887
+    },
+    "monitoring_intervals": {
+      "real_time_metrics": 5,
+      "performance_analysis": 30,
+      "learning_updates": 300,
+      "model_retraining": 3600
+    },
+    "optimization_thresholds": {
+      "memory_critical": 0.95,
+      "memory_warning": 0.85,
+      "cpu_high": 0.9,
+      "error_rate_high": 0.1,
+      "coordination_efficiency_low": 0.7
+    }
+  },
+  "system": {
+    "log_level": "INFO",
+    "enable_debug_mode": false,
+    "enable_fallback_mode": true,
+    "max_memory_usage_mb": 512
+  }
+}

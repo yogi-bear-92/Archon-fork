@@ -1,0 +1,157 @@
+name: Development Helper
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  development-insights:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Development Metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Get commit info
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              per_page: 10
+            });
+            
+            // Analyze recent development patterns
+            let metrics = {
+              recent_commits: commits.data.length,
+              feature_commits: 0,
+              bug_fixes: 0,
+              documentation_updates: 0,
+              ansf_system_updates: 0,
+              neural_ml_updates: 0
+            };
+            
+            commits.data.forEach(commit => {
+              const message = commit.commit.message.toLowerCase();
+              if (message.includes('feat:')) metrics.feature_commits++;
+              if (message.includes('fix:')) metrics.bug_fixes++;
+              if (message.includes('docs:')) metrics.documentation_updates++;
+              if (message.includes('ansf') || message.includes('phase')) metrics.ansf_system_updates++;
+              if (message.includes('neural') || message.includes('ml')) metrics.neural_ml_updates++;
+            });
+            
+            // Generate metrics summary
+            const summary = `## 📊 Development Metrics Report
+            
+            **Recent Activity (Last 10 commits):**
+            - 🚀 Feature commits: ${metrics.feature_commits}
+            - 🐛 Bug fixes: ${metrics.bug_fixes}
+            - 📚 Documentation updates: ${metrics.documentation_updates}
+            - 🤖 ANSF system updates: ${metrics.ansf_system_updates}
+            - 🧠 Neural/ML updates: ${metrics.neural_ml_updates}
+            
+            **Latest Commit:** ${commits.data[0].commit.message.split('\n')[0]}
+            **Author:** ${commits.data[0].commit.author.name}
+            **Date:** ${new Date(commits.data[0].commit.author.date).toLocaleDateString()}
+            
+            ---
+            *Generated automatically on ${new Date().toISOString()}*`;
+            
+            // Save metrics to artifact
+            const metricsFile = 'development-metrics.md';
+            fs.writeFileSync(metricsFile, summary);
+            
+            console.log('Development metrics generated');
+            console.log(summary);
+
+      - name: Check for Performance Indicators
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            
+            try {
+              // Look for performance-related files
+              const performanceFiles = [
+                '.claude-flow/metrics/system-metrics.json',
+                'src/ansf-workflow/docs/PHASE3_OPTIMAL_MODE_REPORT.md',
+                'docs/ML_ENHANCED_ANSF_DEPLOYMENT_REPORT.md'
+              ];
+              
+              let performanceInfo = "## ⚡ Performance Status\n\n";
+              
+              performanceFiles.forEach(file => {
+                try {
+                  if (require('fs').existsSync(file)) {
+                    performanceInfo += `✅ ${file} - Present\n`;
+                  } else {
+                    performanceInfo += `❌ ${file} - Missing\n`;
+                  }
+                } catch (e) {
+                  performanceInfo += `⚠️ ${file} - Error checking\n`;
+                }
+              });
+              
+              // Check for ANSF phases
+              const phaseFiles = execSync('find . -name "*phase*" -type f | head -10', { encoding: 'utf8' }).trim();
+              if (phaseFiles) {
+                performanceInfo += `\n**ANSF Phases Detected:**\n`;
+                phaseFiles.split('\n').forEach(file => {
+                  performanceInfo += `- ${file}\n`;
+                });
+              }
+              
+              console.log('Performance check completed');
+              console.log(performanceInfo);
+              
+            } catch (error) {
+              console.log('Performance check completed with minor issues');
+            }
+
+      - name: Development Recommendations
+        uses: actions/github-script@v7
+        if: github.event_name == 'push'
+        with:
+          script: |
+            const recommendations = [];
+            
+            // Check for common development patterns
+            if (context.payload.commits) {
+              const commitMessages = context.payload.commits.map(c => c.message).join(' ');
+              
+              if (commitMessages.includes('WIP') || commitMessages.includes('work in progress')) {
+                recommendations.push("💡 Consider using draft PRs for work-in-progress commits");
+              }
+              
+              if (commitMessages.includes('fix') && commitMessages.includes('urgent')) {
+                recommendations.push("🚨 Urgent fixes detected - consider hotfix branch strategy");
+              }
+              
+              if (commitMessages.includes('phase3') || commitMessages.includes('optimal')) {
+                recommendations.push("🎯 Phase 3 changes detected - ensure thorough testing and monitoring");
+              }
+              
+              if (commitMessages.includes('neural') || commitMessages.includes('ml')) {
+                recommendations.push("🧠 Neural/ML changes detected - validate performance benchmarks");
+              }
+            }
+            
+            if (recommendations.length > 0) {
+              console.log('Development Recommendations:');
+              recommendations.forEach(rec => console.log(`  ${rec}`));
+            } else {
+              console.log('✅ No specific recommendations at this time - good development practices detected');
+            }

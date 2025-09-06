@@ -1,0 +1,126 @@
+name: Auto Assign Reviewers
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  assign-reviewers:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Auto Assign Reviewers
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const reviewers = new Set();
+            const teamReviewers = new Set();
+            
+            // Analyze files to determine appropriate reviewers
+            files.forEach(file => {
+              const path = file.filename;
+              
+              // ANSF system changes - need architecture review
+              if (path.includes('ansf-workflow/') || path.includes('production/')) {
+                teamReviewers.add('backend-team');
+                // Add specific reviewers based on component
+                if (path.includes('neural') || path.includes('ml_')) {
+                  teamReviewers.add('ml-team');
+                }
+                if (path.includes('monitoring') || path.includes('dashboard')) {
+                  teamReviewers.add('devops-team');
+                }
+              }
+              
+              // Phase 3 changes need senior review
+              if (path.includes('phase3') || path.includes('optimal')) {
+                teamReviewers.add('senior-developers');
+              }
+              
+              // Documentation changes
+              if (path.endsWith('.md')) {
+                teamReviewers.add('documentation-team');
+              }
+              
+              // Configuration changes need careful review
+              if (path.includes('.github/') || path.includes('config') || path.endsWith('.yml')) {
+                teamReviewers.add('devops-team');
+              }
+            });
+            
+            // Don't assign reviewers if the PR author is a bot or the same person
+            const prAuthor = context.payload.pull_request.user.login;
+            if (prAuthor.includes('bot') || prAuthor.includes('github-actions')) {
+              return;
+            }
+            
+            // For now, just use a comment to indicate what type of review is needed
+            let reviewComment = "## 🤖 Auto Review Assignment\n\n";
+            reviewComment += "Based on the files changed, this PR may benefit from review by:\n\n";
+            
+            if (teamReviewers.has('backend-team')) {
+              reviewComment += "- 🏗️ **Backend/Architecture Team** - ANSF system changes detected\n";
+            }
+            if (teamReviewers.has('ml-team')) {
+              reviewComment += "- 🧠 **ML/Neural Team** - Neural network or ML components modified\n";
+            }
+            if (teamReviewers.has('devops-team')) {
+              reviewComment += "- 🔧 **DevOps Team** - Infrastructure or configuration changes\n";
+            }
+            if (teamReviewers.has('documentation-team')) {
+              reviewComment += "- 📚 **Documentation Team** - Documentation updates\n";
+            }
+            if (teamReviewers.has('senior-developers')) {
+              reviewComment += "- 👑 **Senior Developers** - Phase 3 or critical system changes\n";
+            }
+            
+            reviewComment += "\n*Note: This is an automated suggestion. Feel free to request specific reviewers as needed.*";
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: reviewComment
+            });
+
+      - name: Request Review Based on PR Size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            let reviewComment = "";
+            
+            if (total > 1000) {
+              reviewComment = "⚠️ **Large PR Alert**: This PR has 1000+ lines of changes. Consider breaking it into smaller PRs for easier review.";
+            } else if (total > 500) {
+              reviewComment = "📏 **Medium PR**: This PR has significant changes (500+ lines). Extra attention during review recommended.";
+            } else if (total < 10) {
+              reviewComment = "✨ **Quick Review**: Small change detected. This should be a fast review!";
+            }
+            
+            if (reviewComment) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: reviewComment
+              });
+            }
