@@ -458,6 +458,17 @@ class ClaudeFlowCoordinator:
             # Execute status check
             result = await self._run_claude_flow_command(cmd)
             
+            # Handle NPX unavailable gracefully
+            if isinstance(result, str) and "npx_unavailable" in result:
+                logger.info("Claude Flow unavailable (NPX not found)")
+                return {
+                    "status": "npx_unavailable",
+                    "session_id": target_session,
+                    "session_info": self.swarm_sessions.get(target_session, {}),
+                    "message": "Claude Flow commands unavailable - NPX not found",
+                    "timestamp": datetime.now().isoformat()
+                }
+            
             # Get session info
             session_info = self.swarm_sessions.get(target_session, {})
             
@@ -531,21 +542,53 @@ class ClaudeFlowCoordinator:
         try:
             logger.debug(f"Executing Claude Flow command: {' '.join(cmd)}")
             
+            # Check if npx command is available and fix path issues
+            if cmd[0] == "npx":
+                npx_path = None
+                # Try common npx locations
+                for path in ["/opt/homebrew/bin/npx", "/usr/local/bin/npx", "/usr/bin/npx"]:
+                    if os.path.exists(path):
+                        npx_path = path
+                        break
+                
+                if npx_path:
+                    cmd[0] = npx_path
+                else:
+                    # NPX not found, return graceful error
+                    logger.warning("NPX not found, claude-flow commands unavailable")
+                    return '{"status": "npx_unavailable", "message": "NPX not found on system"}'
+            
+            # Set environment with proper PATH
+            env = os.environ.copy()
+            env['PATH'] = f"/opt/homebrew/bin:/usr/local/bin:/usr/bin:{env.get('PATH', '')}"
+            
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=str(self.base_path)
+                cwd=str(self.base_path),
+                env=env
             )
             
             stdout, stderr = await process.communicate()
             
             if process.returncode != 0:
                 error_msg = stderr.decode() if stderr else f"Command failed with code {process.returncode}"
+                # Don't raise exception for NPX not found, return graceful error
+                if "No such file or directory" in error_msg and "npx" in error_msg:
+                    logger.warning(f"NPX command not available: {error_msg}")
+                    return '{"status": "npx_unavailable", "message": "NPX command not available"}'
                 raise Exception(f"Claude Flow command failed: {error_msg}")
             
             return stdout.decode().strip()
             
+        except FileNotFoundError as e:
+            # Handle NPX not found gracefully
+            if "npx" in str(e):
+                logger.warning(f"NPX not found: {e}")
+                return '{"status": "npx_unavailable", "message": "NPX executable not found"}'
+            logger.error(f"Claude Flow command execution failed: {cmd}, error: {e}")
+            raise
         except Exception as e:
             logger.error(f"Claude Flow command execution failed: {cmd}, error: {e}")
             raise
