@@ -1,0 +1,123 @@
+{
+  "name": "Unified MCP Integration",
+  "version": "1.0.0",
+  "description": "Unified integration of Claude Flow, Flow-Nexus, Serena, and Archon systems",
+  "masterController": {
+    "port": 8050,
+    "transport": "stdio",
+    "healthCheckInterval": 30000,
+    "maxConcurrentRequests": 50,
+    "memoryThreshold": 95
+  },
+  "services": {
+    "archon": {
+      "name": "Archon PRP",
+      "enabled": true,
+      "baseUrl": "http://127.0.0.1:8181",
+      "healthEndpoint": "/health",
+      "apiEndpoint": "/api",
+      "timeout": 10000,
+      "retries": 3,
+      "description": "Progressive Refinement and Project Management",
+      "tools": [
+        "archon_project_create",
+        "archon_project_list", 
+        "archon_task_create",
+        "archon_task_update",
+        "archon_rag_query",
+        "archon_document_create"
+      ]
+    },
+    "claudeFlow": {
+      "name": "Claude Flow",
+      "enabled": true,
+      "command": "npx claude-flow@alpha",
+      "timeout": 30000,
+      "memoryLimit": "256MB",
+      "description": "SPARC Methodology and Swarm Coordination", 
+      "tools": [
+        "claude_flow_sparc_execute",
+        "claude_flow_swarm_init",
+        "claude_flow_agent_spawn",
+        "claude_flow_neural_train",
+        "claude_flow_memory_store"
+      ]
+    },
+    "serena": {
+      "name": "Serena Intelligence",
+      "enabled": true,
+      "port": 8054,
+      "mcpEndpoint": "stdio",
+      "cacheLimit": "50MB",
+      "description": "Code Intelligence and Semantic Analysis",
+      "tools": [
+        "serena_analyze_code",
+        "serena_semantic_search", 
+        "serena_refactor_suggest",
+        "serena_lsp_diagnostics"
+      ]
+    },
+    "flowNexus": {
+      "name": "Flow-Nexus Workflows",
+      "enabled": true,
+      "currentPort": 8051,
+      "targetPort": 8056,
+      "migration": true,
+      "description": "Workflow Automation and Pipeline Management",
+      "tools": [
+        "flow_nexus_pipeline_create",
+        "flow_nexus_workflow_execute",
+        "flow_nexus_automation_setup"
+      ]
+    }
+  },
+  "routing": {
+    "strategy": "prefix-based",
+    "loadBalancing": "round-robin",
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "resetTimeout": 60000
+    },
+    "retryPolicy": {
+      "attempts": 3,
+      "backoffStrategy": "exponential",
+      "initialDelay": 1000
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "metricsInterval": 5000,
+    "healthChecks": true,
+    "performanceTracking": true,
+    "memoryMonitoring": {
+      "enabled": true,
+      "warningThreshold": 90,
+      "criticalThreshold": 95,
+      "autoThrottling": true
+    }
+  },
+  "security": {
+    "rateLimit": {
+      "enabled": true,
+      "maxRequests": 100,
+      "windowMs": 60000
+    },
+    "cors": {
+      "enabled": true,
+      "origins": ["http://localhost:*", "http://127.0.0.1:*"]
+    }
+  },
+  "development": {
+    "hotReload": true,
+    "debugMode": false,
+    "logLevel": "info",
+    "mockServices": false
+  },
+  "integration": {
+    "crossServiceMemory": true,
+    "sharedContext": true,
+    "eventDrivenUpdates": true,
+    "realTimeSync": true
+  }
+}

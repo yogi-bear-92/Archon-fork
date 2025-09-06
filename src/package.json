@@ -1,0 +1,64 @@
+{
+  "name": "archon-lunar-mcpx-gateway",
+  "version": "1.0.0",
+  "description": "Archon Lunar MCPX Gateway - Official Lunar.dev integration for MCP server aggregation",
+  "type": "module",
+  "main": "lunar-mcpx-gateway.js",
+  "bin": {
+    "archon-mcpx": "./lunar-mcpx-gateway.js",
+    "unified-mcp": "./unified-mcp-server.js"
+  },
+  "scripts": {
+    "start": "node unified-mcp-server.js",
+    "start:mcpx": "node lunar-mcpx-gateway.js",
+    "dev": "node --watch unified-mcp-server.js",
+    "dev:mcpx": "node --watch lunar-mcpx-gateway.js",
+    "test": "node --test test/*.js",
+    "health-check": "node -e \"import('./unified-mcp-server.js').then(s => new s.default().checkSystemHealth())\"",
+    "mcpx-status": "node -e \"import('./lunar-mcpx-gateway.js').then(g => console.log('MCPX Config:', JSON.stringify(g.MCPX_CONFIG, null, 2)))\"",
+    "install-global": "npm install -g ."
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "lunar",
+    "mcpx",
+    "mcp-aggregation",
+    "claude-flow",
+    "flow-nexus", 
+    "serena",
+    "archon",
+    "ai-orchestration",
+    "sparc-methodology",
+    "server-management"
+  ],
+  "author": "Archon Project",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/archon"
+  },
+  "homepage": "https://github.com/ruvnet/archon#readme",
+  "bugs": {
+    "url": "https://github.com/ruvnet/archon/issues"
+  },
+  "mcpx": {
+    "gateway": "./lunar-mcpx-gateway.js",
+    "config": "./mcpx-config.json",
+    "controlPlane": {
+      "enabled": true,
+      "port": 8090
+    }
+  }
+}

@@ -1,0 +1,104 @@
+# Lunar MCPX Gateway Dockerfile
+# Multi-stage build for optimized production container
+
+FROM node:18-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    wget \
+    git \
+    python3 \
+    py3-pip \
+    make \
+    g++ \
+    bash \
+    net-tools \
+    lsof
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY src/package*.json ./
+
+# Install Node.js dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Create user for security
+RUN addgroup -g 1001 -S mcpx && \
+    adduser -S mcpx -u 1001 -G mcpx
+
+FROM base AS production
+
+# Copy application code
+COPY src/lunar-mcpx-gateway.js ./
+COPY src/mcpx-config.json ./
+COPY src/unified-mcp-config.json ./
+COPY scripts/start-lunar-mcpx.sh ./scripts/
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/.cache /app/.mcpx && \
+    chown -R mcpx:mcpx /app
+
+# Set executable permissions
+RUN chmod +x ./scripts/start-lunar-mcpx.sh && \
+    chmod +x ./lunar-mcpx-gateway.js
+
+# Install global dependencies that might be needed
+RUN npm install -g \
+    claude-flow@alpha \
+    serena@latest \
+    flow-nexus@latest
+
+# Health check script
+COPY <<EOF /health-check.sh
+#!/bin/bash
+set -e
+
+# Check if the MCPX gateway is responding
+if ! curl -f -s http://localhost:8090/health > /dev/null 2>&1; then
+    echo "MCPX Control Plane not responding"
+    exit 1
+fi
+
+# Check if main MCP interface is working
+if ! node -e "
+const fetch = require('node-fetch');
+fetch('http://localhost:8090/api/status')
+  .then(r => r.ok ? console.log('OK') : process.exit(1))
+  .catch(() => process.exit(1))
+" > /dev/null 2>&1; then
+    echo "MCPX API not responding"
+    exit 1
+fi
+
+echo "MCPX Gateway healthy"
+EOF
+
+RUN chmod +x /health-check.sh
+
+# Switch to non-root user
+USER mcpx
+
+# Expose ports
+EXPOSE 8090
+EXPOSE 8050
+
+# Environment variables
+ENV NODE_ENV=production \
+    MCPX_CONTROL_PLANE=true \
+    MCPX_DEBUG=false \
+    MCPX_CONFIG_FILE=/app/mcpx-config.json \
+    ARCHON_SERVER_HOST=archon-server \
+    ARCHON_SERVER_PORT=8181 \
+    CLAUDE_FLOW_ENABLED=true \
+    SERENA_ENABLED=true \
+    FLOW_NEXUS_ENABLED=true
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD /health-check.sh
+
+# Default command
+CMD ["node", "lunar-mcpx-gateway.js"]

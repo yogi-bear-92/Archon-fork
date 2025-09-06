@@ -1,0 +1,176 @@
+{
+  "name": "Archon-Lunar-MCPX",
+  "version": "1.0.0",
+  "description": "Lunar MCPX configuration for Archon project integration",
+  
+  "controlPlane": {
+    "enabled": true,
+    "port": 8090,
+    "webui": true,
+    "metrics": true,
+    "logging": "info"
+  },
+  
+  "servers": {
+    "archon-prp": {
+      "name": "Archon PRP System",
+      "transport": "http",
+      "baseUrl": "${ARCHON_SERVER_HOST:localhost}:${ARCHON_SERVER_PORT:8181}",
+      "healthEndpoint": "/health",
+      "mcpEndpoint": "/mcp",
+      "enabled": true,
+      "priority": 1,
+      "retries": 3,
+      "timeout": 10000,
+      "tags": ["archon", "prp", "rag"],
+      "env": {
+        "ARCHON_SERVER_PORT": "${ARCHON_SERVER_PORT:8181}"
+      },
+      "resources": [
+        { "name": "projects", "uri": "archon://projects/*" },
+        { "name": "tasks", "uri": "archon://tasks/*" },
+        { "name": "knowledge", "uri": "archon://knowledge/*" }
+      ],
+      "tools": [
+        "archon_project_create",
+        "archon_project_list", 
+        "archon_task_create",
+        "archon_task_update",
+        "archon_rag_query",
+        "archon_knowledge_store"
+      ]
+    },
+    
+    "archon-mcp": {
+      "name": "Archon MCP Service",
+      "transport": "http",
+      "baseUrl": "${ARCHON_MCP_HOST:localhost}:${ARCHON_MCP_PORT:8051}",
+      "healthEndpoint": "/health",
+      "mcpEndpoint": "/mcp",
+      "enabled": true,
+      "priority": 1,
+      "retries": 3,
+      "timeout": 8000,
+      "tags": ["archon", "mcp", "bridge"],
+      "tools": [
+        "archon_mcp_status",
+        "archon_mcp_tools_list",
+        "archon_mcp_resources_list"
+      ]
+    },
+    
+    "claude-flow": {
+      "name": "Claude Flow Orchestration",
+      "transport": "http",
+      "baseUrl": "${CLAUDE_FLOW_HOST:localhost}:${CLAUDE_FLOW_PORT:8053}",
+      "healthEndpoint": "/health",
+      "mcpEndpoint": "/mcp",
+      "enabled": true,
+      "priority": 2,
+      "retries": 2,
+      "timeout": 8000,
+      "tags": ["swarm", "orchestration", "sparc"],
+      "env": {
+        "CLAUDE_FLOW_MODE": "mcp",
+        "NODE_ENV": "production"
+      },
+      "tools": [
+        "claude_flow_sparc_execute",
+        "claude_flow_swarm_init",
+        "claude_flow_agent_spawn",
+        "claude_flow_task_orchestrate"
+      ]
+    },
+    
+    "serena": {
+      "name": "Serena Code Intelligence",
+      "transport": "sse",
+      "baseUrl": "${SERENA_HOST:localhost}:${SERENA_PORT:8054}",
+      "healthEndpoint": "/health",
+      "mcpEndpoint": "/sse",
+      "enabled": true,
+      "priority": 3,
+      "retries": 2,
+      "timeout": 6000,
+      "tags": ["code-intelligence", "semantic", "lsp"],
+      "env": {
+        "SERENA_MODE": "sse",
+        "SERENA_CACHE_SIZE": "50MB",
+        "SERENA_PORT": "8054"
+      },
+      "tools": [
+        "read_file",
+        "create_text_file",
+        "list_dir",
+        "find_file",
+        "replace_regex",
+        "search_for_pattern",
+        "get_symbols_overview",
+        "find_symbol",
+        "find_referencing_symbols"
+      ]
+    }
+  },
+  
+  "policies": {
+    "globalRateLimit": {
+      "requests": 100,
+      "window": 60000,
+      "burst": 10
+    },
+    "circuitBreaker": {
+      "errorThreshold": 5,
+      "timeout": 30000,
+      "halfOpenRequests": 3
+    },
+    "retry": {
+      "attempts": 3,
+      "backoff": "exponential",
+      "baseDelay": 1000
+    },
+    "timeout": {
+      "default": 10000,
+      "maximum": 30000
+    }
+  },
+  
+  "aggregation": {
+    "strategy": "priority-based",
+    "loadBalancing": "round-robin",
+    "failover": "automatic",
+    "healthCheck": {
+      "interval": 30000,
+      "timeout": 5000,
+      "retries": 3
+    }
+  },
+  
+  "monitoring": {
+    "metrics": {
+      "enabled": true,
+      "retention": "24h",
+      "export": {
+        "prometheus": false,
+        "json": true
+      }
+    },
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "destinations": ["console", "file"]
+    },
+    "tracing": {
+      "enabled": true,
+      "sampleRate": 0.1
+    }
+  },
+  
+  "docker": {
+    "enabled": false,
+    "network": "mcpx-network",
+    "volumes": {
+      "data": "/var/lib/mcpx/data",
+      "logs": "/var/lib/mcpx/logs"
+    }
+  }
+}
