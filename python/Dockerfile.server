@@ -24,8 +24,6 @@ WORKDIR /app
 
 # Install runtime dependencies for Playwright and Node.js
 RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
     wget \
     ca-certificates \
     fonts-liberation \
@@ -48,7 +46,7 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     curl \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -64,8 +62,15 @@ RUN playwright install chromium
 COPY src/server/ src/server/
 COPY src/__init__.py src/
 COPY tests/ tests/
-RUN npm install npx
-RUN npm install -g claude-flow@alpha
+
+# Install Claude Flow globally and verify installation
+RUN npm install -g claude-flow@alpha \
+    && npm list -g claude-flow \
+    && which node \
+    && which npm \
+    && which npx \
+    && node --version \
+    && npm --version
 
 # Set environment variables
 ENV PYTHONPATH="/app:$PYTHONPATH"
