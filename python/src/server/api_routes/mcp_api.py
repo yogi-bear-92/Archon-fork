@@ -667,13 +667,13 @@ async def save_configuration(config: ServerConfig):
 
 @router.get("/tools")
 async def get_mcp_tools():
-    """Get available MCP tools by querying the running MCP server's registered tools."""
+    """Get available MCP tools by communicating with the MCP server via MCP protocol."""
     with safe_span("api_get_mcp_tools") as span:
         safe_set_attribute(span, "endpoint", "/api/mcp/tools")
         safe_set_attribute(span, "method", "GET")
 
         try:
-            api_logger.info("Getting MCP tools from registered server instance")
+            api_logger.info("Getting MCP tools via MCP protocol client")
 
             # Check if server is running
             server_status = mcp_manager.get_status()
@@ -690,46 +690,43 @@ async def get_mcp_tools():
                     "message": "MCP server is not running. Start the server to see available tools.",
                 }
 
-            # SIMPLE DEBUG: Just check if we can see any tools at all
+            # Use proper MCP client to get tools
+            from ..services.mcp_client import get_mcp_client
+            
             try:
-                # Try to inspect the process to see what tools exist
-                api_logger.info("Debugging: Attempting to check MCP server tools")
-
-                # For now, just return the known modules info since server is registering them
-                # This will at least show the UI that tools exist while we debug the real issue
-                if is_running:
-                    return {
-                        "tools": [
-                            {
-                                "name": "debug_placeholder",
-                                "description": "MCP server is running and modules are registered, but tool introspection is not working yet",
-                                "module": "debug",
-                                "parameters": [],
-                            }
-                        ],
-                        "count": 1,
-                        "server_running": True,
-                        "source": "debug_placeholder",
-                        "message": "MCP server is running with 3 modules registered. Tool introspection needs to be fixed.",
-                    }
-                else:
+                mcp_client = await get_mcp_client()
+                tools_result = await mcp_client.list_tools()
+                
+                safe_set_attribute(span, "tools_count", tools_result["count"])
+                
+                if tools_result["error"]:
+                    api_logger.error(f"MCP client tools/list failed: {tools_result['error']}")
                     return {
                         "tools": [],
                         "count": 0,
-                        "server_running": False,
-                        "source": "server_not_running",
-                        "message": "MCP server is not running. Start the server to see available tools.",
+                        "server_running": True,
+                        "source": "mcp_error",
+                        "message": f"MCP tools/list failed: {tools_result['error']}",
                     }
+                
+                api_logger.info(f"Successfully retrieved {tools_result['count']} tools from MCP server")
+                
+                return {
+                    "tools": tools_result["tools"],
+                    "count": tools_result["count"],
+                    "server_running": True,
+                    "source": "mcp_protocol",
+                    "message": f"Retrieved {tools_result['count']} tools via MCP protocol",
+                }
 
             except Exception as e:
-                api_logger.error("Failed to debug MCP server tools", error=str(e))
-
+                api_logger.error(f"MCP client error: {str(e)}")
                 return {
                     "tools": [],
                     "count": 0,
                     "server_running": is_running,
-                    "source": "debug_error",
-                    "message": f"Debug failed: {str(e)}",
+                    "source": "mcp_client_error",
+                    "message": f"MCP client error: {str(e)}",
                 }
 
         except Exception as e:
