@@ -32,8 +32,6 @@ services:
       - app-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Docker socket for MCP container control
-      - ./python/src:/app/src # Mount source code for hot reload
-      - ./python/tests:/app/tests # Mount tests for UI test execution
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command:
@@ -46,7 +44,8 @@ services:
         "0.0.0.0",
         "--port",
         "${ARCHON_SERVER_PORT:-8181}",
-        "--reload",
+        "--workers",
+        "1",
       ]
     healthcheck:
       test:
@@ -151,7 +150,7 @@ services:
     ports:
       - "${ARCHON_UI_PORT:-3737}:3737"
     environment:
-      - VITE_API_URL=http://${HOST:-localhost}:${ARCHON_SERVER_PORT:-8181}
+      - VITE_API_URL=https://${HOST:-localhost}/api
       - VITE_ARCHON_SERVER_PORT=${ARCHON_SERVER_PORT:-8181}
       - ARCHON_SERVER_PORT=${ARCHON_SERVER_PORT:-8181}
       - HOST=${HOST:-localhost}

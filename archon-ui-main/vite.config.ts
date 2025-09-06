@@ -13,13 +13,27 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const env = loadEnv(mode, process.cwd(), '');
   
   // Get host and port from environment variables or use defaults
-  // For internal Docker communication, use the service name
-  // For external access, use the HOST from environment
-  const isDocker = process.env.DOCKER_ENV === 'true' || existsSync('/.dockerenv');
-  const internalHost = 'archon-server';  // Docker service name for internal communication
-  const externalHost = process.env.HOST || 'localhost';  // Host for external access
-  const host = isDocker ? internalHost : externalHost;
-  const port = process.env.ARCHON_SERVER_PORT || env.ARCHON_SERVER_PORT || '8181';
+  // Check if VITE_API_URL is provided (for external deployments)
+  let host, port, proxyTarget;
+  
+  // Use VITE_API_URL if available, otherwise fallback to constructed URL
+  const viteApiUrl = process.env.VITE_API_URL;
+  if (viteApiUrl && viteApiUrl !== 'https://localhost/api') {
+    // Remove /api suffix to get base URL for proxy
+    proxyTarget = viteApiUrl.replace('/api', '');
+    const url = new URL(proxyTarget);
+    host = url.hostname;
+    port = url.port || (url.protocol === 'https:' ? '443' : '80');
+  } else {
+    // Fallback to constructing from environment  
+    const isDocker = process.env.DOCKER_ENV === 'true' || existsSync('/.dockerenv');
+    const internalHost = 'archon-server';  // Docker service name for internal communication
+    const externalHost = process.env.HOST || '78.47.155.245';  // Use actual external IP
+    // Use external host when HOST is explicitly set (for remote server access)
+    host = (process.env.HOST && process.env.HOST !== 'localhost') ? externalHost : (isDocker ? internalHost : externalHost);
+    port = process.env.ARCHON_SERVER_PORT || env.ARCHON_SERVER_PORT || '8181';
+    proxyTarget = `http://${host}:${port}`;
+  }
   
   return {
     plugins: [
@@ -292,19 +306,24 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       })(),
       proxy: {
         '/api': {
-          target: `http://${host}:${port}`,
+          target: proxyTarget,
           changeOrigin: true,
           secure: false,
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
               console.log('🚨 [VITE PROXY ERROR]:', err.message);
-              console.log('🚨 [VITE PROXY ERROR] Target:', `http://${host}:${port}`);
+              console.log('🚨 [VITE PROXY ERROR] Target:', proxyTarget);
               console.log('🚨 [VITE PROXY ERROR] Request:', req.url);
             });
             proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log('🔄 [VITE PROXY] Forwarding:', req.method, req.url, 'to', `http://${host}:${port}${req.url}`);
+              console.log('🔄 [VITE PROXY] Forwarding:', req.method, req.url, 'to', `${proxyTarget}${req.url}`);
             });
           }
+        },
+        '/health': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
         }
       },
     },

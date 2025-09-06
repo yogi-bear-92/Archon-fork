@@ -56,7 +56,7 @@ export interface CodeExtractionSettings {
 import { getApiUrl } from "../config/api";
 
 class CredentialsService {
-  private baseUrl = getApiUrl();
+  private baseUrl = getApiUrl().replace('/api', ''); // Remove /api suffix to get base URL
 
   private handleCredentialError(error: any, context: string): Error {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -78,11 +78,43 @@ class CredentialsService {
   }
 
   async getAllCredentials(): Promise<Credential[]> {
-    const response = await fetch(`${this.baseUrl}/api/credentials`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch credentials");
+    // Add retry logic for initial page load timing issues
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`[CredentialsService] Attempt ${attempt}: Fetching credentials from ${this.baseUrl}/api/credentials`);
+        
+        const response = await fetch(`${this.baseUrl}/api/credentials`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        console.log(`[CredentialsService] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log(`[CredentialsService] Successfully loaded ${data.length} credentials`);
+        return data;
+        
+      } catch (error) {
+        console.error(`[CredentialsService] Attempt ${attempt} failed:`, error);
+        lastError = error as Error;
+        
+        // Wait before retry (except on last attempt)
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
     }
-    return response.json();
+    
+    throw new Error(`Failed to fetch credentials after 3 attempts: ${lastError?.message}`);
   }
 
   async getCredentialsByCategory(category: string): Promise<Credential[]> {
