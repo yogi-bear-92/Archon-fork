@@ -12,10 +12,10 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.client_manager import get_supabase_client
-from ..services.url_detection_service import get_url_detection_service
-from ..agents.url_decision_agent import get_url_decision_agent
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.client_manager import get_supabase_client
+from src.server.services.url_detection_service import get_url_detection_service
+from src.server.agents.url_decision_agent import get_url_decision_agent
 
 logger = get_logger(__name__)
 

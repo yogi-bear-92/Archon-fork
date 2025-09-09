@@ -14,9 +14,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 # Import logging
-from ..config.logfire_config import logfire
-from ..services.credential_service import credential_service, initialize_credentials
-from ..utils import get_supabase_client
+from src.server.config.logfire_config import logfire
+from src.server.services.credential_service import credential_service, initialize_credentials
+from src.server.utils import get_supabase_client
 
 router = APIRouter(prefix="/api", tags=["settings"])
 

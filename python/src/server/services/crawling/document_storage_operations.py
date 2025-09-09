@@ -9,11 +9,11 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from ...config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
-from ..source_management_service import extract_source_summary, update_source_info
-from ..storage.document_storage_service import add_documents_to_supabase
-from ..storage.storage_services import DocumentStorageService
-from ..ai_tag_generation_service import get_ai_tag_service
+from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from src.server.services.source_management_service import extract_source_summary, update_source_info
+from src.server.services.storage.document_storage_service import add_documents_to_supabase
+from src.server.services.storage.storage_services import DocumentStorageService
+from src.server.services.ai_tag_generation_service import get_ai_tag_service
 from .code_extraction_service import CodeExtractionService
 
 logger = get_logger(__name__)

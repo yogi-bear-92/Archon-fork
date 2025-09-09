@@ -273,7 +273,6 @@ app.include_router(interactive_task_router)
 app.include_router(github_integration_router)
 app.include_router(mcp_proxy_router)
 
-
 # Root endpoint
 @app.get("/")
 async def root():

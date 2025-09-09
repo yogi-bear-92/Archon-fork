@@ -18,9 +18,9 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.llm_provider_service import get_llm_client
-from ..unified_archon_mcp import ArchonMCPCoordinator
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.llm_provider_service import get_llm_client
+from src.server.unified_archon_mcp import ArchonMCPCoordinator
 from .task_detection_service import TaskCandidate, TaskDetectionResult, get_task_detection_service
 
 logger = get_logger(__name__)

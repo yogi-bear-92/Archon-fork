@@ -11,8 +11,8 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from ..services.serena_coordination_hooks import serena_coordination_hooks, CoordinationLevel, HookPhase
-from ..config.logfire_config import get_logger
+from src.server.services.serena_coordination_hooks import serena_coordination_hooks, CoordinationLevel, HookPhase
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -40,7 +40,7 @@ class TaskContextModel(BaseModel):
 
 class CoordinationLevelModel(BaseModel):
     """Model for coordination level specification."""
-    level: str = Field(..., regex="^(individual|pairwise|group|swarm|ecosystem)$")
+    level: str = Field(..., pattern="^(individual|pairwise|group|swarm|ecosystem)$")
 
 
 class WorkflowDefinitionModel(BaseModel):
@@ -553,8 +553,8 @@ async def get_hooks_system_status() -> Dict[str, Any]:
 )
 async def export_coordination_data(
     export_path: str,
-    include_sensitive: bool = False,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    include_sensitive: bool = False
 ) -> Dict[str, Any]:
     """Export coordination data for analysis or backup."""
     try:
@@ -618,8 +618,8 @@ async def cleanup_task_resources(task_id: str) -> Dict[str, Any]:
     description="Manually trigger system optimization"
 )
 async def trigger_manual_optimization(
-    optimization_scope: str = "comprehensive",
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    optimization_scope: str = "comprehensive"
 ) -> Dict[str, Any]:
     """Manually trigger system optimization."""
     try:
@@ -725,7 +725,7 @@ async def handle_task_event_webhook(
 async def _execute_pre_task_preparation(task_context: Dict[str, Any]):
     """Background task for pre-task preparation."""
     try:
-        from ..services.serena_coordination_hooks import CoordinationLevel
+        from src.server.services.serena_coordination_hooks import CoordinationLevel
         
         result = await serena_coordination_hooks.pre_task_semantic_preparation(
             task_context=task_context,

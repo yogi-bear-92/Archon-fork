@@ -14,7 +14,7 @@ from datetime import datetime
 from .claude_flow_service import claude_flow_service
 from .projects.task_service import TaskService
 from .projects.project_service import ProjectService
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

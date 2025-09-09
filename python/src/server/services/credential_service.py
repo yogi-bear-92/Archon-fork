@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from supabase import Client, create_client
 
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

@@ -7,7 +7,7 @@ These services extend the base storage functionality with specific implementatio
 
 from typing import Any
 
-from ...config.logfire_config import get_logger, safe_span
+from src.server.config.logfire_config import get_logger, safe_span
 from .base_storage_service import BaseStorageService
 from .document_storage_service import add_documents_to_supabase
 
@@ -110,7 +110,7 @@ class DocumentStorageService(BaseStorageService):
                 url_to_full_document = {doc_url: file_content}
 
                 # Update source information
-                from ..source_management_service import extract_source_summary, update_source_info
+                from src.server.services.source_management_service import extract_source_summary, update_source_info
 
                 source_summary = await extract_source_summary(source_id, file_content[:5000])
 

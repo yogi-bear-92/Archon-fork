@@ -14,9 +14,9 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
 from .task_detection_service import get_task_detection_service
-from ..unified_archon_mcp import ArchonMCPCoordinator
+from src.server.unified_archon_mcp import ArchonMCPCoordinator
 from .client_manager import get_supabase_client
 
 logger = get_logger(__name__)

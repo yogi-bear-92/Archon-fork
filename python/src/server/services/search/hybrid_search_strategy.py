@@ -15,8 +15,8 @@ from typing import Any
 
 from supabase import Client
 
-from ...config.logfire_config import get_logger, safe_span
-from ..embeddings.embedding_service import create_embedding
+from src.server.config.logfire_config import get_logger, safe_span
+from src.server.services.embeddings.embedding_service import create_embedding
 from .keyword_extractor import build_search_terms, extract_keywords
 
 logger = get_logger(__name__)

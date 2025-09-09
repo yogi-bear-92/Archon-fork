@@ -9,8 +9,8 @@ fast access during agent operations.
 # Removed direct logging import - using unified config
 from datetime import datetime
 
-from ..config.logfire_config import get_logger
-from ..utils import get_supabase_client
+from src.server.config.logfire_config import get_logger
+from src.server.utils import get_supabase_client
 
 logger = get_logger(__name__)
 

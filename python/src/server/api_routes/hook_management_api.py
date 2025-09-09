@@ -10,8 +10,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.hook_integration_service import get_hook_integration_service, HookExecutionResult
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.hook_integration_service import get_hook_integration_service, HookExecutionResult
 
 logger = get_logger(__name__)
 

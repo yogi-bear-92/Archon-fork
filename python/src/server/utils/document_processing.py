@@ -31,7 +31,7 @@ try:
 except ImportError:
     DOCX_AVAILABLE = False
 
-from ..config.logfire_config import get_logger, logfire
+from src.server.config.logfire_config import get_logger, logfire
 
 logger = get_logger(__name__)
 

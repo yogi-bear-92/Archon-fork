@@ -115,9 +115,6 @@ async def ruv_swarm_spawn(**kwargs):
     """Spawn Ruv Swarm agents via wrapped MCP"""
     return await mcp_discovery_service.call_tool("ruv-swarm__agent_spawn", kwargs)
 
-async def flow_nexus_deploy(**kwargs):
-    """Deploy via Flow Nexus wrapped MCP"""
-    return await mcp_discovery_service.call_tool("flow-nexus__deploy", kwargs)
 
 async def serena_analyze(**kwargs):
     """Analyze code via Serena wrapped MCP"""

@@ -18,21 +18,21 @@ from pydantic import BaseModel
 
 # Removed direct logging import - using unified config
 # Set up standard logger for background tasks
-from ..config.logfire_config import get_logger, logfire
-from ..utils import get_supabase_client
-from ..utils.etag_utils import check_etag, generate_etag
+from src.server.config.logfire_config import get_logger, logfire
+from src.server.utils import get_supabase_client
+from src.server.utils.etag_utils import check_etag, generate_etag
 
 logger = get_logger(__name__)
 
 # Service imports
-from ..services.projects import (
+from src.server.services.projects import (
     ProjectCreationService,
     ProjectService,
     SourceLinkingService,
     TaskService,
 )
-from ..services.projects.document_service import DocumentService
-from ..services.projects.versioning_service import VersioningService
+from src.server.services.projects.document_service import DocumentService
+from src.server.services.projects.versioning_service import VersioningService
 
 # Using HTTP polling for real-time updates
 
@@ -399,7 +399,7 @@ async def update_project(project_id: str, request: UpdateProjectRequest):
         # Create version snapshots for JSONB fields before updating
         if update_fields:
             try:
-                from ..services.projects.versioning_service import VersioningService
+                from src.server.services.projects.versioning_service import VersioningService
 
                 versioning_service = VersioningService(supabase_client)
 

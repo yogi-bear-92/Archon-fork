@@ -13,20 +13,6 @@
     "timeout": 10,
     "transport": "stdio"
   },
-  "flow-nexus": {
-    "args": [
-      "flow-nexus@latest",
-      "mcp",
-      "start"
-    ],
-    "auto_start": true,
-    "command": "npx",
-    "health_check_interval": 30,
-    "name": "flow-nexus",
-    "retry_attempts": 3,
-    "timeout": 10,
-    "transport": "stdio"
-  },
   "ruv-swarm": {
     "args": [
       "ruv-swarm",

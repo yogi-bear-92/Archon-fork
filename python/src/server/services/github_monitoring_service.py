@@ -23,8 +23,8 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.llm_provider_service import get_llm_client
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.llm_provider_service import get_llm_client
 from .client_manager import get_supabase_client
 
 logger = get_logger(__name__)

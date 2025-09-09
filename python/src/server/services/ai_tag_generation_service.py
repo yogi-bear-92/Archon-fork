@@ -8,7 +8,7 @@ This service analyzes content and suggests appropriate tags for better discovera
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
 from .llm_provider_service import get_llm_client
 
 logger = get_logger(__name__)

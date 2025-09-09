@@ -10,9 +10,9 @@ from urllib.parse import urldefrag
 
 from crawl4ai import CacheMode, CrawlerRunConfig
 
-from ....config.logfire_config import get_logger
-from ...credential_service import credential_service
-from ..helpers.url_handler import URLHandler
+from src.server.config.logfire_config import get_logger
+from src.server.services.credential_service import credential_service
+from src.server.services.crawling.helpers.url_handler import URLHandler
 
 logger = get_logger(__name__)
 

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from datetime import datetime
 
-from ..config.logfire_config import api_logger
+from src.server.config.logfire_config import api_logger
 
 logger = logging.getLogger(__name__)
 

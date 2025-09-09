@@ -288,7 +288,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         const hostFromEnv = (process.env.HOST ?? env.HOST) && (process.env.HOST ?? env.HOST) !== 'localhost' 
           ? [process.env.HOST ?? env.HOST] 
           : [];
-        return [...new Set([...defaultHosts, ...hostFromEnv, ...customHosts])];
+        const ngrokHosts = ['a029ec602fb1.ngrok-free.app'];
+        return [...new Set([...defaultHosts, ...hostFromEnv, ...customHosts, ...ngrokHosts])];
       })(),
       proxy: {
         '/api': {

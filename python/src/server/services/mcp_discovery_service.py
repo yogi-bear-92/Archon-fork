@@ -78,13 +78,6 @@ class MCPAutoDiscoveryService:
                 transport="stdio",
                 auto_start=True
             ),
-            "flow-nexus": MCPServerConfig(
-                name="flow-nexus",
-                command="npx", 
-                args=["flow-nexus@latest", "mcp", "start"],
-                transport="stdio",
-                auto_start=True
-            ),
             "serena": MCPServerConfig(
                 name="serena",
                 command="uvx",

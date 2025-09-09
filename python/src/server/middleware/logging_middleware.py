@@ -12,7 +12,7 @@ from fastapi import Request, Response
 from fastapi.routing import APIRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..config.logfire_config import LOGFIRE_AVAILABLE, get_logger, is_logfire_enabled
+from src.server.config.logfire_config import LOGFIRE_AVAILABLE, get_logger, is_logfire_enabled
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

@@ -9,8 +9,8 @@ from typing import Any
 
 from crawl4ai import CacheMode, CrawlerRunConfig
 
-from ....config.logfire_config import get_logger
-from ...credential_service import credential_service
+from src.server.config.logfire_config import get_logger
+from src.server.services.credential_service import credential_service
 
 logger = get_logger(__name__)
 

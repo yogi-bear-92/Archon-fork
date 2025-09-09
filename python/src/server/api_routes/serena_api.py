@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional, Union
 import logging
 
-from ..config.logfire_config import get_logger
-from ..services.serena_service import serena_service
+from src.server.config.logfire_config import get_logger
+from src.server.services.serena_service import serena_service
 
 logger = get_logger(__name__)
 

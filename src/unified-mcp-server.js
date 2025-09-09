@@ -46,12 +46,6 @@ const SERVICES = {
     port: 8054,
     prefix: 'serena_',
     description: 'Code Intelligence and Semantic Analysis'
-  },
-  flowNexus: {
-    name: 'Flow-Nexus',
-    port: 8051, // Current port, will migrate to 8056
-    prefix: 'flow_nexus_',
-    description: 'Workflow Automation and Pipeline Management'
   }
 };
 
@@ -376,8 +370,6 @@ class UnifiedMCPServer {
           return await this.handleClaudeFlowTool(name, args);
         } else if (name.startsWith('serena_')) {
           return await this.handleSerenaTool(name, args);
-        } else if (name.startsWith('flow_nexus_')) {
-          return await this.handleFlowNexusTool(name, args);
         } else {
           throw new Error(`Unknown tool: ${name}`);
         }
@@ -539,17 +531,6 @@ class UnifiedMCPServer {
     };
   }
 
-  async handleFlowNexusTool(name, args) {
-    // Flow-Nexus integration (placeholder - would integrate with actual Flow-Nexus MCP)
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Flow-Nexus tool ${name} executed with args: ${JSON.stringify(args)}`,
-        },
-      ],
-    };
-  }
 
   async setupProject(args) {
     const { projectName, services = [], sparkMode = 'tdd' } = args;

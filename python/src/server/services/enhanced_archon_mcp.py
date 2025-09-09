@@ -231,7 +231,7 @@ class EnhancedArchonMCPHandler:
             if archon_project_id and swarm_result.get("success"):
                 try:
                     # Import here to avoid circular imports
-                    from ..unified_archon_mcp import create_task
+                    from src.server.unified_archon_mcp import create_task
                     
                     await create_task(
                         project_id=archon_project_id,
@@ -265,7 +265,7 @@ class EnhancedArchonMCPHandler:
             # If Archon task ID provided, update task status
             if archon_task_id and spawn_result.get("success"):
                 try:
-                    from ..unified_archon_mcp import update_task
+                    from src.server.unified_archon_mcp import update_task
                     
                     await update_task(
                         task_id=archon_task_id,

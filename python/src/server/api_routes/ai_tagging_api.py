@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
-from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
-from ..services.ai_tagging_background_service import get_ai_tagging_background_service
-from ..services.ai_tag_generation_service import get_ai_tag_service
+from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from src.server.services.ai_tagging_background_service import get_ai_tagging_background_service
+from src.server.services.ai_tag_generation_service import get_ai_tag_service
 
 logger = get_logger(__name__)
 
@@ -216,7 +216,7 @@ async def get_ai_tagging_status() -> Dict[str, Any]:
         sources_without_ai = await ai_tagging_service.get_sources_without_ai_tags()
         
         # Get total sources count
-        from ..services.client_manager import get_supabase_client
+        from src.server.services.client_manager import get_supabase_client
         supabase = get_supabase_client()
         total_sources_response = supabase.table("archon_sources").select("source_id", count="exact").execute()
         total_sources = total_sources_response.count or 0

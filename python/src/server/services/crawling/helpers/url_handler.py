@@ -8,7 +8,7 @@ import hashlib
 import re
 from urllib.parse import urlparse
 
-from ....config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

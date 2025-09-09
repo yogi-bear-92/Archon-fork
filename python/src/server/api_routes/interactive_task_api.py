@@ -11,8 +11,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.interactive_task_service import get_interactive_task_service
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.interactive_task_service import get_interactive_task_service
 
 logger = get_logger(__name__)
 

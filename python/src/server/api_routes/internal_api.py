@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from ..services.credential_service import credential_service
+from src.server.services.credential_service import credential_service
 
 logger = logging.getLogger(__name__)
 

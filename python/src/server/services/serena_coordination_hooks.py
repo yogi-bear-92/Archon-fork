@@ -27,7 +27,7 @@ import hashlib
 import pickle
 from contextlib import asynccontextmanager
 
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 from .claude_flow_service import claude_flow_service
 from .claude_flow_task_integration import claude_flow_task_integration
 from .ai_tagging_background_service import get_ai_tagging_background_service
@@ -131,9 +131,9 @@ class SerenaCoordinationHooks:
             
     def _start_background_tasks(self):
         """Start background monitoring tasks."""
-        asyncio.create_task(self._memory_sync_daemon())
-        asyncio.create_task(self._performance_monitor_daemon())
-        asyncio.create_task(self._cleanup_daemon())
+        # Don't start background tasks during module import
+        # They will be started when the FastAPI app starts
+        pass
 
     # ========================================================================
     # PRE-TASK HOOKS: Semantic Analysis Preparation

@@ -11,7 +11,7 @@ from typing import Any
 
 from src.server.utils import get_supabase_client
 
-from ...config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -144,7 +144,7 @@ class ProjectCreationService:
         """
         try:
             # Check if LLM provider is configured
-            from ..credential_service import credential_service
+            from src.server.services.credential_service import credential_service
             provider_config = await credential_service.get_active_provider("llm")
 
             if not provider_config:
@@ -152,7 +152,7 @@ class ProjectCreationService:
                 return False
 
             # Import DocumentAgent (lazy import to avoid startup issues)
-            from ...agents.document_agent import DocumentAgent
+            from src.server.agents.document_agent import DocumentAgent
 
 
 

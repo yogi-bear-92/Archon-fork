@@ -65,13 +65,6 @@ const GATEWAY_CONFIG = {
       priority: 3,
       rateLimit: 40,
       tools: ['serena_analyze_code', 'serena_semantic_search']
-    },
-    flowNexus: {
-      name: 'Flow-Nexus Workflows',
-      port: 8051,
-      priority: 4,
-      rateLimit: 20,
-      tools: ['flow_nexus_pipeline_create', 'flow_nexus_workflow_execute']
     }
   }
 };

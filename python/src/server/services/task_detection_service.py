@@ -14,8 +14,8 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.llm_provider_service import get_llm_client
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.llm_provider_service import get_llm_client
 from .client_manager import get_supabase_client
 
 logger = get_logger(__name__)
@@ -256,7 +256,7 @@ IMPORTANT: Only detect genuine actionable work items. Avoid creating tasks for:
             
             try:
                 # Import here to avoid circular imports
-                from ..unified_archon_mcp import ArchonMCPCoordinator
+                from src.server.unified_archon_mcp import ArchonMCPCoordinator
                 coordinator = ArchonMCPCoordinator()
                 
                 for task in detection_result.tasks:
@@ -365,7 +365,7 @@ IMPORTANT: Only detect genuine actionable work items. Avoid creating tasks for:
         """Detect the current project context."""
         try:
             # Import here to avoid circular imports
-            from ..unified_archon_mcp import ArchonMCPCoordinator
+            from src.server.unified_archon_mcp import ArchonMCPCoordinator
             coordinator = ArchonMCPCoordinator()
             
             # Get recent projects

@@ -8,7 +8,7 @@ This service can be used to retroactively add AI tags to content that was crawle
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
 from .ai_tag_generation_service import get_ai_tag_service
 from .client_manager import get_supabase_client
 

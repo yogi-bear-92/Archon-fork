@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
 import logging
 
-from ..config.logfire_config import get_logger
-from ..services.claude_flow_service import claude_flow_service
+from src.server.config.logfire_config import get_logger
+from src.server.services.claude_flow_service import claude_flow_service
 
 logger = get_logger(__name__)
 

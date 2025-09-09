@@ -10,8 +10,8 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from ..services.mcp_discovery_service import mcp_discovery_service, MCPServerConfig, MCPTool, MCPServerStatus
-from ..services.cli_tool_discovery_service import cli_discovery_service, CLIToolConfig, CLICommand, CLIToolStatus
+from src.server.services.mcp_discovery_service import mcp_discovery_service, MCPServerConfig, MCPTool, MCPServerStatus
+from src.server.services.cli_tool_discovery_service import cli_discovery_service, CLIToolConfig, CLICommand, CLIToolStatus
 
 logger = logging.getLogger(__name__)
 

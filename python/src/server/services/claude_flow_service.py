@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

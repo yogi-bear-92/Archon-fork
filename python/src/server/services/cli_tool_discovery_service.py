@@ -142,25 +142,6 @@ class CLIToolDiscoveryService:
                     }
                 }
             ),
-            "flow-nexus": CLIToolConfig(
-                name="flow-nexus",
-                command="npx",
-                args=["flow-nexus@latest"],
-                help_command=["--help"],
-                description="AI-powered development platform",
-                available_commands={
-                    "deploy": {
-                        "description": "Deploy AI agents and workflows",
-                        "usage": "deploy <workflow>",
-                        "options": {}
-                    },
-                    "orchestrate": {
-                        "description": "Orchestrate multi-agent workflows",
-                        "usage": "orchestrate <task>",
-                        "options": {}
-                    }
-                }
-            )
         }
         
     async def start(self):

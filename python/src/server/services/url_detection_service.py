@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
 from .client_manager import get_supabase_client
 from .mcp_service_client import MCPServiceClient
 

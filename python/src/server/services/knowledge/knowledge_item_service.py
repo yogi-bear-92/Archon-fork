@@ -6,7 +6,7 @@ Handles all knowledge item CRUD operations and data transformations.
 
 from typing import Any
 
-from ...config.logfire_config import safe_logfire_error, safe_logfire_info
+from src.server.config.logfire_config import safe_logfire_error, safe_logfire_info
 
 
 class KnowledgeItemService:

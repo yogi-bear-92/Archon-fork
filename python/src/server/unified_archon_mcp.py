@@ -34,7 +34,7 @@ from config.logfire_config import get_logger
 from services.serena_service import serena_service
 from services.claude_flow_service import claude_flow_service
 from services.url_detection_service import get_url_detection_service
-from agents.url_decision_agent import get_url_decision_agent, URLDecisionContext
+from .agents.url_decision_agent import get_url_decision_agent, URLDecisionContext
 from services.cli_tool_discovery_service import cli_discovery_service
 
 logger = get_logger(__name__)

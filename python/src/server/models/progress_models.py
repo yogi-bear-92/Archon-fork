@@ -232,14 +232,14 @@ def create_progress_response(
     try:
         # Debug logging for code extraction fields
         if operation_type == "crawl" and "completed_summaries" in progress_data:
-            from ..config.logfire_config import get_logger
+            from src.server.config.logfire_config import get_logger
             logger = get_logger(__name__)
             logger.info(f"Code extraction progress fields present: completed_summaries={progress_data.get('completed_summaries')}, total_summaries={progress_data.get('total_summaries')}")
         
         return model_class(**progress_data)
     except Exception as e:
         # Log validation errors for debugging
-        from ..config.logfire_config import get_logger
+        from src.server.config.logfire_config import get_logger
         logger = get_logger(__name__)
         logger.error(f"Failed to create {model_class.__name__}: {e}", exc_info=True)
         

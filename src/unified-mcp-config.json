@@ -56,19 +56,6 @@
         "serena_refactor_suggest",
         "serena_lsp_diagnostics"
       ]
-    },
-    "flowNexus": {
-      "name": "Flow-Nexus Workflows",
-      "enabled": true,
-      "currentPort": 8051,
-      "targetPort": 8056,
-      "migration": true,
-      "description": "Workflow Automation and Pipeline Management",
-      "tools": [
-        "flow_nexus_pipeline_create",
-        "flow_nexus_workflow_execute",
-        "flow_nexus_automation_setup"
-      ]
     }
   },
   "routing": {

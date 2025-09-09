@@ -13,8 +13,8 @@ from fastapi import APIRouter, HTTPException, Request, Depends, Header
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from ..services.github_monitoring_service import GitHubMonitoringService, get_github_monitoring_service
-from ..unified_archon_mcp import ArchonMCPCoordinator
+from src.server.services.github_monitoring_service import GitHubMonitoringService, get_github_monitoring_service
+from src.server.unified_archon_mcp import ArchonMCPCoordinator
 
 
 class GitHubRepoConfig(BaseModel):

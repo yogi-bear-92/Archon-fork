@@ -12,9 +12,9 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.llm_provider_service import get_llm_client
-from ..services.url_detection_service import URLAnalysis
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.llm_provider_service import get_llm_client
+from src.server.services.url_detection_service import URLAnalysis
 
 logger = get_logger(__name__)
 

@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..config.logfire_config import get_logger, safe_span, safe_set_attribute
-from ..services.url_detection_service import get_url_detection_service
+from src.server.config.logfire_config import get_logger, safe_span, safe_set_attribute
+from src.server.services.url_detection_service import get_url_detection_service
 
 logger = get_logger(__name__)
 

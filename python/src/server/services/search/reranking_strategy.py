@@ -19,7 +19,7 @@ except ImportError:
     CrossEncoder = None
     CROSSENCODER_AVAILABLE = False
 
-from ...config.logfire_config import get_logger, safe_span
+from src.server.config.logfire_config import get_logger, safe_span
 
 logger = get_logger(__name__)
 
