@@ -210,9 +210,9 @@ class RecursiveCrawlStrategy:
                     urls=transformed_batch_urls, config=run_config
                 )
 
-                # Handle streaming results from arun_many
+                # Handle results from arun_many (returns a list, not async iterator)
                 i = 0
-                async for result in batch_results:
+                for result in batch_results:
                     # Check for cancellation during streaming results
                     if cancellation_check:
                         try:

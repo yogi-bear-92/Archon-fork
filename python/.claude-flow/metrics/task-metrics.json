@@ -1,10 +1,10 @@
 [
   {
-    "id": "cmd-status-1757418510308",
-    "type": "status",
+    "id": "cmd-mcp-1757640065611",
+    "type": "mcp",
     "success": true,
-    "duration": 1.1850829999999917,
-    "timestamp": 1757418510309,
+    "duration": 0.9039579999999887,
+    "timestamp": 1757640065612,
     "metadata": {}
   }
 ]

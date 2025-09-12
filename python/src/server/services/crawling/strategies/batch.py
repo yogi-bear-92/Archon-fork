@@ -179,8 +179,8 @@ class BatchCrawlStrategy:
                 urls=batch_urls, config=crawl_config
             )
 
-            # Handle streaming results
-            async for result in batch_results:
+            # Handle results from arun_many (returns a list, not async iterator)
+            for result in batch_results:
                 # Check for cancellation during streaming
                 if cancellation_check:
                     try:
