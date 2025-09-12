@@ -20,6 +20,10 @@ logger = get_logger(__name__)
 _settings_cache: dict[str, tuple[Any, float]] = {}
 _CACHE_TTL_SECONDS = 300  # 5 minutes
 
+# Client cache for connection reuse - prevents excessive client creation
+_client_cache: dict[str, tuple[openai.AsyncOpenAI, float]] = {}
+_CLIENT_CACHE_TTL_SECONDS = 1800  # 30 minutes - longer than settings cache
+
 
 def _get_cached_settings(key: str) -> Any | None:
     """Get cached settings if not expired."""
@@ -36,6 +40,23 @@ def _get_cached_settings(key: str) -> Any | None:
 def _set_cached_settings(key: str, value: Any) -> None:
     """Cache settings with current timestamp."""
     _settings_cache[key] = (value, time.time())
+
+
+def _get_cached_client(client_key: str) -> openai.AsyncOpenAI | None:
+    """Get cached client if not expired."""
+    if client_key in _client_cache:
+        client, timestamp = _client_cache[client_key]
+        if time.time() - timestamp < _CLIENT_CACHE_TTL_SECONDS:
+            return client
+        else:
+            # Expired, remove from cache
+            del _client_cache[client_key]
+    return None
+
+
+def _set_cached_client(client_key: str, client: openai.AsyncOpenAI) -> None:
+    """Cache client with current timestamp."""
+    _client_cache[client_key] = (client, time.time())
 
 
 @asynccontextmanager
@@ -91,6 +112,16 @@ async def get_llm_client(provider: str | None = None, use_embedding_provider: bo
             api_key = provider_config["api_key"]
             base_url = provider_config["base_url"]
 
+        # Create client cache key based on provider configuration
+        client_key = f"{provider_name}:{base_url or 'default'}:{service_type if not provider else 'explicit'}"
+        
+        # Check if we have a cached client
+        cached_client = _get_cached_client(client_key)
+        if cached_client:
+            logger.debug(f"Reusing cached LLM client for provider: {provider_name}")
+            yield cached_client
+            return
+
         logger.info(f"Creating LLM client for provider: {provider_name}")
 
         if provider_name == "openai":
@@ -120,6 +151,9 @@ async def get_llm_client(provider: str | None = None, use_embedding_provider: bo
 
         else:
             raise ValueError(f"Unsupported LLM provider: {provider_name}")
+
+        # Cache the newly created client
+        _set_cached_client(client_key, client)
 
         yield client
 
