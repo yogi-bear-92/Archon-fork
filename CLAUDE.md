@@ -1,45 +1,42 @@
 # ULTIMATE INTEGRATED AI DEVELOPMENT PLATFORM
-## Archon PRP + Serena + Claude Flow + Memory-Optimized Coordination
+## Archon PRP + Serena + Claude Flow + Auto-Scaling Coordination
 
-## 🚨 CRITICAL: CONCURRENT EXECUTION & MEMORY MANAGEMENT
+## 🚨 CRITICAL: CONCURRENT EXECUTION & CLAUDE FLOW AUTO-SCALING
 
 **ABSOLUTE RULES FOR ARCHON INTEGRATION:**
 1. ALL operations MUST be concurrent/parallel in a single message
-2. **MEMORY-AWARE SCALING**: Auto-adapt agent count based on system memory (current: 133MB available)
+2. **CLAUDE FLOW AUTO-SCALING**: Let Claude Flow handle all memory and resource management automatically
 3. **NEVER save working files to root folder** - use proper subdirectories
 4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently with Archon coordination
-5. **ARCHON PRP INTEGRATION**: Progressive refinement with streaming and memory constraints
+5. **ARCHON PRP INTEGRATION**: Progressive refinement with automated optimization
 
-### ⚡ GOLDEN RULE: "1 MESSAGE = ALL OPERATIONS + MEMORY MONITORING + ARCHON PRP"
+### ⚡ GOLDEN RULE: "1 MESSAGE = ALL OPERATIONS + ARCHON PRP + AUTO-SCALING"
 
 **MANDATORY ARCHON-OPTIMIZED PATTERNS:**
-- **Memory Check FIRST**: Always verify resources before agent spawning (133MB = LIMITED MODE)
-- **TodoWrite**: Adaptive batching based on memory (3-15 todos for current 133MB)
+- **TodoWrite**: Batch all todos efficiently (Claude Flow handles sizing)
 - **Task tool**: Spawn ALL agents in ONE message with Archon coordination hooks
-- **File operations**: Stream all operations >10MB with immediate cleanup
+- **File operations**: Standard operations with Claude Flow optimization
 - **Archon Integration**: Use PRP cycles with semantic analysis and progressive refinement
-- **Serena Coordination**: Semantic analysis with intelligent caching (25MB limit)
+- **Serena Coordination**: Semantic analysis with intelligent caching
 
 ### 🎯 CRITICAL: Claude Code Task Tool + Archon PRP Integration
 
 **Claude Code Task tool is PRIMARY for Archon agent execution:**
 ```javascript
-// ✅ CORRECT: Use Claude Code Task + Archon PRP coordination
-[Single Message - Memory-Aware Archon Integration]:
-  // Step 1: Check available memory and scale agents accordingly
-  Bash "vm_stat | grep 'Pages free' | awk '{print $3}' | sed 's/\.//' | awk '{print ($1 * 4096 / 1024 / 1024) \" MB\"}'"
+// ✅ CORRECT: Use Claude Code Task + Archon PRP coordination with auto-scaling
+[Single Message - Auto-Scaling Archon Integration]:
   
-  // Step 2: Initialize Archon PRP with memory constraints
-  mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 3, memoryLimit: "100MB" }
+  // Step 1: Initialize Archon PRP with Claude Flow auto-scaling
+  mcp__claude-flow__swarm_init { topology: "hierarchical", autoScale: true, archonIntegration: true }
   
-  // Step 3: Spawn agents via Claude Code with Archon coordination
-  Task("Archon Research Agent", "Use Serena semantic analysis + Archon PRP specification phase. Memory limit 25MB cache.", "researcher")
-  Task("Archon Development Agent", "Implement with progressive refinement cycles. Use streaming for large operations.", "coder")
-  Task("Archon Validation Agent", "Test with semantic analysis and memory monitoring. Progressive validation.", "tester")
+  // Step 2: Spawn agents via Claude Code with Archon coordination
+  Task("Archon Research Agent", "Use Serena semantic analysis + Archon PRP specification phase. Auto-scaling enabled.", "researcher")
+  Task("Archon Development Agent", "Implement with progressive refinement cycles. Claude Flow handles optimization.", "coder")
+  Task("Archon Validation Agent", "Test with semantic analysis. Claude Flow manages resources.", "tester")
   
-  // Step 4: Batch all todos with memory awareness
+  // Step 3: Batch all todos (Claude Flow handles sizing)
   TodoWrite { todos: [
-    {id: "1", content: "Memory monitoring active (133MB)", status: "in_progress", priority: "critical"},
+    {id: "1", content: "Auto-scaling coordination active", status: "in_progress", priority: "critical"},
     {id: "2", content: "Archon PRP specification phase", status: "in_progress", priority: "high"},
     {id: "3", content: "Progressive refinement cycles", status: "pending", priority: "high"}
   ]}
@@ -53,9 +50,9 @@
 - `/docs` - Progressive refinement documentation
 - `/config` - Archon and Serena configurations
 - `/scripts` - Archon PRP automation scripts
-- `/.archon-prp` - Progressive refinement data (compressed)
-- `/.serena-cache` - Semantic analysis cache (auto-cleanup)
-- `/.claude-flow` - Coordination metrics (streaming)
+- `/.archon-prp` - Progressive refinement data
+- `/.serena-cache` - Semantic analysis cache
+- `/.claude-flow` - Coordination metrics
 
 ## 🔄 ARCHON GIT CHECKPOINT INTEGRATION
 
@@ -70,7 +67,6 @@ git config --local claude-code.checkpoint-message-template "🔄 Archon-checkpoi
 **ARCHON CHECKPOINT TRIGGERS:**
 - Progressive refinement cycle completions
 - Serena semantic analysis milestones
-- Memory-critical operation boundaries
 - Cross-agent coordination checkpoints
 - Performance optimization points
 
@@ -78,60 +74,60 @@ git config --local claude-code.checkpoint-message-template "🔄 Archon-checkpoi
 
 ### **TIER 1: CLAUDE CODE (EXECUTION ENGINE) - 85% WORKLOAD**
 **ARCHON-ENHANCED RESPONSIBILITIES:**
-- **Task tool**: Spawn agents with Archon PRP coordination and memory monitoring
-- **File operations**: Streaming operations with Archon progressive refinement
+- **Task tool**: Spawn agents with Archon PRP coordination and Claude Flow auto-scaling
+- **File operations**: Standard operations with Archon progressive refinement
 - **Bash commands**: System operations with Archon automation hooks
 - **Git operations**: Version control with PRP cycle checkpoints
-- **TodoWrite**: Memory-adaptive batching (3-15 items based on 133MB available)
+- **TodoWrite**: Efficient batching with Claude Flow optimization
 
 ### **TIER 2: SERENA (CODE INTELLIGENCE) - 10% WORKLOAD**
 **ARCHON SEMANTIC INTEGRATION:**
-- **MCP Server**: Semantic analysis with Archon PRP context (25MB cache limit)
+- **MCP Server**: Semantic analysis with Archon PRP context and auto-scaling
 - **LSP Integration**: Real-time code intelligence with progressive refinement feedback
 - **Cross-language Support**: Multi-language coordination for Archon projects
-- **Semantic Caching**: Memory-efficient with auto-expiry (current: 25MB limit)
+- **Semantic Caching**: Claude Flow managed caching with auto-optimization
 
 ### **TIER 3: ARCHON PRP (PROGRESSIVE REFINEMENT) - 3% WORKLOAD**
 **CORE ARCHON RESPONSIBILITIES:**
 - **FastAPI Orchestration**: Lightweight API coordination (port 8080)
-- **PydanticAI Agents**: Memory-constrained progressive agents (port 8052)
-- **Progressive Cycles**: Adaptive 2-4 refinement cycles based on 133MB memory
-- **RAG Enhancement**: Streaming vector operations with semantic integration
-- **Socket.IO Coordination**: Real-time PRP updates with minimal overhead
+- **PydanticAI Agents**: Auto-scaling progressive agents (port 8052)
+- **Progressive Cycles**: Claude Flow managed refinement cycles (auto-adaptive)
+- **RAG Enhancement**: Optimized vector operations with semantic integration
+- **Socket.IO Coordination**: Real-time PRP updates with Claude Flow coordination
 
-### **TIER 4: CLAUDE FLOW (COORDINATION) - 2% WORKLOAD**
+### **TIER 4: CLAUDE FLOW (COORDINATION & AUTO-SCALING) - 2% WORKLOAD**
 **ARCHON SWARM COORDINATION:**
-- **Topology Management**: Memory-aware swarm initialization with Archon integration
-- **Performance Monitoring**: Stream-based metrics with PRP cycle tracking
-- **Neural Training**: Memory-bounded pattern learning from Archon workflows
-- **Cross-session Memory**: Compressed state management with PRP persistence
+- **Auto-Scaling Management**: Automatic resource optimization with Archon integration
+- **Performance Monitoring**: Intelligent metrics with PRP cycle tracking
+- **Neural Training**: Adaptive pattern learning from Archon workflows
+- **Cross-session Persistence**: Automated state management with PRP optimization
 
 ## 🚀 ARCHON-OPTIMIZED AGENT SYSTEM (64+ Agents)
 
-### **MEMORY-AWARE AGENT SCALING (133MB Available = LIMITED MODE):**
+### **CLAUDE FLOW AUTO-SCALING AGENT COORDINATION:**
 
-**TIER 1: CRITICAL ARCHON AGENTS (2-3 Agents Maximum)**
+**TIER 1: CRITICAL ARCHON AGENTS (Auto-Scaled)**
 - `archon-master` - Master Archon coordination with PRP orchestration
-- `serena-master` - Semantic intelligence with memory optimization
-- `memory-coordinator` - Resource management and adaptive scaling
+- `serena-master` - Semantic intelligence with auto-optimization
+- `smart-agent` - Adaptive coordination with Claude Flow scaling
 
-**TIER 2: CORE DEVELOPMENT AGENTS (Memory Permitting)**
+**TIER 2: CORE DEVELOPMENT AGENTS (Auto-Managed)**
 - `sparc-coord` - SPARC methodology coordination
 - `system-architect` - Architecture with progressive refinement
 - `coder` - Implementation with Archon PRP cycles
 
-**TIER 3: SPECIALIZED COORDINATION (High Memory Mode)**
+**TIER 3: SPECIALIZED COORDINATION (Claude Flow Managed)**
 - `swarm-coordination-overview` - Multi-agent orchestration
 - `hierarchical-coordinator` - Queen-led swarm coordination
 - `performance-benchmarker` - System performance analysis
 
-### **ARCHON PRP SPARC WORKFLOW PHASES (Memory-Optimized):**
+### **ARCHON PRP SPARC WORKFLOW PHASES (Auto-Optimized):**
 
-1. **Specification** - Requirements with Serena semantic analysis (`memory-budget: 25MB`)
-2. **Pseudocode** - Algorithm design with cached patterns (`memory-budget: 20MB`)
-3. **Architecture** - System design with Archon PRP streaming (`memory-budget: 30MB`)
-4. **Refinement** - Progressive TDD with memory cleanup (`memory-budget: 40MB`)
-5. **Completion** - Integration with real-time monitoring (`memory-budget: 15MB`)
+1. **Specification** - Requirements with Serena semantic analysis (Claude Flow managed)
+2. **Pseudocode** - Algorithm design with cached patterns (auto-optimized)
+3. **Architecture** - System design with Archon PRP (auto-scaled)
+4. **Refinement** - Progressive TDD with automatic optimization (auto-managed)
+5. **Completion** - Integration with real-time monitoring (Claude Flow coordinated)
 
 ## 🎯 ARCHON-CLAUDE FLOW COORDINATION PROTOCOL
 
@@ -139,37 +135,33 @@ git config --local claude-code.checkpoint-message-template "🔄 Archon-checkpoi
 
 ```javascript
 // ARCHON + CLAUDE FLOW INTEGRATION (Single Message)
-[Memory-Optimized Archon Coordination]:
-
-  // STEP 1: Memory assessment and emergency protocols
-  Bash "vm_stat | grep 'Pages free' | awk '{print ($3 * 4096 / 1024 / 1024) \" MB available\"}'"
+[Auto-Scaling Archon Coordination]:
   
-  // STEP 2: Initialize Archon PRP + Claude Flow coordination
+  // STEP 1: Initialize Archon PRP + Claude Flow auto-scaling
   mcp__claude-flow__swarm_init { 
     topology: "hierarchical", 
-    maxAgents: 3, 
-    memoryLimit: "100MB",
+    autoScale: true,
     archonIntegration: true,
     prpEnabled: true
   }
   
-  // STEP 3: Spawn Archon-coordinated agents via Claude Code
-  Task("Archon Research Specialist", "Specification phase with Serena semantic analysis. Use archon-spec-reader agent for PRP framework understanding. Memory limit 25MB.", "archon-spec-reader")
+  // STEP 2: Spawn Archon-coordinated agents via Claude Code
+  Task("Archon Research Specialist", "Specification phase with Serena semantic analysis. Use archon-spec-reader agent for PRP framework understanding. Auto-scaling enabled.", "archon-spec-reader")
   
-  Task("Archon Development Specialist", "Progressive refinement implementation. Use PRP cycles with streaming operations. Coordinate via Socket.IO (8052).", "sparc-coder")
+  Task("Archon Development Specialist", "Progressive refinement implementation. Use PRP cycles with Claude Flow optimization. Coordinate via Socket.IO (8052).", "sparc-coder")
   
-  Task("Archon Performance Monitor", "Memory-aware performance tracking with Claude Flow coordination. Stream metrics to .claude-flow/metrics/", "performance-monitor")
+  Task("Archon Performance Monitor", "Auto-scaling performance tracking with Claude Flow coordination. Stream metrics to .claude-flow/metrics/", "performance-monitor")
   
-  // STEP 4: Memory-constrained todos with PRP phases
+  // STEP 3: Efficient todos with PRP phases (Claude Flow sized)
   TodoWrite { todos: [
-    {id: "1", content: "Memory monitoring (133MB available)", status: "in_progress", priority: "critical"},
+    {id: "1", content: "Auto-scaling coordination active", status: "in_progress", priority: "critical"},
     {id: "2", content: "Archon PRP specification phase", status: "in_progress", priority: "high"},
-    {id: "3", content: "Serena semantic cache optimization", status: "pending", priority: "high"},
+    {id: "3", content: "Serena semantic optimization", status: "pending", priority: "high"},
     {id: "4", content: "Progressive refinement cycle 1", status: "pending", priority: "medium"},
     {id: "5", content: "Socket.IO real-time coordination", status: "pending", priority: "medium"}
   ]}
   
-  // STEP 5: Integrated file operations with streaming
+  // STEP 4: Integrated file operations with auto-optimization
   Bash "mkdir -p {src,tests,docs,config}/.archon-prp"
   Write "src/archon-progressive-refinement.py" 
   Write "config/archon-integration.json"
@@ -180,9 +172,9 @@ git config --local claude-code.checkpoint-message-template "🔄 Archon-checkpoi
 
 ### **PRE-OPERATION (Archon Enhanced)**
 ```bash
-# Archon PRP preparation with memory monitoring
-npx claude-flow@alpha hooks pre-task --archon-prp --memory-check --description "[task]"
-npx claude-flow@alpha hooks archon-prp-prepare --cycles=2 --memory-limit=50MB
+# Archon PRP preparation with auto-scaling
+npx claude-flow@alpha hooks pre-task --archon-prp --auto-scale --description "[task]"
+npx claude-flow@alpha hooks archon-prp-prepare --auto-cycles --claude-flow-managed
 ```
 
 ### **DURING OPERATION (Progressive Coordination)**
@@ -192,11 +184,11 @@ npx claude-flow@alpha hooks post-edit --file "[file]" --archon-prp-cycle --seren
 npx claude-flow@alpha hooks archon-socket-notify --port=8052 --message="[progress]"
 ```
 
-### **POST-OPERATION (Memory Recovery)**
+### **POST-OPERATION (Auto-Optimization)**
 ```bash
 # Archon cleanup with progressive state persistence
-npx claude-flow@alpha hooks post-task --archon-prp-complete --memory-recovery
-npx claude-flow@alpha hooks archon-prp-persist --compress --export-metrics
+npx claude-flow@alpha hooks post-task --archon-prp-complete --auto-optimize
+npx claude-flow@alpha hooks archon-prp-persist --claude-flow-managed --export-metrics
 ```
 
 ## 🚀 ARCHON PERFORMANCE METRICS & INTEGRATION TARGETS
@@ -205,37 +197,37 @@ npx claude-flow@alpha hooks archon-prp-persist --compress --export-metrics
 - **84.8% SWE-Bench solve rate** (enhanced with Archon PRP)
 - **47% token reduction** (optimized with Serena semantic caching)
 - **3.2-5.1x speed improvement** (accelerated with Claude Flow coordination)
-- **Memory efficiency: 99.5%** (critical threshold with adaptive scaling)
-- **Progressive refinement cycles**: 2-4 based on available memory
+- **Auto-scaling efficiency**: Claude Flow managed resource optimization
+- **Progressive refinement cycles**: Auto-adaptive based on Claude Flow intelligence
 
 ### **ARCHON + CLAUDE FLOW BENEFITS:**
 ```yaml
-Claude Code (Execution):     32.3% token reduction + Archon streaming
+Claude Code (Execution):     32.3% token reduction + Archon auto-optimization
 Serena (Intelligence):       25% accuracy + semantic PRP integration  
 Archon PRP (Refinement):     40% solution quality + progressive cycles
-Claude Flow (Coordination):  2.8x speed + neural pattern optimization
+Claude Flow (Coordination):  2.8x speed + auto-scaling optimization
 
-Integrated Performance:      84.8% solve rate + memory-safe Archon PRP
+Integrated Performance:      84.8% solve rate + Claude Flow managed Archon PRP
 ```
 
 ## 🌟 ARCHON-ENHANCED ADVANCED FEATURES
 
-### **PROGRESSIVE REFINEMENT WITH COORDINATION:**
-- 🧠 **Archon PRP Cycles**: Memory-bounded progressive improvement
-- ⚡ **Adaptive Scaling**: Dynamic agent count based on 133MB memory
+### **PROGRESSIVE REFINEMENT WITH AUTO-SCALING:**
+- 🧠 **Archon PRP Cycles**: Claude Flow managed progressive improvement
+- ⚡ **Auto-Scaling**: Dynamic optimization with Claude Flow intelligence
 - 📊 **Real-time Metrics**: Socket.IO coordination with performance tracking
-- 🛡️ **Self-Healing PRP**: Auto-recovery with progressive fallbacks
-- 💾 **Compressed State**: Archon state management with Claude Flow persistence
+- 🛡️ **Self-Healing PRP**: Auto-recovery with Claude Flow managed fallbacks
+- 💾 **Optimized State**: Archon state management with Claude Flow auto-persistence
 
-### **MEMORY-CRITICAL ARCHON CONFIGURATION:**
+### **CLAUDE FLOW AUTO-SCALING ARCHON CONFIGURATION:**
 ```yaml
-Current System State (133MB available):
-├─ Status: LIMITED MODE - Memory-aware Archon PRP active
-├─ Agent Limit: 2-3 specialized Archon agents maximum
-├─ PRP Cycles: 2 cycles with streaming operations
-├─ Serena Cache: 25MB intelligent semantic analysis
-├─ Auto-Recovery: Graceful degradation to single-agent Archon mode
-└─ Integration: Full Archon + Serena + Claude Flow coordination
+Claude Flow Managed System:
+├─ Status: AUTO-SCALING MODE - Claude Flow managed Archon PRP
+├─ Agent Scaling: Dynamic optimization based on Claude Flow intelligence
+├─ PRP Cycles: Auto-adaptive cycles with Claude Flow coordination
+├─ Serena Integration: Intelligent caching with auto-optimization
+├─ Auto-Recovery: Claude Flow managed graceful degradation
+└─ Integration: Full Archon + Serena + Claude Flow auto-coordination
 ```
 
 ## 💡 ARCHON DEVELOPMENT WORKFLOW PATTERNS
@@ -243,28 +235,28 @@ Current System State (133MB available):
 ### **DAILY ARCHON-ENHANCED DEVELOPMENT:**
 ```bash
 # 1. Morning Archon System Health Check
-claude-flow system-status --archon-integration --memory-alert
+claude-flow system-status --archon-integration --auto-scale
 
-# 2. Initialize Archon PRP with memory awareness  
-claude-flow archon-prp-init --cycles=2 --memory-limit=100MB --serena-cache=25MB
+# 2. Initialize Archon PRP with auto-scaling  
+claude-flow archon-prp-init --auto-cycles --claude-flow-managed --serena-auto
 
 # 3. Progressive Development Session
-archon prp-develop "feature-name" --socket-io-port=8052 --streaming --memory-monitor
+archon prp-develop "feature-name" --socket-io-port=8052 --claude-flow-optimized
 
 # 4. Integrated Semantic Analysis
-serena analyze-project --archon-context --memory-efficient --cache-strategy=progressive
+serena analyze-project --archon-context --claude-flow-efficient --cache-strategy=auto
 
 # 5. End-of-Day Archon State Persistence
-claude-flow archon-session-end --prp-export --metrics-stream --memory-recovery
+claude-flow archon-session-end --prp-export --auto-optimize --claude-flow-persist
 ```
 
-### **EMERGENCY ARCHON PROCEDURES (Memory >99%):**
+### **CLAUDE FLOW MANAGED ARCHON PROCEDURES:**
 ```bash
-# Critical Memory: Archon single-agent mode
-1. claude-flow emergency-archon --single-prp-cycle --memory-critical
-2. archon prp-minimal --streaming-only --no-refinement
-3. serena cache-clear --keep-essential=10MB
-4. claude-flow archon-recovery --memory-optimize --progressive-restart
+# Auto-scaling handles all optimization automatically
+1. claude-flow auto-archon --intelligent-scaling --adaptive-optimization
+2. archon prp-auto --claude-flow-managed --intelligent-cycles
+3. serena auto-optimize --claude-flow-coordinated
+4. claude-flow archon-recovery --intelligent-restart --auto-optimize
 ```
 
 ## 📚 ARCHON INTEGRATION QUICK REFERENCE
@@ -273,41 +265,41 @@ claude-flow archon-session-end --prp-export --metrics-stream --memory-recovery
 ```bash
 # Core Archon PRP commands
 archon prp-status                    # Check progressive refinement status
-archon prp-cycle --streaming         # Execute memory-bounded PRP cycle
+archon prp-cycle --claude-flow       # Execute Claude Flow managed PRP cycle
 archon socket-io-status --port=8052  # Check real-time coordination
 
 # Integrated coordination commands  
 claude-flow archon-init              # Initialize Archon + Claude Flow
-claude-flow archon-prp --cycles=2    # Run progressive refinement
+claude-flow archon-prp --auto-cycles # Run auto-scaling progressive refinement
 claude-flow serena-archon-sync       # Sync semantic analysis with PRP
 ```
 
-### **MEMORY STATUS COMMANDS (133MB Available):**
+### **CLAUDE FLOW AUTO-SCALING STATUS COMMANDS:**
 ```bash
-claude-flow memory-archon            # Archon-specific memory status
-serena cache-info --archon-context   # Semantic cache with PRP context
-archon prp-memory --streaming-status # Progressive refinement memory usage
+claude-flow scaling-status           # Auto-scaling status and optimization
+serena cache-info --auto-optimized   # Semantic cache with Claude Flow management
+archon prp-status --claude-flow-managed # Progressive refinement auto-status
 ```
 
 ## 🎯 ULTIMATE ARCHON INTEGRATION PRINCIPLE
 
-**"MEMORY-AWARE PROGRESSIVE REFINEMENT WITH INTELLIGENT COORDINATION"**
+**"AUTO-SCALING PROGRESSIVE REFINEMENT WITH INTELLIGENT COORDINATION"**
 
-*Claude Code executes with Archon PRP precision, Serena provides semantic intelligence with progressive context, Archon enables systematic refinement cycles, and Claude Flow orchestrates everything within critical memory constraints for optimal progressive development.*
+*Claude Code executes with Archon PRP precision, Serena provides semantic intelligence with progressive context, Archon enables systematic refinement cycles, and Claude Flow orchestrates everything with intelligent auto-scaling for optimal progressive development.*
 
-**Current Status: 133MB Available - LIMITED MODE WITH ARCHON PRP ACTIVE**
-**Recommendation: 2-3 Archon agents, progressive streaming, memory-bounded PRP cycles**
+**Current Status: CLAUDE FLOW AUTO-SCALING MODE - ARCHON PRP ACTIVE**
+**Configuration: Auto-scaling agents, intelligent optimization, Claude Flow managed PRP cycles**
 
 ---
 
 # CRITICAL ARCHON INSTRUCTION REMINDERS
-- **MEMORY FIRST**: Always check resources before Archon PRP operations
-- **STREAM EVERYTHING**: Large Archon operations must use streaming
-- **PROGRESSIVE CLEANUP**: Immediate cleanup after each PRP cycle
-- **ADAPTIVE PRP**: Auto-adjust refinement cycles based on memory
+- **CLAUDE FLOW FIRST**: Let Claude Flow handle all resource optimization automatically
+- **AUTO-OPTIMIZATION**: Claude Flow manages all scaling and resource allocation
+- **PROGRESSIVE AUTO-CLEANUP**: Claude Flow handles cleanup after each PRP cycle
+- **INTELLIGENT PRP**: Claude Flow auto-adjusts refinement cycles intelligently
 - **ARCHON COORDINATION**: Use Socket.IO (8052) for real-time PRP updates
 
-*Archon PRP integration optimized for 84.8% SWE-Bench solve rate with critical memory management and progressive refinement excellence*
+*Archon PRP integration optimized for 84.8% SWE-Bench solve rate with Claude Flow auto-scaling and progressive refinement excellence*
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
