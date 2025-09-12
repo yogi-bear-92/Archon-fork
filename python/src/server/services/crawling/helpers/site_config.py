@@ -5,7 +5,7 @@ Handles site-specific configurations and detection.
 """
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
-from src.server.config.logfire_config import get_logger
+from ....config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

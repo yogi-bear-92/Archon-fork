@@ -9,11 +9,10 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
-from src.server.services.source_management_service import extract_source_summary, update_source_info
-from src.server.services.storage.document_storage_service import add_documents_to_supabase
-from src.server.services.storage.storage_services import DocumentStorageService
-from src.server.services.ai_tag_generation_service import get_ai_tag_service
+from ...config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from ..source_management_service import extract_source_summary, update_source_info
+from ..storage.document_storage_service import add_documents_to_supabase
+from ..storage.storage_services import DocumentStorageService
 from .code_extraction_service import CodeExtractionService
 
 logger = get_logger(__name__)
@@ -111,23 +110,6 @@ class DocumentStorageOperations:
                 all_chunk_numbers.append(i)
                 all_contents.append(chunk)
 
-                # Generate AI tags for this chunk if it's substantial enough
-                chunk_tags = request.get("tags", [])  # Start with user tags
-                if len(chunk) > 500:  # Only generate AI tags for substantial chunks
-                    try:
-                        ai_tag_service = get_ai_tag_service()
-                        chunk_ai_tags = await ai_tag_service.generate_tags_for_content(
-                            content=chunk,
-                            knowledge_type=request.get("knowledge_type", "documentation"),
-                            source_url=doc_url,
-                            existing_tags=chunk_tags,
-                            max_tags=5,  # Fewer tags per chunk
-                        )
-                        chunk_tags = list(set(chunk_tags + chunk_ai_tags))  # Combine and deduplicate
-                    except Exception as e:
-                        logger.warning(f"Failed to generate AI tags for chunk {i}: {e}")
-                        # Continue with user tags only
-
                 # Create metadata for each chunk
                 word_count = len(chunk.split())
                 metadata = {
@@ -140,7 +122,7 @@ class DocumentStorageOperations:
                     "word_count": word_count,
                     "char_count": len(chunk),
                     "chunk_index": i,
-                    "tags": chunk_tags,  # Use combined tags
+                    "tags": request.get("tags", []),
                 }
                 all_metadatas.append(metadata)
 
@@ -261,35 +243,6 @@ class DocumentStorageOperations:
                 # Fallback to simple summary
                 summary = f"Documentation from {source_id} - {len(source_contents)} pages crawled"
 
-            # Generate AI tags for the source
-            ai_tags = []
-            try:
-                ai_tag_service = get_ai_tag_service()
-                existing_tags = request.get("tags", [])
-                
-                # Generate AI tags for the source
-                ai_tags = await ai_tag_service.generate_tags_for_source(
-                    source_id=source_id,
-                    content=combined_content,
-                    knowledge_type=request.get("knowledge_type", "documentation"),
-                    source_url=source_url,
-                    existing_tags=existing_tags,
-                )
-                
-                safe_logfire_info(
-                    f"Generated {len(ai_tags)} AI tags for source '{source_id}': {ai_tags[:5]}"
-                )
-                
-            except Exception as e:
-                logger.error(f"Failed to generate AI tags for '{source_id}': {e}", exc_info=True)
-                safe_logfire_error(f"AI tag generation failed for '{source_id}': {str(e)}")
-                # Continue without AI tags
-                ai_tags = []
-
-            # Combine user tags with AI-generated tags
-            user_tags = request.get("tags", [])
-            all_tags = list(set(user_tags + ai_tags))  # Remove duplicates
-
             # Update source info in database BEFORE storing documents
             safe_logfire_info(
                 f"About to create/update source record for '{source_id}' (word count: {source_id_word_counts[source_id]})"
@@ -303,7 +256,7 @@ class DocumentStorageOperations:
                     word_count=source_id_word_counts[source_id],
                     content=combined_content,
                     knowledge_type=request.get("knowledge_type", "documentation"),
-                    tags=all_tags,  # Use combined user + AI tags
+                    tags=request.get("tags", []),
                     update_frequency=0,  # Set to 0 since we're using manual refresh
                     original_url=request.get("url"),  # Store the original crawl URL
                     source_url=source_url,
@@ -325,7 +278,7 @@ class DocumentStorageOperations:
                         "total_word_count": source_id_word_counts[source_id],
                         "metadata": {
                             "knowledge_type": request.get("knowledge_type", "documentation"),
-                            "tags": all_tags,  # Use combined user + AI tags
+                            "tags": request.get("tags", []),
                             "auto_generated": True,
                             "fallback_creation": True,
                             "original_url": request.get("url"),

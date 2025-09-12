@@ -8,11 +8,11 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urldefrag
 
-from crawl4ai import CacheMode, CrawlerRunConfig
+from crawl4ai import CacheMode, CrawlerRunConfig, MemoryAdaptiveDispatcher
 
-from src.server.config.logfire_config import get_logger
-from src.server.services.credential_service import credential_service
-from src.server.services.crawling.helpers.url_handler import URLHandler
+from ....config.logfire_config import get_logger
+from ...credential_service import credential_service
+from ..helpers.url_handler import URLHandler
 
 logger = get_logger(__name__)
 
@@ -77,7 +77,7 @@ class RecursiveCrawlStrategy:
             memory_threshold = float(settings.get("MEMORY_THRESHOLD_PERCENT", "80"))
             check_interval = float(settings.get("DISPATCHER_CHECK_INTERVAL", "0.5"))
         except (ValueError, KeyError, TypeError) as e:
-            # Critical configuration errors should fail fast in alpha
+            # Critical configuration errors should fail fast
             logger.error(f"Invalid crawl settings format: {e}", exc_info=True)
             raise ValueError(f"Failed to load crawler configuration: {e}") from e
         except Exception as e:
@@ -101,28 +101,34 @@ class RecursiveCrawlStrategy:
             )
             run_config = CrawlerRunConfig(
                 cache_mode=CacheMode.BYPASS,
+                stream=True,  # Enable streaming for faster parallel processing
                 markdown_generator=self.markdown_generator,
                 wait_until=settings.get("CRAWL_WAIT_STRATEGY", "domcontentloaded"),
                 page_timeout=int(settings.get("CRAWL_PAGE_TIMEOUT", "30000")),
                 delay_before_return_html=float(settings.get("CRAWL_DELAY_BEFORE_HTML", "1.0")),
                 wait_for_images=False,  # Skip images for faster crawling
                 scan_full_page=True,  # Trigger lazy loading
-                exclude_external_images=True,  # Updated parameter name
+                exclude_all_images=False,
                 remove_overlay_elements=True,
                 process_iframes=True,
-                semaphore_count=max_concurrent,  # Concurrency control
             )
         else:
             # Configuration for regular recursive crawling
             run_config = CrawlerRunConfig(
                 cache_mode=CacheMode.BYPASS,
+                stream=True,  # Enable streaming
                 markdown_generator=self.markdown_generator,
                 wait_until=settings.get("CRAWL_WAIT_STRATEGY", "domcontentloaded"),
                 page_timeout=int(settings.get("CRAWL_PAGE_TIMEOUT", "45000")),
                 delay_before_return_html=float(settings.get("CRAWL_DELAY_BEFORE_HTML", "0.5")),
                 scan_full_page=True,
-                semaphore_count=max_concurrent,  # Concurrency control
             )
+
+        dispatcher = MemoryAdaptiveDispatcher(
+            memory_threshold_percent=memory_threshold,
+            check_interval=check_interval,
+            max_session_permit=max_concurrent,
+        )
 
         async def report_progress(progress_val: int, message: str, **kwargs):
             """Helper to report progress if callback is available"""
@@ -207,12 +213,12 @@ class RecursiveCrawlStrategy:
                 # Use arun_many for native parallel crawling with streaming
                 logger.info(f"Starting parallel crawl of {len(batch_urls)} URLs with arun_many")
                 batch_results = await self.crawler.arun_many(
-                    urls=transformed_batch_urls, config=run_config
+                    urls=transformed_batch_urls, config=run_config, dispatcher=dispatcher
                 )
 
-                # Handle results from arun_many (returns a list, not async iterator)
+                # Handle streaming results from arun_many
                 i = 0
-                for result in batch_results:
+                async for result in batch_results:
                     # Check for cancellation during streaming results
                     if cancellation_check:
                         try:

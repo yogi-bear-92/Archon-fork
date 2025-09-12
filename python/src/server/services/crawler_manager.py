@@ -10,13 +10,11 @@ from typing import Optional
 
 try:
     from crawl4ai import AsyncWebCrawler, BrowserConfig
-    AsyncWebCrawlerType = AsyncWebCrawler
 except ImportError:
     AsyncWebCrawler = None
     BrowserConfig = None
-    AsyncWebCrawlerType = type(None)
 
-from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
 
 logger = get_logger(__name__)
 
@@ -25,7 +23,7 @@ class CrawlerManager:
     """Manages the global crawler instance."""
 
     _instance: Optional["CrawlerManager"] = None
-    _crawler: Optional[AsyncWebCrawlerType] = None
+    _crawler: AsyncWebCrawler | None = None
     _initialized: bool = False
 
     def __new__(cls):
@@ -151,7 +149,7 @@ class CrawlerManager:
 _crawler_manager = CrawlerManager()
 
 
-async def get_crawler() -> Optional[AsyncWebCrawlerType]:
+async def get_crawler() -> AsyncWebCrawler | None:
     """Get the global crawler instance."""
     global _crawler_manager
     crawler = await _crawler_manager.get_crawler()

@@ -10,7 +10,7 @@ from typing import Any
 
 from crawl4ai import CacheMode, CrawlerRunConfig
 
-from src.server.config.logfire_config import get_logger
+from ....config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

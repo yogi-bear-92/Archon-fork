@@ -8,9 +8,9 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from src.server.config.logfire_config import safe_logfire_error, safe_logfire_info
-from src.server.services.credential_service import credential_service
-from src.server.services.storage.code_storage_service import (
+from ...config.logfire_config import safe_logfire_error, safe_logfire_info
+from ...services.credential_service import credential_service
+from ..storage.code_storage_service import (
     add_code_examples_to_supabase,
     generate_code_summaries_batch,
 )
@@ -311,7 +311,7 @@ class CodeExtractionService:
                     safe_logfire_info(
                         f"No code blocks from HTML, trying markdown extraction | url={source_url}"
                     )
-                    from src.server.services.storage.code_storage_service import extract_code_blocks
+                    from ..storage.code_storage_service import extract_code_blocks
 
                     # Use dynamic minimum for markdown extraction
                     base_min_length = 250  # Default for markdown
