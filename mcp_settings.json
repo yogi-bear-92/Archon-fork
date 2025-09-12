@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "archon-lunar-mcpx": {
+    "archon-mcp": {
       "command": "docker",
-      "args": ["exec", "-i", "archon-lunar-mcpx", "node", "lunar-mcpx-gateway.js"],
+      "args": ["exec", "-i", "archon-mcp", "python", "-m", "src.mcp_server.main"],
       "env": {
         "SERVICE_DISCOVERY_MODE": "docker_compose"
       }

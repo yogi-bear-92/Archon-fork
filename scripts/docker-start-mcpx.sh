@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker Lunar MCPX Gateway Startup Script
+# Docker Archon Services Startup Script
 # Manages the MCPX gateway in Docker environment
 
 set -e
@@ -34,8 +34,8 @@ log_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-log_lunar() {
-    echo -e "${PURPLE}🌙 $1${NC}"
+log_archon() {
+    echo -e "${PURPLE}🏛️ $1${NC}"
 }
 
 log_docker() {
@@ -75,7 +75,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$HELP" = true ]; then
-    echo "🌙🐳 Docker Lunar MCPX Gateway Launcher"
+    echo "🐳 Docker Archon Services Launcher"
     echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
@@ -94,9 +94,9 @@ if [ "$HELP" = true ]; then
 fi
 
 echo "================================================================"
-log_lunar "🐳 Docker Lunar MCPX Gateway"
-echo "   Container-based MCP Server Aggregation"
-echo "   Archon + Claude Flow + Serena Integration"
+echo "🐳 Docker Archon Services"
+echo "   Container-based MCP Server and AI Services"
+echo "   Archon + Claude Flow Integration"
 echo "================================================================"
 echo ""
 
@@ -144,7 +144,7 @@ if [ "$BUILD" = true ]; then
 fi
 
 # Display startup information
-log_lunar "🚀 Starting Docker services..."
+log_info "🚀 Starting Docker services..."
 log_info "Profile: $PROFILE"
 log_info "Compose file: deployment/docker/docker-compose.yml"
 echo ""
@@ -153,7 +153,6 @@ log_docker "Service Architecture:"
 log_info "  🔹 archon-server (FastAPI) - :8181"
 log_info "  🔹 archon-mcp (HTTP MCP) - :8051" 
 log_info "  🔹 archon-claude-flow (Flow-Nexus) - :8053"
-log_info "  🌙 archon-lunar-mcpx (MCPX Gateway) - :8090"
 log_info "  🎨 archon-frontend (React UI) - :3737"
 
 if [ "$PROFILE" = "agents" ]; then
@@ -161,7 +160,6 @@ if [ "$PROFILE" = "agents" ]; then
 fi
 
 echo ""
-log_lunar "🌐 MCPX Control Plane: http://localhost:8090"
 log_docker "🎯 Frontend UI: http://localhost:3737"
 echo ""
 
@@ -181,7 +179,7 @@ log_info "Waiting for services to be ready..."
 sleep 10
 
 # Check service health
-services=("archon-server" "archon-mcp" "archon-claude-flow" "archon-lunar-mcpx")
+services=("archon-server" "archon-mcp" "archon-claude-flow")
 if [ "$PROFILE" = "agents" ]; then
     services+=("archon-agents")
 fi
@@ -195,30 +193,17 @@ for service in "${services[@]}"; do
 done
 
 echo ""
-log_lunar "🎉 Lunar MCPX Gateway is now running!"
+log_success "🎉 Archon services are now running!"
 echo ""
 log_info "Available endpoints:"
-log_info "  • MCPX Control Plane: http://localhost:8090"
-log_info "  • MCPX API Status: http://localhost:8090/api/status"
 log_info "  • Archon Server: http://localhost:8181"
 log_info "  • Frontend UI: http://localhost:3737"
-echo ""
-
-log_info "To connect with Claude Desktop, add to mcp_settings.json:"
-echo '  {'
-echo '    "mcpServers": {'
-echo '      "archon-lunar-mcpx": {'
-echo '        "command": "docker",'
-echo '        "args": ["exec", "-i", "archon-lunar-mcpx", "node", "lunar-mcpx-gateway.js"]'
-echo '      }'
-echo '    }'
-echo '  }'
 echo ""
 
 log_info "Useful commands:"
 log_info "  • View logs: $COMPOSE_CMD -f deployment/docker/docker-compose.yml logs -f"
 log_info "  • Stop services: $COMPOSE_CMD -f deployment/docker/docker-compose.yml down"
-log_info "  • Restart MCPX: $COMPOSE_CMD -f deployment/docker/docker-compose.yml restart archon-lunar-mcpx"
+log_info "  • Restart services: $COMPOSE_CMD -f deployment/docker/docker-compose.yml restart"
 echo ""
 
 # Follow logs if requested

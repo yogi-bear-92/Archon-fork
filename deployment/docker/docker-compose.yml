@@ -184,77 +184,6 @@ services:
       archon-mcp:
         condition: service_healthy
 
-  # Lunar MCPX Gateway Service (MCP Aggregation)
-  archon-lunar-mcpx:
-    build:
-      context: ../../
-      dockerfile: ./Dockerfile.lunar-mcpx
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-    container_name: archon-lunar-mcpx
-    ports:
-      - "${MCPX_CONTROL_PLANE_PORT:-8090}:8090"  # Control Plane
-      - "${MCPX_GATEWAY_PORT:-8050}:8050"        # MCP Gateway (backup)
-    env_file:
-      - ../../.env
-    environment:
-      - NODE_ENV=production
-      - MCPX_CONTROL_PLANE=true
-      - MCPX_DEBUG=${MCPX_DEBUG:-false}
-      - SERVICE_DISCOVERY_MODE=docker_compose
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      
-      # Service URLs for Docker networking
-      - ARCHON_SERVER_HOST=archon-server
-      - ARCHON_SERVER_PORT=${ARCHON_SERVER_PORT:-8181}
-      - ARCHON_MCP_HOST=archon-mcp
-      - ARCHON_MCP_PORT=${ARCHON_MCP_PORT:-8051}
-      - CLAUDE_FLOW_HOST=archon-claude-flow
-      - CLAUDE_FLOW_PORT=${CLAUDE_FLOW_PORT:-8053}
-      
-      # External API Keys (passed through from .env)
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - LOGFIRE_TOKEN=${LOGFIRE_TOKEN:-}
-      
-      # MCPX Configuration
-      - MCPX_CONFIG_FILE=/app/mcpx-config.json
-      - MCPX_AGGREGATION_STRATEGY=${MCPX_AGGREGATION_STRATEGY:-priority-based}
-      - MCPX_HEALTH_CHECK_INTERVAL=${MCPX_HEALTH_CHECK_INTERVAL:-30000}
-      - MCPX_CIRCUIT_BREAKER_ENABLED=${MCPX_CIRCUIT_BREAKER_ENABLED:-true}
-      
-    networks:
-      - app-network
-    volumes:
-      - ../../src:/app/src:ro  # Mount source for configuration
-      - mcpx-data:/app/data    # Persistent data
-      - mcpx-logs:/app/logs    # Log storage
-      - mcpx-cache:/app/.cache # Cache directory
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/health-check.sh"
-        ]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-      start_period: 60s  # Give time for all services to be discovered
-    depends_on:
-      archon-server:
-        condition: service_healthy
-      archon-mcp:
-        condition: service_healthy
-      archon-claude-flow:
-        condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
 
   # Frontend
   archon-frontend:
@@ -284,14 +213,6 @@ services:
     depends_on:
       archon-server:
         condition: service_healthy
-
-volumes:
-  mcpx-data:
-    driver: local
-  mcpx-logs:
-    driver: local
-  mcpx-cache:
-    driver: local
 
 networks:
   app-network:

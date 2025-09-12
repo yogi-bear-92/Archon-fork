@@ -1,7 +1,7 @@
 {
-  "name": "Archon-Lunar-MCPX",
+  "name": "Archon-MCPX",
   "version": "1.0.0",
-  "description": "Lunar MCPX configuration for Archon project integration",
+  "description": "MCPX configuration for Archon project integration",
   
   "controlPlane": {
     "enabled": true,
