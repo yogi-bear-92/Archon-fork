@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir uv
 COPY pyproject.toml .
 
 # Install only mcp dependencies using uv
-RUN uv pip install --system --group mcp
+RUN uv pip install -e . --system --group mcp
 
 # Create minimal directory structure
 RUN mkdir -p src/mcp_server/features/projects src/mcp_server/features/tasks src/mcp_server/features/documents src/server/services src/server/config
@@ -38,5 +38,5 @@ ARG ARCHON_MCP_PORT=8051
 ENV ARCHON_MCP_PORT=${ARCHON_MCP_PORT}
 EXPOSE ${ARCHON_MCP_PORT}
 
-# Run the MCP server
+# Run the proper MCP server with FastMCP
 CMD ["python", "-m", "src.mcp_server.mcp_server"]

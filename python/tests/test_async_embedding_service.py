@@ -1,3 +1,6 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+import openai
+import pytest
 """
 Comprehensive Tests for Async Embedding Service
 
@@ -5,20 +8,12 @@ Tests all aspects of the async embedding service after sync function removal.
 Covers both success and error scenarios with thorough edge case testing.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import openai
-import pytest
-
-from src.server.services.embeddings.embedding_exceptions import (
     EmbeddingAPIError,
 )
-from src.server.services.embeddings.embedding_service import (
     EmbeddingBatchResult,
     create_embedding,
     create_embeddings_batch,
 )
-
 
 class AsyncContextManager:
     """Helper class for properly mocking async context managers"""
@@ -31,7 +26,6 @@ class AsyncContextManager:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
-
 
 class TestAsyncEmbeddingService:
     """Test suite for async embedding service functions"""
@@ -296,7 +290,6 @@ class TestAsyncEmbeddingService:
                         assert len(result.failed_items) == 2
                         # Verify quota exhausted is in error messages
                         assert any("quota" in item["error"].lower() for item in result.failed_items)
-
 
     @pytest.mark.asyncio
     async def test_create_embeddings_batch_with_progress_callback(

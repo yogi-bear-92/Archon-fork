@@ -9,10 +9,10 @@ import os
 from typing import Any
 from urllib.parse import urlparse
 
-from ...config.logfire_config import safe_span, search_logger
-from ..credential_service import credential_service
-from ..embeddings.contextual_embedding_service import generate_contextual_embeddings_batch
-from ..embeddings.embedding_service import create_embeddings_batch
+from src.server.config.logfire_config import safe_span, search_logger
+from src.server.services.credential_service import credential_service
+from src.server.services.embeddings.contextual_embedding_service import generate_contextual_embeddings_batch
+from src.server.services.embeddings.embedding_service import create_embeddings_batch
 
 
 async def add_documents_to_supabase(
@@ -117,7 +117,7 @@ async def add_documents_to_supabase(
 
         # Check if contextual embeddings are enabled
         # Fix: Get from credential service instead of environment
-        from ..credential_service import credential_service
+        from src.server.services.credential_service import credential_service
 
         try:
             use_contextual_embeddings = await credential_service.get_credential(

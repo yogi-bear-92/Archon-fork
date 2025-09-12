@@ -6,7 +6,7 @@ Handles all knowledge item CRUD operations and data transformations.
 
 from typing import Any
 
-from ...config.logfire_config import safe_logfire_error, safe_logfire_info
+from src.server.config.logfire_config import safe_logfire_error, safe_logfire_info
 
 
 class KnowledgeItemService:
@@ -261,7 +261,12 @@ class KnowledgeItemService:
                 "update_frequency",
                 "group_name",
             ]
-            metadata_updates = {k: v for k, v in updates.items() if k in metadata_fields}
+            
+            # Check if updates contains a metadata object
+            if "metadata" in updates:
+                metadata_updates = updates["metadata"]
+            else:
+                metadata_updates = {k: v for k, v in updates.items() if k in metadata_fields}
 
             if metadata_updates:
                 # Get current metadata
@@ -286,7 +291,9 @@ class KnowledgeItemService:
                 .execute()
             )
 
-            if result.data:
+            # Check if update was successful (Supabase updates may not return data)
+            # If we have data, it was successful. If no data but no error, it was also successful.
+            if result.data or (not result.data and not hasattr(result, 'error')):
                 safe_logfire_info(f"Knowledge item updated successfully | source_id={source_id}")
                 return True, {
                     "success": True,

@@ -9,9 +9,9 @@ import os
 
 import openai
 
-from ...config.logfire_config import search_logger
-from ..llm_provider_service import get_llm_client
-from ..threading_service import get_threading_service
+from src.server.config.logfire_config import search_logger
+from src.server.services.llm_provider_service import get_llm_client
+from src.server.services.threading_service import get_threading_service
 
 
 async def generate_contextual_embedding(
@@ -32,7 +32,7 @@ async def generate_contextual_embedding(
     """
     # Model choice is a RAG setting, get from credential service
     try:
-        from ...services.credential_service import credential_service
+        from src.server.services.credential_service import credential_service
 
         model_choice = await credential_service.get_credential("MODEL_CHOICE", "gpt-4.1-nano")
     except Exception as e:
@@ -112,7 +112,7 @@ async def process_chunk_with_context(
 
 async def _get_model_choice(provider: str | None = None) -> str:
     """Get model choice from credential service."""
-    from ..credential_service import credential_service
+    from src.server.services.credential_service import credential_service
 
     # Get the active provider configuration
     provider_config = await credential_service.get_active_provider("llm")

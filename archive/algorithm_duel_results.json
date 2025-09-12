@@ -1,0 +1,22 @@
+{
+  "timestamp": 1757090070.493377,
+  "algorithms_tested": [
+    "quicksort_3way",
+    "merge_sort_iterative",
+    "binary_search_variants",
+    "dijkstra_optimized",
+    "knapsack_optimized",
+    "kmp_pattern_search"
+  ],
+  "performance_scores": {
+    "quicksort_3way": 1.1021272432325153,
+    "merge_sort_iterative": 0.7297911702945119,
+    "binary_search_variants": 0.3544475367281778,
+    "dijkstra_optimized": 40.66831037803175,
+    "knapsack_optimized": 3.562247260941332,
+    "kmp_pattern_search": 0.006433445309949272
+  },
+  "total_score": 46.423357034538235,
+  "performance_rating": "COMPETITIVE",
+  "algorithms_count": 6
+}

@@ -1,3 +1,8 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+import pytest
+        import src.server.services.llm_provider_service as llm_module
+        import src.server.services.llm_provider_service as llm_module
+                    import src.server.services.llm_provider_service as llm_module
 """
 Comprehensive Tests for Async LLM Provider Service
 
@@ -5,17 +10,11 @@ Tests all aspects of the async LLM provider service after sync function removal.
 Covers different providers (OpenAI, Ollama, Google) and error scenarios.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-
-from src.server.services.llm_provider_service import (
     _get_cached_settings,
     _set_cached_settings,
     get_embedding_model,
     get_llm_client,
 )
-
 
 class AsyncContextManager:
     """Helper class for properly mocking async context managers"""
@@ -29,14 +28,12 @@ class AsyncContextManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
-
 class TestAsyncLLMProviderService:
     """Test suite for async LLM provider service functions"""
 
     @pytest.fixture(autouse=True)
     def clear_cache(self):
         """Clear cache before each test"""
-        import src.server.services.llm_provider_service as llm_module
 
         llm_module._settings_cache.clear()
         yield
@@ -404,7 +401,6 @@ class TestAsyncLLMProviderService:
 
     def test_deprecated_functions_removed(self):
         """Test that deprecated sync functions are no longer available"""
-        import src.server.services.llm_provider_service as llm_module
 
         # These functions should no longer exist
         assert not hasattr(llm_module, "get_llm_client_sync")
@@ -461,7 +457,6 @@ class TestAsyncLLMProviderService:
 
                 for config in configs:
                     # Clear cache between tests to force fresh credential service calls
-                    import src.server.services.llm_provider_service as llm_module
 
                     llm_module._settings_cache.clear()
 

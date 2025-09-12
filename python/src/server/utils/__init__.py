@@ -19,8 +19,8 @@ import asyncio
 import os
 from typing import Optional
 
-from ..services.client_manager import get_supabase_client
-from ..services.embeddings import (
+from src.server.services.client_manager import get_supabase_client
+from src.server.services.embeddings import (
     create_embedding,
     create_embeddings_batch,
     generate_contextual_embedding,
@@ -31,16 +31,16 @@ from ..services.embeddings import (
 
 # Note: storage and search imports removed to avoid circular dependency
 # Import these directly from their modules when needed:
-# from ..services.storage import add_documents_to_supabase, extract_code_blocks, etc.
-# from ..services.search import search_documents, search_code_examples
-from ..services.source_management_service import (
+# from src.server.services.storage import add_documents_to_supabase, extract_code_blocks, etc.
+# from src.server.services.search import search_documents, search_code_examples
+from src.server.services.source_management_service import (
     extract_source_summary,
     generate_source_title_and_metadata,
     update_source_info,
 )
 
 # Re-export threading service imports for compatibility
-from ..services.threading_service import (
+from src.server.services.threading_service import (
     ProcessingMode,
     RateLimitConfig,
     ThreadingConfig,
@@ -58,7 +58,7 @@ async def initialize_threading_service(
     """Initialize the global threading service for utilities"""
     global _threading_service
     if _threading_service is None:
-        from ..services.threading_service import ThreadingService
+        from src.server.services.threading_service import ThreadingService
 
         _threading_service = ThreadingService(threading_config, rate_limit_config)
         await _threading_service.start()

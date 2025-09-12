@@ -1,14 +1,19 @@
+import os
+from unittest.mock import MagicMock, patch
+import pytest
+            from src.server.services.search.rag_service import RAGService
+        from src.server.services.search.base_search_strategy import BaseSearchStrategy
+        from src.server.services.search.hybrid_search_strategy import HybridSearchStrategy
+        from src.server.services.search.reranking_strategy import RerankingStrategy
+        from src.server.services.search.agentic_rag_strategy import AgenticRAGStrategy
+        from src.server.services.search.base_search_strategy import BaseSearchStrategy
+        from src.server.services.search.reranking_strategy import RerankingStrategy
 """
 Simple, Fast RAG Tests
 
 Focused tests that avoid complex initialization and database calls.
 These tests verify the core RAG functionality without heavy dependencies.
 """
-
-import os
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 # Set test environment variables
 os.environ.update({
@@ -20,7 +25,6 @@ os.environ.update({
     "USE_AGENTIC_RAG": "false",
 })
 
-
 @pytest.fixture
 def mock_supabase():
     """Mock supabase client"""
@@ -29,17 +33,14 @@ def mock_supabase():
     client.from_.return_value.select.return_value.limit.return_value.execute.return_value.data = []
     return client
 
-
 @pytest.fixture
 def rag_service(mock_supabase):
     """Create RAGService with mocked dependencies"""
     with patch("src.server.utils.get_supabase_client", return_value=mock_supabase):
         with patch("src.server.services.credential_service.credential_service"):
-            from src.server.services.search.rag_service import RAGService
 
             service = RAGService(supabase_client=mock_supabase)
             return service
-
 
 class TestRAGServiceCore:
     """Core RAGService functionality tests"""
@@ -60,7 +61,6 @@ class TestRAGServiceCore:
         # Test boolean setting
         result = rag_service.get_bool_setting("TEST_BOOL", False)
         assert isinstance(result, bool)
-
 
 class TestRAGServiceSearch:
     """Search functionality tests"""
@@ -145,15 +145,12 @@ class TestRAGServiceSearch:
             assert isinstance(results, list)
             mock_agentic.assert_called_once()
 
-
 class TestHybridSearchCore:
     """Basic hybrid search tests"""
 
     @pytest.fixture
     def hybrid_strategy(self, mock_supabase):
         """Create hybrid search strategy"""
-        from src.server.services.search.base_search_strategy import BaseSearchStrategy
-        from src.server.services.search.hybrid_search_strategy import HybridSearchStrategy
 
         base_strategy = BaseSearchStrategy(mock_supabase)
         return HybridSearchStrategy(mock_supabase, base_strategy)
@@ -195,14 +192,12 @@ class TestHybridSearchCore:
         assert isinstance(merged, list)
         assert len(merged) <= 5
 
-
 class TestRerankingCore:
     """Basic reranking tests"""
 
     @pytest.fixture
     def reranking_strategy(self):
         """Create reranking strategy"""
-        from src.server.services.search.reranking_strategy import RerankingStrategy
 
         return RerankingStrategy()
 
@@ -261,15 +256,12 @@ class TestRerankingCore:
         # Highest rerank score should be first
         assert result[0]["rerank_score"] == 0.95
 
-
 class TestAgenticRAGCore:
     """Basic agentic RAG tests"""
 
     @pytest.fixture
     def agentic_strategy(self, mock_supabase):
         """Create agentic RAG strategy"""
-        from src.server.services.search.agentic_rag_strategy import AgenticRAGStrategy
-        from src.server.services.search.base_search_strategy import BaseSearchStrategy
 
         base_strategy = BaseSearchStrategy(mock_supabase)
         return AgenticRAGStrategy(mock_supabase, base_strategy)
@@ -291,7 +283,6 @@ class TestAgenticRAGCore:
         assert "languages" in analysis
         assert analysis["is_code_query"] is True
         assert "python" in analysis["languages"]
-
 
 class TestRAGIntegrationSimple:
     """Simple integration tests"""
@@ -331,7 +322,6 @@ class TestRAGIntegrationSimple:
         mock_model.predict.return_value = [0.95, 0.85, 0.75]
 
         # Initialize RAG service with reranking
-        from src.server.services.search.reranking_strategy import RerankingStrategy
 
         reranking_strategy = RerankingStrategy()
         reranking_strategy.model = mock_model
@@ -430,7 +420,6 @@ class TestRAGIntegrationSimple:
             code_result = result["results"][0]
             assert "def example_function" in code_result["code"]
             assert code_result["summary"] == "Example function that returns greeting"
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

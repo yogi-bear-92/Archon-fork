@@ -1,0 +1,199 @@
+name: Branch Protection Management
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, closed, merged]
+
+jobs:
+  branch-protection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      administration: write
+      pull-requests: read
+    
+    steps:
+      - name: Configure Branch Protection Rules
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = 'main';
+            
+            // Define protection rules for main branch
+            const protectionRules = {
+              required_status_checks: {
+                strict: true,
+                contexts: []
+              },
+              enforce_admins: false,
+              required_pull_request_reviews: {
+                required_approving_review_count: 1,
+                dismiss_stale_reviews: true,
+                require_code_owner_reviews: false,
+                dismissal_restrictions: {}
+              },
+              restrictions: null,
+              required_linear_history: false,
+              allow_force_pushes: false,
+              allow_deletions: false
+            };
+            
+            try {
+              await github.rest.repos.updateBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: branch,
+                ...protectionRules
+              });
+              
+              console.log(`✅ Branch protection updated for ${branch}`);
+            } catch (error) {
+              console.log(`ℹ️ Branch protection update not needed or insufficient permissions: ${error.message}`);
+            }
+
+      - name: Check ANSF Critical Files Protection
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            // Critical ANSF system files that need extra attention
+            const criticalFiles = [
+              'src/ansf-workflow/src/production/',
+              'src/ansf-workflow/docs/PHASE3_OPTIMAL_MODE_REPORT.md',
+              'docs/ML_ENHANCED_ANSF_DEPLOYMENT_REPORT.md',
+              '.claude-flow/',
+              'CLAUDE.md'
+            ];
+            
+            let criticalChanges = [];
+            files.forEach(file => {
+              const path = file.filename;
+              criticalFiles.forEach(criticalPattern => {
+                if (path.includes(criticalPattern)) {
+                  criticalChanges.push({
+                    file: path,
+                    status: file.status,
+                    changes: file.changes
+                  });
+                }
+              });
+            });
+            
+            if (criticalChanges.length > 0) {
+              let warningComment = "## ⚠️ Critical ANSF System Files Modified\n\n";
+              warningComment += "This PR modifies critical ANSF system files that require careful review:\n\n";
+              
+              criticalChanges.forEach(change => {
+                warningComment += `- **${change.file}** (${change.status}, ${change.changes} changes)\n`;
+              });
+              
+              warningComment += "\n### Recommended Actions:\n";
+              warningComment += "- 🧪 Verify Phase 3 coordination accuracy remains >97%\n";
+              warningComment += "- 🤖 Test neural model integration (target: 88.7% accuracy)\n";
+              warningComment += "- 📊 Check monitoring dashboard functionality\n";
+              warningComment += "- 🚀 Validate production deployment scripts\n";
+              warningComment += "\n*This is an automated warning for critical system files.*";
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: warningComment
+              });
+            }
+
+      - name: ANSF Phase Protection Check
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            // Check for phase-specific changes
+            let phaseChanges = {
+              phase1: false,
+              phase2: false,
+              phase3: false,
+              neural: false
+            };
+            
+            files.forEach(file => {
+              const path = file.filename.toLowerCase();
+              if (path.includes('phase1') || path.includes('memory-critical')) phaseChanges.phase1 = true;
+              if (path.includes('phase2') || path.includes('enhanced')) phaseChanges.phase2 = true;
+              if (path.includes('phase3') || path.includes('optimal')) phaseChanges.phase3 = true;
+              if (path.includes('neural') || path.includes('ml_') || path.includes('transformer')) phaseChanges.neural = true;
+            });
+            
+            let phaseComment = "";
+            
+            if (phaseChanges.phase3) {
+              phaseComment += "🎯 **Phase 3 Changes Detected** - Ensure coordination accuracy >97%\n";
+            }
+            if (phaseChanges.neural) {
+              phaseComment += "🧠 **Neural Network Changes** - Validate model accuracy >88.7%\n";
+            }
+            if (phaseChanges.phase1 || phaseChanges.phase2) {
+              phaseComment += "⚡ **Core Phase Changes** - Test backward compatibility\n";
+            }
+            
+            if (phaseComment) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 🤖 ANSF Phase Protection Alert\n\n${phaseComment}\n*Automated phase detection and protection system*`
+              });
+            }
+
+      - name: Development Branch Recommendations
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && github.event.action == 'opened'
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const baseBranch = context.payload.pull_request.base.ref;
+            
+            let recommendations = [];
+            
+            // Branch naming recommendations
+            if (!branchName.match(/^(feature|fix|enhancement|refactor)\//) && baseBranch === 'main') {
+              recommendations.push("💡 Consider using conventional branch naming: `feature/`, `fix/`, `enhancement/`, or `refactor/`");
+            }
+            
+            // ANSF-specific branch recommendations
+            if (branchName.includes('phase') && !branchName.includes('ansf')) {
+              recommendations.push("🤖 ANSF phase work detected - consider including 'ansf' in branch name for clarity");
+            }
+            
+            if (branchName.includes('neural') || branchName.includes('ml')) {
+              recommendations.push("🧠 Neural/ML work detected - ensure model validation and performance benchmarks");
+            }
+            
+            if (recommendations.length > 0) {
+              let comment = "## 📋 Branch Development Recommendations\n\n";
+              recommendations.forEach(rec => {
+                comment += `${rec}\n`;
+              });
+              comment += "\n*These are automated suggestions to help maintain development standards.*";
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }

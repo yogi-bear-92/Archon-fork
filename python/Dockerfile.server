@@ -3,11 +3,12 @@ FROM python:3.12 AS builder
 
 WORKDIR /build
 
-# Install build dependencies and uv
+# Install build dependencies and uv with uvx
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir uv
+    && pip install --no-cache-dir uv \
+    && uv --version
 
 # Copy pyproject.toml for dependency installation
 COPY pyproject.toml .
@@ -15,14 +16,15 @@ COPY pyproject.toml .
 # Install server dependencies to a virtual environment using uv
 RUN uv venv /venv && \
     . /venv/bin/activate && \
-    uv pip install --group server --group server-reranking
+    uv pip install -e . --group server --group server-reranking --group mcp && \
+    uv pip install mcp==1.12.2
 
 # Runtime stage
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install runtime dependencies for Playwright (minimal set)
+# Install runtime dependencies for Playwright and Node.js
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -45,11 +47,18 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
+    curl \
+    git \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy the virtual environment from builder
 COPY --from=builder /venv /venv
+
+# Install uv in runtime stage for uvx functionality
+RUN pip install --no-cache-dir uv
 
 # Install Playwright browsers
 ENV PATH=/venv/bin:$PATH
@@ -60,10 +69,32 @@ COPY src/server/ src/server/
 COPY src/__init__.py src/
 COPY tests/ tests/
 
+# Verify Node.js installation and install Claude Flow
+RUN echo "=== Verifying Node.js installation ===" \
+    && which node || echo "ERROR: node not found" \
+    && which npm || echo "ERROR: npm not found" \
+    && which npx || echo "ERROR: npx not found" \
+    && ls -la /usr/bin/ | grep -E "(node|npm)" || echo "ERROR: No Node.js tools in /usr/bin" \
+    && echo "=== Installing Claude Flow ===" \
+    && npm install -g claude-flow@alpha \
+    && npm list -g claude-flow \
+    && echo "=== Final verification ===" \
+    && node --version \
+    && npm --version \
+    && npx --version
+
 # Set environment variables
 ENV PYTHONPATH="/app:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
-ENV PATH="/venv/bin:$PATH"
+ENV PATH="/venv/bin:/usr/bin:/usr/local/bin:$PATH"
+
+# Verify uvx is available and install Serena dependencies
+RUN echo "=== Verifying uv/uvx installation ===" \
+    && which uv || echo "ERROR: uv not found" \
+    && uv --version \
+    && echo "=== Setting up uvx symlink ===" \
+    && ln -sf /venv/bin/uv /venv/bin/uvx \
+    && uvx --version
 
 # Expose Server port
 ARG ARCHON_SERVER_PORT=8181
@@ -74,5 +105,5 @@ EXPOSE ${ARCHON_SERVER_PORT}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD sh -c "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${ARCHON_SERVER_PORT}/health')\""
 
-# Run the Server service
-CMD sh -c "python -m uvicorn src.server.main:socket_app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT} --workers 1"
+# Run the Server service - use simple health server in development mode
+CMD sh -c "if [ \"${DEVELOPMENT_MODE:-false}\" = \"true\" ]; then python -m uvicorn src.server.simple_health:app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT}; else python -m uvicorn src.server.main:app --host 0.0.0.0 --port ${ARCHON_SERVER_PORT} --workers 1; fi"

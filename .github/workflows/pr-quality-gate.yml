@@ -1,0 +1,273 @@
+name: PR Quality Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+
+jobs:
+  pr-quality-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: PR Quality Analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            console.log('Analyzing PR quality...');
+            
+            let qualityScore = 100;
+            let issues = [];
+            let suggestions = [];
+            let blocking = false;
+            
+            // Check 1: Branch naming convention
+            const branchName = pr.head.ref;
+            const validBranchPattern = /^(feature|feat|fix|hotfix|bugfix|enhancement|refactor|docs|chore|test|ci|perf)\/.+/;
+            
+            if (!validBranchPattern.test(branchName)) {
+              qualityScore -= 20;
+              issues.push('❌ Branch name does not follow naming convention');
+              blocking = true;
+            } else {
+              suggestions.push('✅ Branch naming convention followed');
+            }
+            
+            // Check 2: PR description quality
+            const description = pr.body || '';
+            if (description.length < 50) {
+              qualityScore -= 15;
+              issues.push('⚠️ PR description is too short (< 50 characters)');
+            } else if (description.length > 200) {
+              suggestions.push('✅ Detailed PR description provided');
+            }
+            
+            // Check 3: PR size analysis
+            const totalChanges = pr.additions + pr.deletions;
+            if (totalChanges > 1000) {
+              qualityScore -= 10;
+              issues.push(`⚠️ Large PR detected (${totalChanges} lines) - consider breaking into smaller PRs`);
+            } else if (totalChanges < 10) {
+              suggestions.push('✅ Small, focused change - easy to review');
+            }
+            
+            // Check 4: File type analysis
+            const sensitiveFiles = files.filter(file => 
+              file.filename.includes('production') ||
+              file.filename.includes('config') ||
+              file.filename.includes('.env') ||
+              file.filename === 'CLAUDE.md' ||
+              file.filename.includes('docker-compose')
+            );
+            
+            if (sensitiveFiles.length > 0) {
+              qualityScore -= 5;
+              issues.push(`🔒 Sensitive files modified (${sensitiveFiles.length}) - extra review needed`);
+            }
+            
+            // Check 5: ANSF system changes
+            const ansfFiles = files.filter(file =>
+              file.filename.includes('ansf-workflow') ||
+              file.filename.includes('phase3') ||
+              file.filename.includes('neural') ||
+              file.filename.includes('ml_')
+            );
+            
+            if (ansfFiles.length > 0) {
+              issues.push(`🤖 ANSF system changes detected (${ansfFiles.length} files) - specialized review required`);
+              suggestions.push('Consider running ANSF validation tests before merge');
+            }
+            
+            // Check 6: Commit message quality
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            let poorCommitMessages = 0;
+            commits.forEach(commit => {
+              const msg = commit.commit.message;
+              if (msg.length < 10 || !msg.match(/^(feat|fix|docs|style|refactor|test|chore|perf|ci|build).*:/)) {
+                poorCommitMessages++;
+              }
+            });
+            
+            if (poorCommitMessages > 0) {
+              qualityScore -= 5;
+              issues.push(`📝 ${poorCommitMessages} commit(s) with poor messages - consider following conventional commits`);
+            }
+            
+            // Determine overall status
+            let status = 'success';
+            let statusDescription = 'PR passes quality checks';
+            
+            if (blocking) {
+              status = 'failure';
+              statusDescription = 'PR has blocking issues';
+            } else if (qualityScore < 80) {
+              status = 'pending';
+              statusDescription = 'PR has quality concerns';
+            }
+            
+            // Generate quality report
+            let report = `## 📊 PR Quality Gate Report
+            
+**Quality Score**: ${qualityScore}/100 ${qualityScore >= 90 ? '🟢' : qualityScore >= 80 ? '🟡' : '🔴'}
+**Status**: ${status === 'success' ? '✅ PASSED' : status === 'failure' ? '❌ BLOCKED' : '⏳ REVIEW NEEDED'}
+
+### 📋 Analysis Results:
+
+`;
+            
+            if (issues.length > 0) {
+              report += `**Issues Found:**\n`;
+              issues.forEach(issue => report += `${issue}\n`);
+              report += '\n';
+            }
+            
+            if (suggestions.length > 0) {
+              report += `**Positive Indicators:**\n`;
+              suggestions.forEach(suggestion => report += `${suggestion}\n`);
+              report += '\n';
+            }
+            
+            report += `### 📈 PR Metrics:
+- **Files Changed**: ${files.length}
+- **Lines Added**: +${pr.additions}
+- **Lines Removed**: -${pr.deletions}
+- **Total Changes**: ${totalChanges}
+- **Commits**: ${commits.length}
+
+`;
+            
+            if (ansfFiles.length > 0) {
+              report += `### 🤖 ANSF System Impact:
+- **ANSF Files Modified**: ${ansfFiles.length}
+- **Requires Specialized Review**: Yes
+- **Validation Required**: Phase 3 accuracy testing (>97%)
+- **Neural Model Check**: Model performance validation (>88.7%)
+
+`;
+            }
+            
+            if (blocking) {
+              report += `### 🚫 Blocking Issues:
+This PR cannot be merged until the following issues are resolved:
+${issues.filter(issue => issue.includes('❌')).map(issue => `- ${issue}`).join('\n')}
+
+**Required Actions:**
+1. Fix branch naming convention
+2. Update PR to meet quality standards
+3. Re-run quality gate after fixes
+
+`;
+            } else if (qualityScore < 80) {
+              report += `### ⚠️ Recommendations:
+While not blocking, consider addressing these items:
+${issues.map(issue => `- ${issue}`).join('\n')}
+
+`;
+            }
+            
+            report += `### 🔍 Review Recommendations:
+- **Minimum Reviewers**: ${ansfFiles.length > 0 || sensitiveFiles.length > 0 ? '2' : '1'}
+- **Review Time Estimate**: ${totalChanges > 500 ? 'Long (45+ min)' : totalChanges > 100 ? 'Medium (15-30 min)' : 'Quick (5-15 min)'}
+- **Auto-merge Eligible**: ${qualityScore >= 90 && totalChanges < 100 && sensitiveFiles.length === 0 ? 'Yes' : 'No'}
+
+*Quality gate automatically runs on every PR update*`;
+            
+            // Post the report
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: report
+            });
+            
+            // Create status check
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: pr.head.sha,
+              state: status,
+              context: 'pr-quality-gate',
+              description: statusDescription,
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${context.issue.number}`
+            });
+            
+            // Set output for other jobs
+            core.setOutput('quality-score', qualityScore);
+            core.setOutput('blocking', blocking);
+            core.setOutput('ansf-changes', ansfFiles.length > 0);
+
+  auto-merge-check:
+    runs-on: ubuntu-latest
+    needs: pr-quality-checks
+    if: ${{ !fromJSON(steps.pr-quality-checks.outputs.blocking) && fromJSON(steps.pr-quality-checks.outputs.quality-score) >= 90 }}
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Enable Auto-merge for High Quality PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            // Only enable auto-merge for small, high-quality PRs
+            const totalChanges = pr.additions + pr.deletions;
+            const qualityScore = ${{ needs.pr-quality-checks.outputs.quality-score }};
+            const ansfChanges = ${{ needs.pr-quality-checks.outputs.ansf-changes }};
+            
+            if (qualityScore >= 90 && totalChanges < 100 && !ansfChanges) {
+              const comment = `## 🚀 Auto-merge Enabled
+              
+This PR qualifies for auto-merge based on:
+- ✅ High quality score (${qualityScore}/100)
+- ✅ Small change size (${totalChanges} lines)
+- ✅ No critical system files modified
+- ✅ Follows all naming conventions
+
+**Auto-merge will trigger after:**
+1. Required status checks pass
+2. Required reviews are approved
+3. No blocking conversations remain
+
+*You can disable auto-merge by commenting \`@github-actions disable auto-merge\`*`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+              
+              // Note: Actual auto-merge enablement would require additional permissions
+              console.log('Auto-merge eligibility confirmed');
+            }

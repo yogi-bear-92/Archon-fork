@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import requests
 
-from ....config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

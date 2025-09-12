@@ -18,14 +18,14 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 # Import unified logging
-from ..config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
-from ..services.crawler_manager import get_crawler
-from ..services.crawling import CrawlOrchestrationService
-from ..services.knowledge import DatabaseMetricsService, KnowledgeItemService
-from ..services.search.rag_service import RAGService
-from ..services.storage import DocumentStorageService
-from ..utils import get_supabase_client
-from ..utils.document_processing import extract_text_from_document
+from src.server.config.logfire_config import get_logger, safe_logfire_error, safe_logfire_info
+from src.server.services.crawler_manager import get_crawler
+from src.server.services.crawling import CrawlOrchestrationService
+from src.server.services.knowledge import DatabaseMetricsService, KnowledgeItemService
+from src.server.services.search.rag_service import RAGService
+from src.server.services.storage import DocumentStorageService
+from src.server.utils import get_supabase_client
+from src.server.utils.document_processing import extract_text_from_document
 
 # Get logger for this module
 logger = get_logger(__name__)
@@ -96,8 +96,8 @@ async def get_crawl_progress(progress_id: str):
     Frontend should poll this endpoint to track crawl progress.
     """
     try:
-        from ..utils.progress.progress_tracker import ProgressTracker
-        from ..models.progress_models import create_progress_response
+        from src.server.utils.progress.progress_tracker import ProgressTracker
+        from src.server.models.progress_models import create_progress_response
 
         # Get progress from the tracker's in-memory storage
         progress_data = ProgressTracker.get_progress(progress_id)
@@ -197,7 +197,7 @@ async def delete_knowledge_item(source_id: str):
 
         # Use SourceManagementService directly instead of going through MCP
         logger.debug("Creating SourceManagementService...")
-        from ..services.source_management_service import SourceManagementService
+        from src.server.services.source_management_service import SourceManagementService
 
         source_service = SourceManagementService(get_supabase_client())
         logger.debug("Successfully created SourceManagementService")
@@ -303,7 +303,7 @@ async def refresh_knowledge_item(source_id: str):
         progress_id = str(uuid.uuid4())
 
         # Initialize progress tracker IMMEDIATELY so it's available for polling
-        from ..utils.progress.progress_tracker import ProgressTracker
+        from src.server.utils.progress.progress_tracker import ProgressTracker
         tracker = ProgressTracker(progress_id, operation_type="crawl")
         await tracker.start({
             "url": url,
@@ -392,7 +392,7 @@ async def crawl_knowledge_item(request: KnowledgeItemRequest):
         progress_id = str(uuid.uuid4())
 
         # Initialize progress tracker IMMEDIATELY so it's available for polling
-        from ..utils.progress.progress_tracker import ProgressTracker
+        from src.server.utils.progress.progress_tracker import ProgressTracker
         tracker = ProgressTracker(progress_id, operation_type="crawl")
         
         # Detect crawl type from URL
@@ -568,7 +568,7 @@ async def upload_document(
         }
 
         # Initialize progress tracker IMMEDIATELY so it's available for polling
-        from ..utils.progress.progress_tracker import ProgressTracker
+        from src.server.utils.progress.progress_tracker import ProgressTracker
         tracker = ProgressTracker(progress_id, operation_type="upload")
         await tracker.start({
             "filename": file.filename,
@@ -618,7 +618,7 @@ async def _perform_upload_with_progress(
             raise asyncio.CancelledError("Document upload was cancelled by user")
 
     # Import ProgressMapper to prevent progress from going backwards
-    from ..services.crawling.progress_mapper import ProgressMapper
+    from src.server.services.crawling.progress_mapper import ProgressMapper
     progress_mapper = ProgressMapper()
 
     try:
@@ -827,7 +827,7 @@ async def delete_source(source_id: str):
         safe_logfire_info(f"Deleting source | source_id={source_id}")
 
         # Use SourceManagementService directly
-        from ..services.source_management_service import SourceManagementService
+        from src.server.services.source_management_service import SourceManagementService
 
         source_service = SourceManagementService(get_supabase_client())
 
@@ -872,7 +872,7 @@ async def get_database_metrics():
 async def knowledge_health():
     """Knowledge API health check with migration detection."""
     # Check for database migration needs
-    from ..main import _check_database_schema
+    from src.server.main import _check_database_schema
 
     schema_status = await _check_database_schema()
     if not schema_status["valid"]:
@@ -900,7 +900,7 @@ async def knowledge_health():
 async def get_crawl_task_status(task_id: str):
     """Get status of a background crawl task."""
     try:
-        from ..services.background_task_manager import get_task_manager
+        from src.server.services.background_task_manager import get_task_manager
 
         task_manager = get_task_manager()
         status = await task_manager.get_task_status(task_id)
@@ -920,7 +920,7 @@ async def get_crawl_task_status(task_id: str):
 async def stop_crawl_task(progress_id: str):
     """Stop a running crawl task."""
     try:
-        from ..services.crawling import get_active_orchestration, unregister_orchestration
+        from src.server.services.crawling import get_active_orchestration, unregister_orchestration
 
 
         safe_logfire_info(f"Stop crawl requested | progress_id={progress_id}")
@@ -950,7 +950,7 @@ async def stop_crawl_task(progress_id: str):
         # Step 4: Update progress tracker to reflect cancellation (only if we found and cancelled something)
         if found:
             try:
-                from ..utils.progress.progress_tracker import ProgressTracker
+                from src.server.utils.progress.progress_tracker import ProgressTracker
                 tracker = ProgressTracker(progress_id, operation_type="crawl")
                 await tracker.update(
                     status="cancelled",

@@ -11,10 +11,10 @@ from typing import Any
 
 import openai
 
-from ...config.logfire_config import safe_span, search_logger
-from ..credential_service import credential_service
-from ..llm_provider_service import get_embedding_model, get_llm_client
-from ..threading_service import get_threading_service
+from src.server.config.logfire_config import safe_span, search_logger
+from src.server.services.credential_service import credential_service
+from src.server.services.llm_provider_service import get_embedding_model, get_llm_client
+from src.server.services.threading_service import get_threading_service
 from .embedding_exceptions import (
     EmbeddingAPIError,
     EmbeddingError,

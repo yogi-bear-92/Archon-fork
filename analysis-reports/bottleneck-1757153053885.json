@@ -1,0 +1,17 @@
+{
+  "scope": "system",
+  "target": "all",
+  "bottlenecks": [
+    {
+      "severity": "critical",
+      "component": "Memory usage",
+      "metric": "99.61185455322266% utilization"
+    }
+  ],
+  "recommendations": [
+    "Implement memory optimization or increase system resources"
+  ],
+  "analysisDuration": 120.909333,
+  "confidenceScore": 0.85,
+  "issuesDetected": 1
+}

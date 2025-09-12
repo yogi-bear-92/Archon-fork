@@ -1,0 +1,56 @@
+FROM python:3.11-slim
+
+LABEL maintainer="Archon Team"
+LABEL description="Unified Archon Service - Memory Optimized"
+LABEL version="2.0.0"
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for CLI tools and lightweight services
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    npm \
+    nodejs \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Node.js tools for CLI integrations
+RUN npm install -g \
+    claude-flow@alpha \
+    ruv-swarm@latest \
+    serena@latest
+
+# Copy dependency files first for better Docker layer caching
+COPY pyproject.toml ./
+
+# Install Python dependencies directly with pip
+RUN pip install --no-cache-dir fastapi uvicorn python-multipart watchfiles \
+    crawl4ai==0.6.2 supabase==2.15.1 asyncpg openai==1.71.0 \
+    pypdf2 pdfplumber python-docx markdown python-jose[cryptography] \
+    cryptography slowapi httpx pydantic python-dotenv docker logfire \
+    pytest pytest-asyncio pytest-mock mcp
+
+# Copy application code
+COPY . .
+
+# Create cache directories with proper permissions
+RUN mkdir -p /app/.cache \
+    && mkdir -p /app/.serena-cache \
+    && mkdir -p /app/.claude-flow \
+    && chmod -R 755 /app/.cache /app/.serena-cache /app/.claude-flow
+
+# Set Python path
+ENV PYTHONPATH=/app:/app/src
+
+# Expose unified service ports
+EXPOSE 8181 8051
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8181/health || exit 1
+
+# Start unified service using system python
+CMD ["python", "-m", "uvicorn", "src.server.main:app", "--host", "0.0.0.0", "--port", "8181", "--workers", "1"]

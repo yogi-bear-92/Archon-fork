@@ -10,6 +10,7 @@ import {
   Code,
   FileCode,
   Bug,
+  Bot,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../contexts/ToastContext";
@@ -21,6 +22,7 @@ import { RAGSettings } from "../components/settings/RAGSettings";
 import { CodeExtractionSettings } from "../components/settings/CodeExtractionSettings";
 import { IDEGlobalRules } from "../components/settings/IDEGlobalRules";
 import { ButtonPlayground } from "../components/settings/ButtonPlayground";
+import { ClaudeFlowSettings } from "../components/settings/ClaudeFlowSettings";
 import { CollapsibleSettingsCard } from "../components/ui/CollapsibleSettingsCard";
 import { BugReportButton } from "../components/bug-report/BugReportButton";
 import {
@@ -190,6 +192,18 @@ export const SettingsPage = () => {
                 codeExtractionSettings={codeExtractionSettings}
                 setCodeExtractionSettings={setCodeExtractionSettings}
               />
+            </CollapsibleSettingsCard>
+          </motion.div>
+          
+          <motion.div variants={itemVariants}>
+            <CollapsibleSettingsCard
+              title="Claude Flow Integration"
+              icon={Bot}
+              accentColor="blue"
+              storageKey="claude-flow"
+              defaultExpanded={true}
+            >
+              <ClaudeFlowSettings />
             </CollapsibleSettingsCard>
           </motion.div>
 

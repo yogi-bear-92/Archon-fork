@@ -1,0 +1,152 @@
+---
+description: Archon-specific integration patterns and MCP server guidelines
+---
+
+# Archon Integration & MCP Server Rules
+
+## MCP (Model Context Protocol) Integration
+
+### MCP Server Architecture
+- **HTTP Wrapper**: Lightweight MCP server on port 8051
+- **Service Location**: [python/src/mcp/](mdc:python/src/mcp/)
+- **Dependencies**: Minimal dependencies for performance (~150MB vs 1.66GB)
+- **Communication**: HTTP-based communication between services
+
+### MCP Tool Categories
+- **RAG & Knowledge Management**: `get_available_sources()`, `perform_rag_query()`, `search_code_examples()`
+- **Project Management**: `create_project()`, `list_projects()`, `get_project()`, `update_project()`
+- **Task Management**: `create_task()`, `list_tasks()`, `get_task()`, `update_task()`
+- **Document Management**: `create_document()`, `list_documents()`, `get_document()`, `update_document()`
+- **Version Control**: `create_version()`, `restore_version()`, `list_versions()`
+
+## Knowledge Management System
+
+### RAG (Retrieval-Augmented Generation)
+- **Vector Database**: Supabase PostgreSQL with pgvector extension
+- **Embeddings**: Support for multiple embedding models
+- **Hybrid Search**: Combine semantic and keyword search
+- **Context Retrieval**: Advanced context retrieval strategies
+
+### Document Processing
+- **Supported Formats**: PDF, DOCX, Markdown, HTML
+- **Processing Pipeline**: Crawl4AI for web content, PyPDF2 for PDFs
+- **Metadata Extraction**: Automatic metadata extraction and indexing
+- **Content Chunking**: Intelligent content chunking for optimal retrieval
+
+### Knowledge Base Sources
+- **Web Crawling**: Automated web content collection
+- **Document Upload**: Manual document upload and processing
+- **API Integration**: External API data integration
+- **Real-time Updates**: WebSocket-based real-time knowledge updates
+
+## AI Agents Integration
+
+### PydanticAI Framework
+- **Agent Service**: Dedicated agents service on port 8052
+- **Service Location**: [python/src/agents/](mdc:python/src/agents/)
+- **Multi-LLM Support**: OpenAI, Gemini, Ollama integration
+- **Context Management**: Proper context management for AI conversations
+
+### Agent Capabilities
+- **Task Execution**: AI agents can execute complex tasks
+- **Code Generation**: AI-powered code generation and modification
+- **Documentation**: Automated documentation generation
+- **Testing**: AI-assisted test generation and validation
+
+## Progressive Refinement Knowledge Management
+
+### Knowledge Refinement Process
+- **Initial Ingestion**: Raw content ingestion and basic processing
+- **Semantic Analysis**: AI-powered semantic analysis and categorization
+- **Refinement Iterations**: Progressive refinement based on usage patterns
+- **Quality Scoring**: Knowledge quality scoring and optimization
+
+### Context-Aware Retrieval
+- **Query Understanding**: Natural language query understanding
+- **Context Matching**: Intelligent context matching for relevant results
+- **Relevance Scoring**: Advanced relevance scoring algorithms
+- **Result Ranking**: Multi-factor result ranking and presentation
+
+## Real-time Collaboration
+
+### WebSocket Integration
+- **Real-time Updates**: WebSocket for real-time knowledge updates
+- **Live Collaboration**: Multiple users working simultaneously
+- **Event Broadcasting**: Real-time event broadcasting across clients
+- **Connection Management**: Robust connection management and reconnection
+
+### State Synchronization
+- **Shared State**: Synchronized state across all connected clients
+- **Conflict Resolution**: Automatic conflict resolution for concurrent edits
+- **Version Control**: Real-time version control and change tracking
+- **Audit Trail**: Complete audit trail of all changes and updates
+
+## Task-Driven Development
+
+### Task Management Integration
+- **Task Creation**: AI-assisted task creation and planning
+- **Progress Tracking**: Real-time progress tracking and updates
+- **Dependency Management**: Task dependency management and resolution
+- **Completion Validation**: Automated task completion validation
+
+### Workflow Orchestration
+- **SPARC Integration**: SPARC methodology for structured development
+- **Claude Flow**: Claude Flow orchestration for complex workflows
+- **Neural Training**: AI model training and optimization
+- **Performance Monitoring**: Continuous performance monitoring and optimization
+
+## Security & Access Control
+
+### Authentication & Authorization
+- **JWT Tokens**: Secure JWT-based authentication
+- **Role-Based Access**: Role-based access control for different user types
+- **API Security**: Secure API endpoints with proper authentication
+- **Data Encryption**: End-to-end encryption for sensitive data
+
+### Data Privacy
+- **Data Anonymization**: Automatic data anonymization where appropriate
+- **Access Logging**: Comprehensive access logging and auditing
+- **Data Retention**: Configurable data retention policies
+- **GDPR Compliance**: GDPR compliance for data handling
+
+## Performance Optimization
+
+### Caching Strategies
+- **Query Caching**: Intelligent query result caching
+- **Embedding Caching**: Vector embedding caching for performance
+- **API Response Caching**: API response caching for frequently accessed data
+- **CDN Integration**: CDN integration for static content delivery
+
+### Scalability Patterns
+- **Microservices**: Independent microservices for horizontal scaling
+- **Load Balancing**: Load balancing across multiple service instances
+- **Database Sharding**: Database sharding for large-scale deployments
+- **Auto-scaling**: Automatic scaling based on load and demand
+
+## Monitoring & Observability
+
+### Health Monitoring
+- **Service Health**: Continuous health monitoring of all services
+- **Performance Metrics**: Real-time performance metrics and alerts
+- **Error Tracking**: Comprehensive error tracking and reporting
+- **Uptime Monitoring**: Service uptime monitoring and alerting
+
+### Analytics & Insights
+- **Usage Analytics**: User behavior and usage pattern analytics
+- **Performance Analytics**: System performance and optimization insights
+- **Knowledge Analytics**: Knowledge base usage and effectiveness metrics
+- **AI Model Analytics**: AI model performance and accuracy tracking
+
+## Integration Testing
+
+### MCP Server Testing
+- **API Testing**: Comprehensive API endpoint testing
+- **Integration Testing**: End-to-end integration testing
+- **Load Testing**: Performance and load testing
+- **Security Testing**: Security vulnerability testing
+
+### Knowledge Base Testing
+- **RAG Testing**: RAG system accuracy and performance testing
+- **Document Processing**: Document processing pipeline testing
+- **Search Testing**: Search functionality and relevance testing
+- **Real-time Testing**: Real-time collaboration and updates testing

@@ -15,16 +15,16 @@ from urllib.parse import urlparse
 
 from supabase import Client
 
-from ...config.logfire_config import search_logger
-from ..embeddings.contextual_embedding_service import generate_contextual_embeddings_batch
-from ..embeddings.embedding_service import create_embeddings_batch
+from src.server.config.logfire_config import search_logger
+from src.server.services.embeddings.contextual_embedding_service import generate_contextual_embeddings_batch
+from src.server.services.embeddings.embedding_service import create_embeddings_batch
 
 
 def _get_model_choice() -> str:
     """Get MODEL_CHOICE with direct fallback."""
     try:
         # Direct cache/env fallback
-        from ..credential_service import credential_service
+        from src.server.services.credential_service import credential_service
 
         if credential_service._cache_initialized and "MODEL_CHOICE" in credential_service._cache:
             model = credential_service._cache["MODEL_CHOICE"]
@@ -167,7 +167,7 @@ def extract_code_blocks(markdown_content: str, min_length: int = None) -> list[d
     """
     # Load all code extraction settings with direct fallback
     try:
-        from ...services.credential_service import credential_service
+        from src.server.services.credential_service import credential_service
 
         def _get_setting_fallback(key: str, default: str) -> str:
             if credential_service._cache_initialized and key in credential_service._cache:
@@ -544,7 +544,7 @@ Format your response as JSON:
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
                 # Try to get from credential service with direct fallback
-                from ..credential_service import credential_service
+                from src.server.services.credential_service import credential_service
 
                 if (
                     credential_service._cache_initialized
@@ -644,7 +644,7 @@ async def generate_code_summaries_batch(
     # Get max_workers from settings if not provided
     if max_workers is None:
         try:
-            from ...services.credential_service import credential_service
+            from src.server.services.credential_service import credential_service
 
             if (
                 credential_service._cache_initialized
@@ -776,7 +776,7 @@ async def add_code_examples_to_supabase(
 
     # Check if contextual embeddings are enabled
     try:
-        from ..credential_service import credential_service
+        from src.server.services.credential_service import credential_service
 
         use_contextual_embeddings = credential_service._cache.get("USE_CONTEXTUAL_EMBEDDINGS")
         if isinstance(use_contextual_embeddings, str):

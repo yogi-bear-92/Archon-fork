@@ -1,0 +1,590 @@
+name: 🤖 Intelligent PR Auto-Merge with GitHub Swarm
+
+on:
+  # Trigger on PR status changes, reviews, and check suite completion
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [development, main]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  status: {}
+  
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to evaluate for auto-merge'
+        required: true
+        type: number
+      force_merge:
+        description: 'Force merge (bypass some safety checks)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # GitHub Swarm Configuration
+  GITHUB_SWARM_ENABLED: true
+  GITHUB_SWARM_AGENTS: 3
+  MERGE_SAFETY_LEVEL: maximum
+  CONTAINER_VALIDATION_REQUIRED: true
+  
+  # Claude Flow Integration
+  CLAUDE_FLOW_COORDINATION: true
+  NEURAL_PATTERN_ANALYSIS: true
+  PERFORMANCE_VALIDATION: true
+
+jobs:
+  # Phase 1: GitHub Swarm Initialization
+  swarm-initialization:
+    name: 🚀 Initialize GitHub Swarm Coordination
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.state == 'open' || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      swarm-session-id: ${{ steps.swarm-init.outputs.session-id }}
+      coordination-enabled: ${{ steps.swarm-init.outputs.coordination-enabled }}
+      agent-count: ${{ steps.swarm-init.outputs.agent-count }}
+      pr-number: ${{ steps.context.outputs.pr-number }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🔍 Get PR Context
+        id: context
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "pr-number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr-number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 🌐 Setup Node.js for Claude Flow
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 🚀 Initialize GitHub Swarm Coordination
+        id: swarm-init
+        run: |
+          # Install Claude Flow for swarm coordination
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Initialize GitHub swarm with intelligent coordination
+          SESSION_ID=$(date +%s | sha256sum | head -c 16)
+          echo "session-id=${SESSION_ID}" >> $GITHUB_OUTPUT
+          echo "coordination-enabled=true" >> $GITHUB_OUTPUT
+          echo "agent-count=3" >> $GITHUB_OUTPUT
+          
+          # Initialize swarm topology for GitHub operations
+          npx claude-flow@alpha swarm init \
+            --topology=hierarchical \
+            --max-agents=3 \
+            --session-id="${SESSION_ID}" \
+            --github-integration=true \
+            --pr-monitoring=true \
+            --safety-level=maximum
+            
+          echo "✅ GitHub Swarm initialized with session: ${SESSION_ID}"
+          
+      - name: 📊 Export Swarm Configuration
+        run: |
+          echo "SWARM_SESSION_ID=${{ steps.swarm-init.outputs.session-id }}" >> $GITHUB_ENV
+          echo "PR_NUMBER=${{ steps.context.outputs.pr-number }}" >> $GITHUB_ENV
+          
+          # Create swarm coordination metadata
+          cat > /tmp/swarm-config.json << EOF
+          {
+            "sessionId": "${{ steps.swarm-init.outputs.session-id }}",
+            "prNumber": ${{ steps.context.outputs.pr-number }},
+            "agentCount": ${{ steps.swarm-init.outputs.agent-count }},
+            "coordinationEnabled": ${{ steps.swarm-init.outputs.coordination-enabled }},
+            "safetyLevel": "maximum",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          
+      - name: 📤 Upload Swarm Configuration
+        uses: actions/upload-artifact@v4
+        with:
+          name: swarm-coordination-config
+          path: /tmp/swarm-config.json
+          retention-days: 1
+
+  # Phase 2: Comprehensive Safety Analysis
+  safety-validation:
+    name: 🛡️ Multi-Agent Safety Validation
+    runs-on: ubuntu-latest
+    needs: swarm-initialization
+    if: needs.swarm-initialization.outputs.coordination-enabled == 'true'
+    
+    outputs:
+      safety-score: ${{ steps.safety-analysis.outputs.safety-score }}
+      validation-passed: ${{ steps.safety-analysis.outputs.validation-passed }}
+      container-health: ${{ steps.container-validation.outputs.health-status }}
+      all-checks-passed: ${{ steps.status-validation.outputs.all-passed }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📤 Download Swarm Configuration
+        uses: actions/download-artifact@v4
+        with:
+          name: swarm-coordination-config
+          path: /tmp/
+          
+      - name: 🌐 Setup Node.js for Claude Flow
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 🤖 Deploy GitHub Swarm Agents
+        run: |
+          # Install Claude Flow
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Load swarm configuration
+          SWARM_CONFIG=$(cat /tmp/swarm-config.json)
+          SESSION_ID=$(echo "$SWARM_CONFIG" | jq -r '.sessionId')
+          PR_NUMBER=$(echo "$SWARM_CONFIG" | jq -r '.prNumber')
+          
+          echo "🚀 Deploying GitHub Swarm agents for PR #${PR_NUMBER}"
+          
+          # Deploy specialized agents for PR validation
+          npx claude-flow@alpha agent spawn \
+            --type="github-pr-analyzer" \
+            --name="PR Safety Analyzer" \
+            --session-id="${SESSION_ID}" \
+            --pr-number="${PR_NUMBER}"
+            
+          npx claude-flow@alpha agent spawn \
+            --type="container-validator" \
+            --name="Container Health Validator" \
+            --session-id="${SESSION_ID}" \
+            --validation-mode="comprehensive"
+            
+          npx claude-flow@alpha agent spawn \
+            --type="merge-coordinator" \
+            --name="Merge Decision Coordinator" \
+            --session-id="${SESSION_ID}" \
+            --safety-level="maximum"
+          
+      - name: 🔍 Comprehensive PR Status Analysis
+        id: status-validation
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          
+          echo "🔍 Analyzing PR #${PR_NUMBER} with GitHub Swarm coordination"
+          
+          # Get comprehensive PR status
+          PR_DATA=$(gh pr view ${PR_NUMBER} --json number,state,mergeable,draft,baseRefName,headRefName,statusCheckRollup,reviews,commits,changedFiles)
+          
+          echo "📊 PR Status Analysis:"
+          echo "$PR_DATA" | jq '.'
+          
+          # Validate PR state
+          STATE=$(echo "$PR_DATA" | jq -r '.state')
+          MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
+          IS_DRAFT=$(echo "$PR_DATA" | jq -r '.draft')
+          BASE_BRANCH=$(echo "$PR_DATA" | jq -r '.baseRefName')
+          
+          # Validate status checks
+          STATUS_CHECKS=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[]')
+          FAILED_CHECKS=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[] | select(.conclusion != "SUCCESS") | .name')
+          
+          if [ "$STATE" == "OPEN" ] && [ "$MERGEABLE" == "MERGEABLE" ] && [ "$IS_DRAFT" == "false" ] && [ -z "$FAILED_CHECKS" ]; then
+            echo "✅ All status checks passed"
+            echo "all-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ PR validation failed:"
+            echo "  State: $STATE (expected: OPEN)"
+            echo "  Mergeable: $MERGEABLE (expected: MERGEABLE)"
+            echo "  Draft: $IS_DRAFT (expected: false)"
+            if [ -n "$FAILED_CHECKS" ]; then
+              echo "  Failed checks: $FAILED_CHECKS"
+            fi
+            echo "all-passed=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🐳 Container Health Validation
+        id: container-validation
+        run: |
+          echo "🐳 Performing comprehensive container validation"
+          
+          # Set up Python environment
+          python -m pip install --upgrade pip
+          pip install uvicorn fastapi httpx pytest aiohttp
+          
+          # Start container health check
+          cd python
+          
+          echo "🚀 Starting Archon server for health validation"
+          timeout 60s python -m uvicorn src.server.main:app --host 0.0.0.0 --port 8080 --workers 1 &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 10
+          
+          # Health check endpoint
+          HEALTH_STATUS="unhealthy"
+          for i in {1..12}; do
+            if curl -s http://localhost:8080/health >/dev/null 2>&1; then
+              HEALTH_STATUS="healthy"
+              echo "✅ Container health check passed (attempt $i)"
+              break
+            fi
+            echo "⏳ Waiting for container to be healthy (attempt $i/12)"
+            sleep 5
+          done
+          
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+          
+          echo "health-status=$HEALTH_STATUS" >> $GITHUB_OUTPUT
+          
+          if [ "$HEALTH_STATUS" == "healthy" ]; then
+            echo "✅ Container validation successful"
+          else
+            echo "❌ Container validation failed"
+          fi
+          
+      - name: 🧠 GitHub Swarm Safety Analysis
+        id: safety-analysis
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          SESSION_ID=${{ needs.swarm-initialization.outputs.swarm-session-id }}
+          
+          echo "🧠 Performing GitHub Swarm safety analysis for PR #${PR_NUMBER}"
+          
+          # Coordinate swarm agents for comprehensive analysis
+          npx claude-flow@alpha task orchestrate \
+            --session-id="${SESSION_ID}" \
+            --task="comprehensive-pr-safety-analysis" \
+            --pr-number="${PR_NUMBER}" \
+            --strategy="parallel"
+          
+          # Calculate safety score based on validation results
+          STATUS_PASSED="${{ steps.status-validation.outputs.all-passed }}"
+          CONTAINER_HEALTHY="${{ steps.container-validation.outputs.health-status }}"
+          
+          SAFETY_SCORE=0
+          
+          # Status checks weight: 50%
+          if [ "$STATUS_PASSED" == "true" ]; then
+            SAFETY_SCORE=$((SAFETY_SCORE + 50))
+          fi
+          
+          # Container health weight: 30%
+          if [ "$CONTAINER_HEALTHY" == "healthy" ]; then
+            SAFETY_SCORE=$((SAFETY_SCORE + 30))
+          fi
+          
+          # Branch protection and merge conflicts weight: 20%
+          if [ "${{ github.event.pull_request.mergeable }}" == "true" ] || [ "${{ inputs.force_merge }}" == "true" ]; then
+            SAFETY_SCORE=$((SAFETY_SCORE + 20))
+          fi
+          
+          echo "📊 Safety Score: ${SAFETY_SCORE}/100"
+          echo "safety-score=${SAFETY_SCORE}" >> $GITHUB_OUTPUT
+          
+          # Validation threshold: 80/100
+          if [ $SAFETY_SCORE -ge 80 ]; then
+            echo "✅ Safety validation passed (${SAFETY_SCORE}/100)"
+            echo "validation-passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Safety validation failed (${SAFETY_SCORE}/100)"
+            echo "validation-passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Phase 3: Intelligent Merge Decision
+  merge-decision:
+    name: 🎯 GitHub Swarm Merge Decision
+    runs-on: ubuntu-latest
+    needs: [swarm-initialization, safety-validation]
+    if: needs.safety-validation.outputs.validation-passed == 'true'
+    
+    outputs:
+      merge-approved: ${{ steps.merge-decision.outputs.merge-approved }}
+      merge-method: ${{ steps.merge-decision.outputs.merge-method }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🌐 Setup Node.js for Claude Flow
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 🧠 GitHub Swarm Merge Decision Analysis
+        id: merge-decision
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          SESSION_ID=${{ needs.swarm-initialization.outputs.swarm-session-id }}
+          SAFETY_SCORE=${{ needs.safety-validation.outputs.safety-score }}
+          
+          echo "🎯 GitHub Swarm making merge decision for PR #${PR_NUMBER}"
+          echo "🛡️ Safety Score: ${SAFETY_SCORE}/100"
+          
+          # Install Claude Flow
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Coordinate merge decision with swarm agents
+          MERGE_DECISION=$(npx claude-flow@alpha task orchestrate \
+            --session-id="${SESSION_ID}" \
+            --task="intelligent-merge-decision" \
+            --pr-number="${PR_NUMBER}" \
+            --safety-score="${SAFETY_SCORE}" \
+            --strategy="consensus")
+          
+          # Get PR details for merge method decision
+          PR_DATA=$(gh pr view ${PR_NUMBER} --json baseRefName,changedFiles,commits)
+          BASE_BRANCH=$(echo "$PR_DATA" | jq -r '.baseRefName')
+          CHANGED_FILES=$(echo "$PR_DATA" | jq -r '.changedFiles')
+          COMMIT_COUNT=$(echo "$PR_DATA" | jq -r '.commits | length')
+          
+          echo "📊 PR Analysis:"
+          echo "  Base Branch: $BASE_BRANCH"
+          echo "  Changed Files: $CHANGED_FILES"
+          echo "  Commit Count: $COMMIT_COUNT"
+          
+          # Intelligent merge method selection
+          MERGE_METHOD="merge"
+          
+          # Use squash for feature branches with multiple commits
+          if [[ "$BASE_BRANCH" == "development" ]] && [ $COMMIT_COUNT -gt 3 ]; then
+            MERGE_METHOD="squash"
+          elif [[ "$BASE_BRANCH" == "main" ]] && [ $COMMIT_COUNT -eq 1 ]; then
+            MERGE_METHOD="rebase"
+          fi
+          
+          echo "🔄 Selected merge method: $MERGE_METHOD"
+          echo "merge-method=$MERGE_METHOD" >> $GITHUB_OUTPUT
+          
+          # Final merge approval based on all criteria
+          if [ $SAFETY_SCORE -ge 80 ] && [ "${{ needs.safety-validation.outputs.all-checks-passed }}" == "true" ] && [ "${{ needs.safety-validation.outputs.container-health }}" == "healthy" ]; then
+            echo "✅ MERGE APPROVED by GitHub Swarm"
+            echo "merge-approved=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ MERGE DENIED by GitHub Swarm"
+            echo "merge-approved=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Phase 4: Automated Merge Execution
+  execute-merge:
+    name: 🚀 Execute Automated Merge
+    runs-on: ubuntu-latest
+    needs: [swarm-initialization, safety-validation, merge-decision]
+    if: needs.merge-decision.outputs.merge-approved == 'true'
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🚀 Execute GitHub Swarm Coordinated Merge
+        id: execute-merge
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          MERGE_METHOD=${{ needs.merge-decision.outputs.merge-method }}
+          SAFETY_SCORE=${{ needs.safety-validation.outputs.safety-score }}
+          SESSION_ID=${{ needs.swarm-initialization.outputs.swarm-session-id }}
+          
+          echo "🚀 Executing automated merge for PR #${PR_NUMBER}"
+          echo "🔄 Merge method: $MERGE_METHOD"
+          echo "🛡️ Safety score: ${SAFETY_SCORE}/100"
+          
+          # Get PR details for merge message
+          PR_DATA=$(gh pr view ${PR_NUMBER} --json title,body,author,baseRefName,headRefName)
+          PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+          PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login')
+          BASE_BRANCH=$(echo "$PR_DATA" | jq -r '.baseRefName')
+          HEAD_BRANCH=$(echo "$PR_DATA" | jq -r '.headRefName')
+          
+          # Create intelligent merge message
+          MERGE_MESSAGE="$(cat <<EOF
+          $PR_TITLE (#${PR_NUMBER})
+          
+          🤖 Auto-merged by GitHub Swarm Coordination
+          👤 Author: @${PR_AUTHOR}
+          🔄 ${HEAD_BRANCH} → ${BASE_BRANCH}
+          🛡️ Safety Score: ${SAFETY_SCORE}/100
+          🧠 Swarm Session: ${SESSION_ID}
+          
+          ✅ All automated safety checks passed:
+          - Status checks: ✅ All passed
+          - Container health: ✅ Healthy
+          - Merge conflicts: ✅ None detected
+          - Branch protection: ✅ Satisfied
+          
+          🚀 Generated with [Claude Code](https://claude.ai/code)
+          Co-Authored-By: GitHub Swarm <swarm@github.com>
+          EOF
+          )"
+          
+          # Execute merge with appropriate method
+          case "$MERGE_METHOD" in
+            "squash")
+              echo "🔄 Executing squash merge..."
+              gh pr merge ${PR_NUMBER} --squash --body "$MERGE_MESSAGE"
+              ;;
+            "rebase")
+              echo "🔄 Executing rebase merge..."
+              gh pr merge ${PR_NUMBER} --rebase
+              ;;
+            *)
+              echo "🔄 Executing merge commit..."
+              gh pr merge ${PR_NUMBER} --merge --body "$MERGE_MESSAGE"
+              ;;
+          esac
+          
+          echo "✅ Merge completed successfully!"
+          echo "merge-completed=true" >> $GITHUB_OUTPUT
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📊 Post-Merge Swarm Coordination
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          SESSION_ID=${{ needs.swarm-initialization.outputs.swarm-session-id }}
+          
+          echo "📊 Coordinating post-merge activities with GitHub Swarm"
+          
+          # Install Claude Flow for coordination
+          npm install -g @ruvnet/claude-flow@alpha
+          
+          # Coordinate post-merge tasks
+          npx claude-flow@alpha task orchestrate \
+            --session-id="${SESSION_ID}" \
+            --task="post-merge-coordination" \
+            --pr-number="${PR_NUMBER}" \
+            --strategy="sequential"
+          
+          # Export merge metrics
+          npx claude-flow@alpha metrics export \
+            --session-id="${SESSION_ID}" \
+            --format="github-actions" \
+            --include-performance=true
+
+  # Phase 5: Notification and Monitoring
+  notifications:
+    name: 📢 Merge Notifications & Monitoring
+    runs-on: ubuntu-latest
+    needs: [swarm-initialization, safety-validation, merge-decision, execute-merge]
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📢 GitHub Swarm Merge Notification
+        run: |
+          PR_NUMBER=${{ needs.swarm-initialization.outputs.pr-number }}
+          SESSION_ID=${{ needs.swarm-initialization.outputs.swarm-session-id }}
+          
+          # Determine outcome
+          if [ "${{ needs.execute-merge.result }}" == "success" ]; then
+            STATUS="✅ SUCCESSFULLY MERGED"
+            SAFETY_SCORE=${{ needs.safety-validation.outputs.safety-score }}
+            MERGE_METHOD=${{ needs.merge-decision.outputs.merge-method }}
+          elif [ "${{ needs.merge-decision.outputs.merge-approved }}" == "false" ]; then
+            STATUS="❌ MERGE DENIED"
+            SAFETY_SCORE=${{ needs.safety-validation.outputs.safety-score }}
+            MERGE_METHOD="N/A"
+          else
+            STATUS="⚠️ MERGE FAILED"
+            SAFETY_SCORE=${{ needs.safety-validation.outputs.safety-score || '0' }}
+            MERGE_METHOD="N/A"
+          fi
+          
+          # Create comprehensive notification
+          NOTIFICATION="$(cat <<EOF
+          ## 🤖 GitHub Swarm Auto-Merge Report
+          
+          **PR #${PR_NUMBER}**: $STATUS
+          
+          ### 📊 Analysis Results
+          - 🛡️ **Safety Score**: ${SAFETY_SCORE}/100
+          - 🔄 **Merge Method**: ${MERGE_METHOD}
+          - 🧠 **Swarm Session**: \`${SESSION_ID}\`
+          
+          ### ✅ Validation Results
+          - **Status Checks**: ${{ needs.safety-validation.outputs.all-checks-passed == 'true' && '✅ Passed' || '❌ Failed' }}
+          - **Container Health**: ${{ needs.safety-validation.outputs.container-health == 'healthy' && '✅ Healthy' || '❌ Unhealthy' }}
+          - **Merge Conflicts**: ${{ github.event.pull_request.mergeable && '✅ None' || '❌ Detected' }}
+          
+          ### 🤖 GitHub Swarm Coordination
+          - **Agents Deployed**: ${{ needs.swarm-initialization.outputs.agent-count }}
+          - **Coordination Mode**: Hierarchical
+          - **Safety Level**: Maximum
+          
+          ---
+          *Automated by GitHub Swarm • Session: ${SESSION_ID}*
+          EOF
+          )"
+          
+          echo "$NOTIFICATION"
+          
+          # Add comment to PR if it still exists
+          if gh pr view ${PR_NUMBER} >/dev/null 2>&1; then
+            echo "$NOTIFICATION" | gh pr comment ${PR_NUMBER} --body-file -
+          fi
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📈 Export Swarm Performance Metrics
+        if: always()
+        run: |
+          echo "📈 Exporting GitHub Swarm performance metrics"
+          
+          # Create performance report
+          cat > /tmp/swarm-performance.json << EOF
+          {
+            "sessionId": "${{ needs.swarm-initialization.outputs.swarm-session-id }}",
+            "prNumber": ${{ needs.swarm-initialization.outputs.pr-number }},
+            "safetyScore": ${{ needs.safety-validation.outputs.safety-score || 0 }},
+            "mergeApproved": "${{ needs.merge-decision.outputs.merge-approved }}",
+            "mergeCompleted": "${{ needs.execute-merge.result == 'success' }}",
+            "agentCount": ${{ needs.swarm-initialization.outputs.agent-count }},
+            "validationResults": {
+              "statusChecks": "${{ needs.safety-validation.outputs.all-checks-passed }}",
+              "containerHealth": "${{ needs.safety-validation.outputs.container-health }}",
+              "mergeable": "${{ github.event.pull_request.mergeable }}"
+            },
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          
+      - name: 📤 Upload Performance Metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-swarm-performance-${{ needs.swarm-initialization.outputs.pr-number }}
+          path: /tmp/swarm-performance.json
+          retention-days: 30

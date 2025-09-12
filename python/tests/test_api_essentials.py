@@ -1,6 +1,5 @@
 """Essential API tests - Focus on core functionality that must work."""
 
-
 def test_health_endpoint(client):
     """Test that health endpoint returns OK status."""
     response = client.get("/health")
@@ -8,7 +7,6 @@ def test_health_endpoint(client):
     data = response.json()
     assert "status" in data
     assert data["status"] in ["healthy", "initializing"]
-
 
 def test_create_project(client, test_project, mock_supabase_client):
     """Test creating a new project via API."""
@@ -37,7 +35,6 @@ def test_create_project(client, test_project, mock_supabase_client):
             or "message" in data
         )
 
-
 def test_list_projects(client, mock_supabase_client):
     """Test listing projects endpoint exists and responds."""
     # Set up mock to return empty list (no projects)
@@ -51,7 +48,6 @@ def test_list_projects(client, mock_supabase_client):
         data = response.json()
         assert isinstance(data, (list, dict))
 
-
 def test_create_task(client, test_task):
     """Test task creation endpoint exists."""
     # Try the tasks endpoint directly
@@ -59,13 +55,11 @@ def test_create_task(client, test_task):
     # Accept various status codes - endpoint exists
     assert response.status_code in [200, 201, 400, 422, 405]
 
-
 def test_list_tasks(client):
     """Test tasks listing endpoint exists."""
     response = client.get("/api/tasks")
     # Accept 200, 400, 422, or 500 - endpoint exists
     assert response.status_code in [200, 400, 422, 500]
-
 
 def test_start_crawl(client):
     """Test crawl endpoint exists and validates input."""
@@ -75,13 +69,11 @@ def test_start_crawl(client):
     # Accept various status codes - endpoint exists and processes request
     assert response.status_code in [200, 201, 400, 404, 422, 500]
 
-
 def test_search_knowledge(client):
     """Test knowledge search endpoint exists."""
     response = client.post("/api/knowledge/search", json={"query": "test"})
     # Accept various status codes - endpoint exists
     assert response.status_code in [200, 400, 404, 422, 500]
-
 
 def test_polling_endpoint(client):
     """Test polling endpoints exist for progress tracking."""
@@ -89,7 +81,6 @@ def test_polling_endpoint(client):
     response = client.get("/api/knowledge/crawl-progress/test-id")
     # Should return 200 with not_found status or actual progress
     assert response.status_code in [200, 404, 500]
-
 
 def test_authentication(client):
     """Test that API handles auth headers gracefully."""
@@ -101,7 +92,6 @@ def test_authentication(client):
     headers = {"Authorization": "Bearer invalid-token"}
     response = client.get("/api/projects", headers=headers)
     assert response.status_code in [200, 401, 403, 500]  # 500 is OK in test environment
-
 
 def test_error_handling(client):
     """Test API returns proper error responses."""

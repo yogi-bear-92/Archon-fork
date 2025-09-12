@@ -1,0 +1,385 @@
+name: Comment-Driven Automatic Fixes
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  checks: write
+
+jobs:
+  detect-fix-command:
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request != null || github.event.pull_request != null
+    outputs:
+      command: ${{ steps.parse-command.outputs.command }}
+      pr_number: ${{ steps.get-pr.outputs.pr_number }}
+      authorized: ${{ steps.check-auth.outputs.authorized }}
+      comment_id: ${{ steps.get-comment-id.outputs.comment_id }}
+    
+    steps:
+      - name: Get PR Number
+        id: get-pr
+        run: |
+          if [ "${{ github.event.issue.pull_request }}" != "" ]; then
+            echo "pr_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get Comment ID
+        id: get-comment-id
+        run: |
+          echo "comment_id=${{ github.event.comment.id }}" >> $GITHUB_OUTPUT
+      
+      - name: Check Authorization
+        id: check-auth
+        run: |
+          # Check if user is authorized (repo owner, collaborator, or in authorized list)
+          authorized_users=("yogi-bear-92" "dependabot[bot]" "github-actions[bot]")
+          user="${{ github.event.comment.user.login }}"
+          
+          if [[ " ${authorized_users[@]} " =~ " $user " ]] || \
+             [[ "${{ github.event.comment.author_association }}" == "OWNER" ]] || \
+             [[ "${{ github.event.comment.author_association }}" == "COLLABORATOR" ]] || \
+             [[ "${{ github.event.comment.author_association }}" == "MEMBER" ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Parse Fix Command
+        id: parse-command
+        run: |
+          comment="${{ github.event.comment.body }}"
+          
+          if [[ "$comment" =~ /fix-containers ]]; then
+            echo "command=containers" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-lint ]]; then
+            echo "command=lint" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-types ]]; then
+            echo "command=types" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-security ]]; then
+            echo "command=security" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-tests ]]; then
+            echo "command=tests" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-deps ]]; then
+            echo "command=deps" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-docs ]]; then
+            echo "command=docs" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-performance ]]; then
+            echo "command=performance" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-workflows ]]; then
+            echo "command=workflows" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /fix-all ]]; then
+            echo "command=all" >> $GITHUB_OUTPUT
+          else
+            echo "command=none" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Add Initial Reaction
+        if: steps.parse-command.outputs.command != 'none' && steps.check-auth.outputs.authorized == 'true'
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/comments/${{ steps.get-comment-id.outputs.comment_id }}/reactions" \
+            -d '{"content":"eyes"}'
+
+  execute-fix:
+    needs: detect-fix-command
+    runs-on: ubuntu-latest
+    if: needs.detect-fix-command.outputs.command != 'none' && needs.detect-fix-command.outputs.authorized == 'true'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - command: ${{ needs.detect-fix-command.outputs.command }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            python/package-lock.json
+      
+      - name: Install Dependencies
+        run: |
+          # Python dependencies
+          pip install --upgrade pip
+          pip install -r python/requirements.txt || echo "No requirements.txt found"
+          
+          # Node.js dependencies
+          if [ -f package.json ]; then npm ci; fi
+          if [ -f python/package.json ]; then cd python && npm ci && cd ..; fi
+          
+          # Claude Flow and system dependencies
+          npm install -g claude-flow@alpha
+          
+          # Additional fix tools
+          pip install black isort flake8 mypy bandit safety pytest-cov
+          npm install -g prettier eslint
+      
+      - name: Get PR Information
+        id: pr-info
+        run: |
+          pr_number="${{ needs.detect-fix-command.outputs.pr_number }}"
+          pr_data=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/pulls/$pr_number")
+          
+          echo "head_ref=$(echo "$pr_data" | jq -r '.head.ref')" >> $GITHUB_OUTPUT
+          echo "base_ref=$(echo "$pr_data" | jq -r '.base.ref')" >> $GITHUB_OUTPUT
+          echo "head_sha=$(echo "$pr_data" | jq -r '.head.sha')" >> $GITHUB_OUTPUT
+      
+      - name: Checkout PR Branch
+        run: |
+          git checkout ${{ steps.pr-info.outputs.head_ref }}
+      
+      - name: Add Started Reaction
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/comments/${{ needs.detect-fix-command.outputs.comment_id }}/reactions" \
+            -d '{"content":"rocket"}'
+      
+      - name: Create Fix Status Comment
+        id: status-comment
+        run: |
+          status_comment=$(cat << 'EOF'
+## 🤖 Automated Fix System Activated
+
+**Command**: `/fix-${{ matrix.command }}`  
+**Status**: 🔄 Initializing swarm agents...  
+**Branch**: `${{ steps.pr-info.outputs.head_ref }}`  
+**Commit**: `${{ steps.pr-info.outputs.head_sha }}`
+
+### Progress Updates:
+- ⚡ Swarm coordination initialized
+- 📋 Safety checks in progress
+- 🔍 Analysis phase starting...
+
+*This comment will be updated with progress...*
+EOF
+          )
+          
+          comment_response=$(curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/${{ needs.detect-fix-command.outputs.pr_number }}/comments" \
+            -d "{\"body\": $(echo "$status_comment" | jq -R -s .)}")
+          
+          echo "status_comment_id=$(echo "$comment_response" | jq -r '.id')" >> $GITHUB_OUTPUT
+      
+      - name: Initialize Claude Flow Swarm
+        run: |
+          # Initialize memory-optimized swarm for automated fixes
+          claude-flow swarm init \
+            --topology=hierarchical \
+            --max-agents=3 \
+            --memory-limit=100MB \
+            --emergency-mode=false \
+            --coordination-mode=fix-automation
+      
+      - name: Execute Fix Based on Command
+        id: execute-fix
+        run: |
+          cd python
+          
+          case "${{ matrix.command }}" in
+            "containers")
+              bash ../scripts/fixes/fix-containers.sh
+              ;;
+            "lint")
+              bash ../scripts/fixes/fix-lint.sh
+              ;;
+            "types")
+              bash ../scripts/fixes/fix-types.sh
+              ;;
+            "security")
+              bash ../scripts/fixes/fix-security.sh
+              ;;
+            "tests")
+              bash ../scripts/fixes/fix-tests.sh
+              ;;
+            "deps")
+              bash ../scripts/fixes/fix-deps.sh
+              ;;
+            "docs")
+              bash ../scripts/fixes/fix-docs.sh
+              ;;
+            "performance")
+              bash ../scripts/fixes/fix-performance.sh
+              ;;
+            "workflows")
+              bash ../scripts/fixes/fix-workflows.sh
+              ;;
+            "all")
+              bash ../scripts/fixes/fix-all.sh
+              ;;
+          esac
+      
+      - name: Run Safety Validation
+        id: validate-fixes
+        run: |
+          cd python
+          
+          # Run comprehensive validation
+          validation_passed=true
+          
+          # Test basic imports and syntax
+          if ! python -c "import sys; sys.path.append('src'); import server.main"; then
+            validation_passed=false
+          fi
+          
+          # Run critical tests
+          if [ -f "requirements.txt" ] && [ -d "tests" ]; then
+            if ! python -m pytest tests/ -x --tb=short; then
+              validation_passed=false
+            fi
+          fi
+          
+          echo "validation_passed=$validation_passed" >> $GITHUB_OUTPUT
+      
+      - name: Commit and Push Changes
+        if: steps.validate-fixes.outputs.validation_passed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Fix Bot"
+          
+          # Check if there are changes to commit
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "🤖 Automated fix: ${{ matrix.command }}
+
+Applied by comment-driven fix system
+- Command: /fix-${{ matrix.command }}
+- Triggered by: @${{ github.event.comment.user.login }}
+- Validation: Passed
+- Safety checks: Complete
+
+🔄 Generated with Claude Code Archon System
+Co-Authored-By: Fix Bot <noreply@github.com>"
+            
+            git push origin ${{ steps.pr-info.outputs.head_ref }}
+            echo "changes_committed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_committed=false" >> $GITHUB_OUTPUT
+          fi
+        id: commit-changes
+      
+      - name: Update Status Comment - Success
+        if: steps.validate-fixes.outputs.validation_passed == 'true'
+        run: |
+          if [ "${{ steps.commit-changes.outputs.changes_committed }}" == "true" ]; then
+            status_message="## ✅ Automated Fix Completed Successfully
+
+**Command**: \`/fix-${{ matrix.command }}\`  
+**Status**: 🎉 **COMPLETED**  
+**Branch**: \`${{ steps.pr-info.outputs.head_ref }}\`  
+
+### What was fixed:
+- 🔧 Applied automated fixes for: **${{ matrix.command }}**
+- ✅ All safety validations passed
+- 🧪 Tests are passing
+- 💾 Changes committed and pushed
+
+### Next Steps:
+- Review the changes in the PR
+- Verify the fixes address the intended issues
+- Merge when ready
+
+*Fix applied by the Archon automated system*"
+          else
+            status_message="## ℹ️ No Changes Required
+
+**Command**: \`/fix-${{ matrix.command }}\`  
+**Status**: ✅ **COMPLETED**  
+**Result**: No fixes were needed
+
+The automated analysis found no issues requiring fixes for the **${{ matrix.command }}** category.
+
+*Analysis completed by the Archon automated system*"
+          fi
+          
+          curl -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/comments/${{ steps.status-comment.outputs.status_comment_id }}" \
+            -d "{\"body\": $(echo "$status_message" | jq -R -s .)}"
+      
+      - name: Update Status Comment - Failure
+        if: steps.validate-fixes.outputs.validation_passed != 'true'
+        run: |
+          status_message="## ❌ Automated Fix Failed
+
+**Command**: \`/fix-${{ matrix.command }}\`  
+**Status**: 💥 **FAILED**  
+**Branch**: \`${{ steps.pr-info.outputs.head_ref }}\`  
+
+### Issues encountered:
+- ⚠️ Safety validation failed
+- 🧪 Tests may be failing
+- 🚫 Changes were not committed
+
+### Recommended actions:
+1. Review the workflow logs for detailed error information
+2. Consider manual intervention for complex issues
+3. Try running individual fix commands locally
+
+*Safety systems prevented potentially harmful changes*"
+          
+          curl -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/comments/${{ steps.status-comment.outputs.status_comment_id }}" \
+            -d "{\"body\": $(echo "$status_message" | jq -R -s .)}"
+      
+      - name: Add Final Reaction
+        run: |
+          if [ "${{ steps.validate-fixes.outputs.validation_passed }}" == "true" ]; then
+            reaction="hooray"
+          else
+            reaction="confused"
+          fi
+          
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/issues/comments/${{ needs.detect-fix-command.outputs.comment_id }}/reactions" \
+            -d "{\"content\":\"$reaction\"}"
+      
+      - name: Cleanup and Export Metrics
+        if: always()
+        run: |
+          # Export fix metrics to Claude Flow
+          claude-flow metrics export \
+            --fix-command="${{ matrix.command }}" \
+            --success="${{ steps.validate-fixes.outputs.validation_passed }}" \
+            --changes-made="${{ steps.commit-changes.outputs.changes_committed }}" \
+            --export-path=".claude-flow/metrics/fix-metrics.json" || true
+          
+          # Cleanup temporary resources
+          claude-flow cleanup --force --memory-recovery || true
