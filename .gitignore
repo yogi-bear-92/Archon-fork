@@ -4,6 +4,7 @@ __pycache__
 .claude/settings.local.json
 PRPs/local
 PRPs/completed/
+PRPs/stories/
 /logs/
 node_modules
 
@@ -43,3 +44,9 @@ test_*.py
 debug_*.py
 example_*.py
 demo_*.py
+
+# Upstream additions
+.zed
+tmp/
+temp/
+UAT/

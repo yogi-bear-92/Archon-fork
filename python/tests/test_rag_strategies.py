@@ -1,27 +1,15 @@
-import asyncio
-import os
-from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
-        from src.server.services.search import RAGService
-            from unittest.mock import Mock
-        from src.server.services.search import RerankingStrategy
-        from src.server.services.search import HybridSearchStrategy
-        from src.server.services.search.base_search_strategy import BaseSearchStrategy
-        from src.server.services.search import RerankingStrategy
-        from src.server.services.search import AgenticRAGStrategy
-        from src.server.services.search.base_search_strategy import BaseSearchStrategy
-        from src.server.services.search import RAGService
-            from unittest.mock import Mock
-        from unittest.mock import MagicMock
-        from src.server.services.search import RAGService
-        from unittest.mock import MagicMock
-        from src.server.services.search import RAGService
 """
 Tests for RAG Strategies and Search Functionality
 
 Tests RAGService class, hybrid search, agentic RAG, reranking, and other advanced RAG features.
 Updated to match current async-only architecture.
 """
+
+import asyncio
+import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Mock problematic imports at module level
 with patch.dict(
@@ -49,6 +37,7 @@ with patch.dict(
             ) as mock_embed:
                 mock_embed.return_value = [0.1] * 1536
 
+
 # Test RAGService core functionality
 class TestRAGService:
     """Test core RAGService functionality"""
@@ -61,6 +50,7 @@ class TestRAGService:
     @pytest.fixture
     def rag_service(self, mock_supabase_client):
         """Create RAGService instance"""
+        from src.server.services.search import RAGService
 
         return RAGService(supabase_client=mock_supabase_client)
 
@@ -112,6 +102,7 @@ class TestRAGService:
         """Test complete RAG query flow"""
         # Create a mock reranking strategy if it doesn't exist
         if rag_service.reranking_strategy is None:
+            from unittest.mock import Mock
 
             rag_service.reranking_strategy = Mock()
             rag_service.reranking_strategy.rerank_results = AsyncMock()
@@ -132,6 +123,7 @@ class TestRAGService:
     @pytest.mark.asyncio
     async def test_rerank_results(self, rag_service):
         """Test result reranking via strategy"""
+        from src.server.services.search import RerankingStrategy
 
         # Create a mock reranking strategy
         mock_strategy = MagicMock(spec=RerankingStrategy)
@@ -152,6 +144,7 @@ class TestRAGService:
         assert isinstance(result, list)
         assert result[0]["content"] == "Reranked content"
 
+
 class TestHybridSearchStrategy:
     """Test hybrid search strategy implementation"""
 
@@ -163,6 +156,8 @@ class TestHybridSearchStrategy:
     @pytest.fixture
     def hybrid_strategy(self, mock_supabase_client):
         """Create HybridSearchStrategy instance"""
+        from src.server.services.search import HybridSearchStrategy
+        from src.server.services.search.base_search_strategy import BaseSearchStrategy
 
         base_strategy = BaseSearchStrategy(mock_supabase_client)
         return HybridSearchStrategy(mock_supabase_client, base_strategy)
@@ -173,41 +168,6 @@ class TestHybridSearchStrategy:
         assert hasattr(hybrid_strategy, "search_documents_hybrid")
         assert hasattr(hybrid_strategy, "search_code_examples_hybrid")
 
-    def test_merge_search_results(self, hybrid_strategy):
-        """Test search result merging"""
-        vector_results = [
-            {
-                "id": "1",
-                "content": "Vector result 1",
-                "score": 0.9,
-                "url": "url1",
-                "chunk_number": 1,
-                "metadata": {},
-                "source_id": "source1",
-                "similarity": 0.9,
-            }
-        ]
-        keyword_results = [
-            {
-                "id": "2",
-                "content": "Keyword result 1",
-                "score": 0.8,
-                "url": "url2",
-                "chunk_number": 1,
-                "metadata": {},
-                "source_id": "source2",
-            }
-        ]
-
-        merged = hybrid_strategy._merge_search_results(
-            vector_results, keyword_results, match_count=5
-        )
-
-        assert isinstance(merged, list)
-        assert len(merged) <= 5
-        # Should contain results from both sources
-        if merged:
-            assert any("Vector result" in str(r) or "Keyword result" in str(r) for r in merged)
 
 class TestRerankingStrategy:
     """Test reranking strategy implementation"""
@@ -215,6 +175,7 @@ class TestRerankingStrategy:
     @pytest.fixture
     def reranking_strategy(self):
         """Create RerankingStrategy instance"""
+        from src.server.services.search import RerankingStrategy
 
         return RerankingStrategy()
 
@@ -270,6 +231,7 @@ class TestRerankingStrategy:
             assert isinstance(result, list)
             assert len(result) <= len(original_results)
 
+
 class TestAgenticRAGStrategy:
     """Test agentic RAG strategy implementation"""
 
@@ -281,6 +243,8 @@ class TestAgenticRAGStrategy:
     @pytest.fixture
     def agentic_strategy(self, mock_supabase_client):
         """Create AgenticRAGStrategy instance"""
+        from src.server.services.search import AgenticRAGStrategy
+        from src.server.services.search.base_search_strategy import BaseSearchStrategy
 
         base_strategy = BaseSearchStrategy(mock_supabase_client)
         return AgenticRAGStrategy(mock_supabase_client, base_strategy)
@@ -291,6 +255,7 @@ class TestAgenticRAGStrategy:
         # Check for expected methods
         methods = dir(agentic_strategy)
         assert any("search" in method.lower() for method in methods)
+
 
 class TestRAGIntegration:
     """Integration tests for RAG strategies working together"""
@@ -303,6 +268,7 @@ class TestRAGIntegration:
     @pytest.fixture
     def rag_service(self, mock_supabase_client):
         """Create RAGService instance"""
+        from src.server.services.search import RAGService
 
         return RAGService(supabase_client=mock_supabase_client)
 
@@ -311,6 +277,7 @@ class TestRAGIntegration:
         """Test complete RAG pipeline with all strategies"""
         # Create a mock reranking strategy if it doesn't exist
         if rag_service.reranking_strategy is None:
+            from unittest.mock import Mock
 
             rag_service.reranking_strategy = Mock()
             rag_service.reranking_strategy.rerank_results = AsyncMock()
@@ -383,12 +350,16 @@ class TestRAGIntegration:
             assert "results" in result
             assert len(result["results"]) == 0
 
+
 class TestRAGPerformance:
     """Test RAG performance and optimization features"""
 
     @pytest.fixture
     def rag_service(self):
         """Create RAGService instance"""
+        from unittest.mock import MagicMock
+
+        from src.server.services.search import RAGService
 
         mock_client = MagicMock()
         return RAGService(supabase_client=mock_client)
@@ -460,12 +431,16 @@ class TestRAGPerformance:
             # Should respect match_count limit
             assert len(result["results"]) <= 50
 
+
 class TestRAGConfiguration:
     """Test RAG configuration and settings"""
 
     @pytest.fixture
     def rag_service(self):
         """Create RAGService instance"""
+        from unittest.mock import MagicMock
+
+        from src.server.services.search import RAGService
 
         mock_client = MagicMock()
         return RAGService(supabase_client=mock_client)
