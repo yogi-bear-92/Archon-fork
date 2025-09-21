@@ -1,0 +1,132 @@
+{
+  "os_detection": {
+    "commands": {
+      "memory_check": {
+        "darwin": "vm_stat | awk '/Pages free/ {print $3*16/1024}' | head -1",
+        "linux": "free -m | grep 'Mem:' | awk '{print $7}'",
+        "win32": "wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /format:csv | findstr /r /v \"^$\" | for /f \"skip=1 tokens=2,3 delims=,\" %i in ('more') do @echo %j"
+      },
+      "swap_check": {
+        "darwin": "sysctl vm.swapusage | awk -F'[= ]' '{print $10}'",
+        "linux": "free -m | grep 'Swap:' | awk '{print $4}'",
+        "win32": "wmic pagefile list brief | findstr /r /c:\"[0-9]\""
+      },
+      "process_list": {
+        "darwin": "ps aux | head -10",
+        "linux": "ps aux | head -10", 
+        "win32": "tasklist /FO TABLE | findstr /V \"=\""
+      },
+      "disk_usage": {
+        "darwin": "df -h | grep -E '^/dev/'",
+        "linux": "df -h | grep -E '^/dev/'",
+        "win32": "wmic logicaldisk get size,freespace,caption"
+      },
+      "system_info": {
+        "darwin": "system_profiler SPHardwareDataType | grep -E '(Memory|Processor)'",
+        "linux": "cat /proc/meminfo | grep -E '(MemTotal|MemFree|MemAvailable)' && cat /proc/cpuinfo | grep 'model name' | head -1",
+        "win32": "wmic computersystem get TotalPhysicalMemory,NumberOfProcessors && wmic cpu get name"
+      }
+    }
+  },
+  "memory_thresholds": {
+    "emergency": {
+      "darwin": 70,
+      "linux": 100,
+      "win32": 128
+    },
+    "limited": {
+      "darwin": 200,
+      "linux": 256,
+      "win32": 512
+    },
+    "optimal": {
+      "darwin": 500,
+      "linux": 1024,
+      "win32": 2048
+    }
+  },
+  "hook_commands": {
+    "pre_task": {
+      "memory_check": "{{os_commands.memory_check}}",
+      "resource_allocation": {
+        "darwin": "npx claude-flow@alpha hooks pre-task --memory-budget={{memory}}MB --platform=darwin --cache-limit=25MB",
+        "linux": "npx claude-flow@alpha hooks pre-task --memory-budget={{memory}}MB --platform=linux --cache-limit=50MB", 
+        "win32": "npx claude-flow@alpha hooks pre-task --memory-budget={{memory}}MB --platform=windows --cache-limit=100MB"
+      }
+    },
+    "post_task": {
+      "cleanup": {
+        "darwin": "npx claude-flow@alpha hooks post-task --cleanup-darwin --memory-recovery --gc-force",
+        "linux": "npx claude-flow@alpha hooks post-task --cleanup-linux --memory-recovery --gc-force",
+        "win32": "npx claude-flow@alpha hooks post-task --cleanup-windows --memory-recovery --gc-force"
+      }
+    },
+    "memory_monitor": {
+      "continuous": {
+        "darwin": "npx claude-flow@alpha hooks memory-monitor --command='vm_stat' --interval=5 --threshold=99%",
+        "linux": "npx claude-flow@alpha hooks memory-monitor --command='free -m' --interval=5 --threshold=99%",
+        "win32": "npx claude-flow@alpha hooks memory-monitor --command='wmic OS get FreePhysicalMemory' --interval=5 --threshold=99%"
+      }
+    },
+    "system_health": {
+      "full_check": {
+        "darwin": "npx claude-flow@alpha hooks system-health --memory-cmd='vm_stat' --disk-cmd='df -h' --process-cmd='ps aux'",
+        "linux": "npx claude-flow@alpha hooks system-health --memory-cmd='free -m' --disk-cmd='df -h' --process-cmd='ps aux'",
+        "win32": "npx claude-flow@alpha hooks system-health --memory-cmd='wmic OS get FreePhysicalMemory' --disk-cmd='wmic logicaldisk' --process-cmd='tasklist'"
+      }
+    }
+  },
+  "agent_scaling": {
+    "emergency_mode": {
+      "darwin": {
+        "max_agents": 1,
+        "tools": ["claude-code"],
+        "memory_limit": "30MB"
+      },
+      "linux": {
+        "max_agents": 2, 
+        "tools": ["claude-code", "serena-minimal"],
+        "memory_limit": "50MB"
+      },
+      "win32": {
+        "max_agents": 2,
+        "tools": ["claude-code", "serena-minimal"],
+        "memory_limit": "64MB"
+      }
+    },
+    "limited_mode": {
+      "darwin": {
+        "max_agents": 3,
+        "tools": ["claude-code", "serena", "archon-stream"],
+        "memory_limit": "100MB"
+      },
+      "linux": {
+        "max_agents": 4,
+        "tools": ["claude-code", "serena", "archon-prp", "claude-flow-minimal"],
+        "memory_limit": "150MB"
+      },
+      "win32": {
+        "max_agents": 4,
+        "tools": ["claude-code", "serena", "archon-prp", "claude-flow-minimal"],
+        "memory_limit": "200MB"
+      }
+    },
+    "optimal_mode": {
+      "darwin": {
+        "max_agents": 6,
+        "tools": ["claude-code", "serena", "archon-prp", "claude-flow", "github-integration"],
+        "memory_limit": "250MB"
+      },
+      "linux": {
+        "max_agents": 8,
+        "tools": ["claude-code", "serena", "archon-prp", "claude-flow", "github-integration", "neural-training"],
+        "memory_limit": "500MB"
+      },
+      "win32": {
+        "max_agents": 8,
+        "tools": ["claude-code", "serena", "archon-prp", "claude-flow", "github-integration", "neural-training"],
+        "memory_limit": "1024MB"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "backup_info": {
+    "timestamp": "2025-09-05T23:18:25.602631",
+    "backup_version": "1.0",
+    "method": "API-based backup",
+    "total_records": 29
+  },
+  "backup_counts": {
+    "projects": 1,
+    "tasks": 0,
+    "sources": 14,
+    "documents": 0,
+    "knowledge_items": 14
+  },
+  "files": {
+    "data_files": [
+      "backups/archon_backup_20250905_231824/sources.json",
+      "backups/archon_backup_20250905_231824/knowledge_items.json",
+      "backups/archon_backup_20250905_231824/projects.json",
+      "backups/archon_backup_20250905_231824/tasks.json"
+    ],
+    "csv_files": [
+      "backups/archon_backup_20250905_231824/projects.csv",
+      "backups/archon_backup_20250905_231824/sources.csv"
+    ]
+  },
+  "restore_instructions": {
+    "method": "Use Archon API endpoints to restore data",
+    "order": "Restore in order: projects -> tasks -> sources -> documents",
+    "note": "This backup contains all accessible data via API endpoints"
+  }
+}

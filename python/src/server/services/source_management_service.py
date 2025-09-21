@@ -9,7 +9,7 @@ from typing import Any
 
 from supabase import Client
 
-from ..config.logfire_config import get_logger, search_logger
+from src.server.config.logfire_config import get_logger, search_logger
 from .client_manager import get_supabase_client
 from .llm_provider_service import get_llm_client
 

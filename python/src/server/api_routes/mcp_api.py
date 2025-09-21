@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException
 
 # Import unified logging
 from ..config.logfire_config import api_logger, safe_set_attribute, safe_span
+from src.server.utils import get_supabase_client
 
 router = APIRouter(prefix="/api/mcp", tags=["mcp"])
 
@@ -116,7 +117,7 @@ async def get_mcp_config():
 
             # Get only model choice from database (simplified)
             try:
-                from ..services.credential_service import credential_service
+                from src.server.services.credential_service import credential_service
 
                 model_choice = await credential_service.get_credential(
                     "MODEL_CHOICE", "gpt-4o-mini"

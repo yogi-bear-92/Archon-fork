@@ -11,8 +11,8 @@ from urllib.parse import urljoin
 
 import httpx
 
-from ..config.logfire_config import mcp_logger
-from ..config.service_discovery import get_agents_url, get_api_url
+from src.server.config.logfire_config import mcp_logger
+from src.server.config.service_discovery import get_agents_url, get_api_url
 
 
 class MCPServiceClient:

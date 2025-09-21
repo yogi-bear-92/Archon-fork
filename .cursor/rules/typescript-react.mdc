@@ -1,0 +1,95 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: TypeScript and React frontend development rules
+---
+
+# TypeScript & React Frontend Rules
+
+## TypeScript Configuration
+- **Target**: ES2020 with strict mode enabled
+- **Module Resolution**: Bundler mode with ESNext modules
+- **Path Aliases**: Use `@/*` for [src/](mdc:archon-ui-main/src/) imports
+- **Strict Settings**: All strict TypeScript options enabled
+- **No Unused Variables**: Enable `noUnusedLocals` and `noUnusedParameters`
+
+## React Development Standards
+
+### Component Structure
+- **Functional Components**: Use React functional components with hooks
+- **TypeScript Props**: Define explicit prop interfaces for all components
+- **Default Exports**: Use default exports for main component files
+- **File Naming**: PascalCase for component files (e.g., `UserProfile.tsx`)
+
+### Hooks and State Management
+- **Custom Hooks**: Extract reusable logic into custom hooks
+- **State Management**: Use React hooks and context for state management
+- **Effect Cleanup**: Always clean up subscriptions and timers in useEffect
+- **Dependency Arrays**: Include all dependencies in useEffect and useMemo
+
+### Styling with TailwindCSS
+- **Utility-First**: Use TailwindCSS utility classes for styling
+- **Custom CSS**: Only use custom CSS for complex animations or unique designs
+- **CSS Variables**: Use CSS custom properties for theming (see [tailwind.config.js](mdc:archon-ui-main/tailwind.config.js))
+- **Responsive Design**: Mobile-first approach with responsive breakpoints
+
+## Code Quality Standards
+
+### Type Safety
+- **Strict Typing**: No `any` types unless absolutely necessary
+- **Interface Definitions**: Define interfaces for all data structures
+- **Generic Types**: Use generics for reusable components and functions
+- **Type Guards**: Implement proper type guards for runtime type checking
+
+### Import/Export Patterns
+- **Named Imports**: Prefer named imports over default imports for utilities
+- **Absolute Imports**: Use `@/` alias for internal imports
+- **Import Order**: Group imports: React, third-party, internal, relative
+- **Barrel Exports**: Use index files for clean public APIs
+
+### Error Handling
+- **Error Boundaries**: Implement error boundaries for component error handling
+- **Async Error Handling**: Proper try-catch for async operations
+- **User Feedback**: Provide meaningful error messages to users
+- **Logging**: Use structured logging for debugging
+
+## Testing Standards
+
+### Test Structure
+- **Test Files**: Co-locate tests with components using `.test.tsx` suffix
+- **Test Setup**: Use [test/setup.ts](mdc:archon-ui-main/test/setup.ts) for global test configuration
+- **Testing Library**: Use React Testing Library for component testing
+- **Vitest**: Use Vitest as the test runner (see [vitest.config.ts](mdc:archon-ui-main/vitest.config.ts))
+
+### Test Coverage
+- **Coverage Target**: Maintain high test coverage for critical components
+- **Coverage Reports**: Generate coverage reports in [coverage/](mdc:archon-ui-main/coverage/) directory
+- **Mock Data**: Use consistent mock data patterns
+- **Integration Tests**: Write integration tests for complex user flows
+
+## Performance Optimization
+
+### React Performance
+- **Memoization**: Use React.memo, useMemo, and useCallback appropriately
+- **Code Splitting**: Implement lazy loading for route-based code splitting
+- **Bundle Analysis**: Monitor bundle size and optimize imports
+- **Virtual Scrolling**: Use virtual scrolling for large lists
+
+### Vite Configuration
+- **Build Optimization**: Configure Vite for optimal production builds
+- **Environment Variables**: Use VITE_ prefix for client-side environment variables
+- **Proxy Configuration**: Use Vite proxy for API development (see [vite.config.ts](mdc:archon-ui-main/vite.config.ts))
+- **Hot Reload**: Leverage Vite's fast HMR for development
+
+## Development Workflow
+
+### File Organization
+- **Component Files**: One component per file in [src/components/](mdc:archon-ui-main/src/components/)
+- **Hook Files**: Custom hooks in [src/hooks/](mdc:archon-ui-main/src/hooks/)
+- **Utility Files**: Shared utilities in [src/utils/](mdc:archon-ui-main/src/utils/)
+- **Type Files**: Type definitions in [src/types/](mdc:archon-ui-main/src/types/)
+
+### Linting and Formatting
+- **ESLint**: Use ESLint with TypeScript rules (see [package.json](mdc:archon-ui-main/package.json))
+- **Prettier**: Consistent code formatting
+- **Pre-commit Hooks**: Run linting before commits
+- **CI Integration**: Automated linting in CI/CD pipeline

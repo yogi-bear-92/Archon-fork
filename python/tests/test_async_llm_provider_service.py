@@ -1,3 +1,8 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+import pytest
+        import src.server.services.llm_provider_service as llm_module
+        import src.server.services.llm_provider_service as llm_module
+                    import src.server.services.llm_provider_service as llm_module
 """
 Comprehensive Tests for Async LLM Provider Service
 
@@ -5,17 +10,11 @@ Tests all aspects of the async LLM provider service after sync function removal.
 Covers different providers (OpenAI, Ollama, Google) and error scenarios.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-
-from src.server.services.llm_provider_service import (
     _get_cached_settings,
     _set_cached_settings,
     get_embedding_model,
     get_llm_client,
 )
-
 
 class AsyncContextManager:
     """Helper class for properly mocking async context managers"""
@@ -29,14 +28,12 @@ class AsyncContextManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
-
 class TestAsyncLLMProviderService:
     """Test suite for async LLM provider service functions"""
 
     @pytest.fixture(autouse=True)
     def clear_cache(self):
         """Clear cache before each test"""
-        import src.server.services.llm_provider_service as llm_module
 
         llm_module._settings_cache.clear()
         yield
@@ -69,7 +66,7 @@ class TestAsyncLLMProviderService:
         return {
             "provider": "ollama",
             "api_key": "ollama",
-            "base_url": "http://localhost:11434/v1",
+            "base_url": "http://host.docker.internal:11434/v1",
             "chat_model": "llama2",
             "embedding_model": "nomic-embed-text",
         }
@@ -127,7 +124,7 @@ class TestAsyncLLMProviderService:
                 async with get_llm_client() as client:
                     assert client == mock_client
                     mock_openai.assert_called_once_with(
-                        api_key="ollama", base_url="http://localhost:11434/v1"
+                        api_key="ollama", base_url="http://host.docker.internal:11434/v1"
                     )
 
     @pytest.mark.asyncio
@@ -216,7 +213,7 @@ class TestAsyncLLMProviderService:
         }
         mock_credential_service.get_active_provider.return_value = config_without_key
         mock_credential_service.get_credentials_by_category = AsyncMock(return_value={
-            "LLM_BASE_URL": "http://localhost:11434"
+            "LLM_BASE_URL": "http://host.docker.internal:11434"
         })
 
         with patch(
@@ -234,7 +231,7 @@ class TestAsyncLLMProviderService:
                     # Verify it created an Ollama client with correct params
                     mock_openai.assert_called_once_with(
                         api_key="ollama",
-                        base_url="http://localhost:11434/v1"
+                        base_url="http://host.docker.internal:11434/v1"
                     )
 
     @pytest.mark.asyncio
@@ -442,7 +439,6 @@ class TestAsyncLLMProviderService:
 
     def test_deprecated_functions_removed(self):
         """Test that deprecated sync functions are no longer available"""
-        import src.server.services.llm_provider_service as llm_module
 
         # These functions should no longer exist
         assert not hasattr(llm_module, "get_llm_client_sync")
@@ -480,7 +476,7 @@ class TestAsyncLLMProviderService:
         """Test creating clients for different providers in sequence"""
         configs = [
             {"provider": "openai", "api_key": "openai-key", "base_url": None},
-            {"provider": "ollama", "api_key": "ollama", "base_url": "http://localhost:11434/v1"},
+            {"provider": "ollama", "api_key": "ollama", "base_url": "http://host.docker.internal:11434/v1"},
             {
                 "provider": "google",
                 "api_key": "google-key",
@@ -499,7 +495,6 @@ class TestAsyncLLMProviderService:
 
                 for config in configs:
                     # Clear cache between tests to force fresh credential service calls
-                    import src.server.services.llm_provider_service as llm_module
 
                     llm_module._settings_cache.clear()
 

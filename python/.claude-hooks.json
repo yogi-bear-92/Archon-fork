@@ -1,0 +1,51 @@
+{
+  "global_settings": {
+    "environment_variables": {
+      "HOOK_LOGGING_ENABLED": "true",
+      "PYTHONPATH": "/Users/yogi/Projects/Archon-fork/python/src",
+      "TASK_AUTO_CREATION_THRESHOLD": "0.7"
+    },
+    "max_concurrent_hooks": 3,
+    "timeout": 30000,
+    "working_directory": "/Users/yogi/Projects/Archon-fork/python"
+  },
+  "hooks": {
+    "interactive-task-response": {
+      "background": false,
+      "command": "python3 src/hooks/interactive_task_response_hook.py",
+      "description": "Process user responses in interactive task creation sessions",
+      "enabled": true,
+      "log_output": true,
+      "manual_trigger": true,
+      "parameters": {
+        "context": "optional",
+        "session_id": "required",
+        "user_response": "required"
+      },
+      "timeout": 30000
+    },
+    "post-user-prompt": {
+      "background": false,
+      "command": "python3 src/hooks/post_user_prompt_hook.py",
+      "conditions": {
+        "exclude_patterns": [
+          "^(yes|no|ok|thanks?)$",
+          "^\\s*$",
+          "^[.!?]+$"
+        ],
+        "include_patterns": [
+          "\\b(implement|create|build|add|fix|develop|code|task|feature|bug|issue)\\b",
+          "\\b(can you|could you|please|need to|should|must|want to)\\b",
+          "\\b(help me|I need|let's)\\b"
+        ],
+        "min_message_length": 10
+      },
+      "description": "Analyze user messages for potential tasks and initiate interactive creation process",
+      "enabled": true,
+      "log_output": true,
+      "pass_conversation_context": true,
+      "pass_user_message": true,
+      "timeout": 30000
+    }
+  }
+}

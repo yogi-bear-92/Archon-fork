@@ -1,14 +1,20 @@
+import os
+import pytest
+            from src.server.config.service_discovery import ServiceDiscovery
+            from src.server.config.service_discovery import ServiceDiscovery
+            from src.server.config.service_discovery import ServiceDiscovery
+        from src.server.config.service_discovery import ServiceDiscovery
+        from src.server.config.config import ConfigurationError
+        from src.server.config.service_discovery import ServiceDiscovery
+            from src.server.config.service_discovery import ServiceDiscovery
+                from src.server.config.service_discovery import ServiceDiscovery
+                    from src.server.config.service_discovery import ServiceDiscovery
 """
 Tests for port configuration requirements.
 
 This test file verifies that all services properly require environment variables
 for port configuration and fail with clear error messages when not set.
 """
-
-import os
-
-import pytest
-
 
 class TestPortConfiguration:
     """Test that services require port environment variables."""
@@ -30,7 +36,6 @@ class TestPortConfiguration:
 
         # Import should fail without environment variables
         with pytest.raises(ValueError, match="ARCHON_SERVER_PORT environment variable is required"):
-            from src.server.config.service_discovery import ServiceDiscovery
 
             ServiceDiscovery()
 
@@ -41,7 +46,6 @@ class TestPortConfiguration:
         os.environ["ARCHON_AGENTS_PORT"] = "8052"
 
         with pytest.raises(ValueError, match="ARCHON_MCP_PORT environment variable is required"):
-            from src.server.config.service_discovery import ServiceDiscovery
 
             ServiceDiscovery()
 
@@ -52,7 +56,6 @@ class TestPortConfiguration:
         os.environ.pop("ARCHON_AGENTS_PORT", None)
 
         with pytest.raises(ValueError, match="ARCHON_AGENTS_PORT environment variable is required"):
-            from src.server.config.service_discovery import ServiceDiscovery
 
             ServiceDiscovery()
 
@@ -61,8 +64,6 @@ class TestPortConfiguration:
         os.environ["ARCHON_SERVER_PORT"] = "9191"
         os.environ["ARCHON_MCP_PORT"] = "9051"
         os.environ["ARCHON_AGENTS_PORT"] = "9052"
-
-        from src.server.config.service_discovery import ServiceDiscovery
 
         sd = ServiceDiscovery()
 
@@ -128,7 +129,6 @@ class TestPortConfiguration:
 
     def test_config_requires_port_or_archon_mcp_port(self):
         """Test that config.py requires PORT or ARCHON_MCP_PORT."""
-        from src.server.config.config import ConfigurationError
 
         os.environ.pop("PORT", None)
         os.environ.pop("ARCHON_MCP_PORT", None)
@@ -154,8 +154,6 @@ class TestPortConfiguration:
         os.environ["ARCHON_MCP_PORT"] = "8888"
         os.environ["ARCHON_AGENTS_PORT"] = "7777"
 
-        from src.server.config.service_discovery import ServiceDiscovery
-
         sd = ServiceDiscovery()
 
         # Verify custom ports are used
@@ -169,7 +167,6 @@ class TestPortConfiguration:
             assert sd.get_service_url("mcp") == "http://localhost:8888"
             assert sd.get_service_url("agents") == "http://localhost:7777"
 
-
 class TestPortValidation:
     """Test port validation logic."""
 
@@ -180,7 +177,6 @@ class TestPortValidation:
         os.environ["ARCHON_AGENTS_PORT"] = "8052"
 
         with pytest.raises(ValueError):
-            from src.server.config.service_discovery import ServiceDiscovery
 
             ServiceDiscovery()
 
@@ -201,14 +197,12 @@ class TestPortValidation:
 
             if should_succeed:
                 # Should not raise
-                from src.server.config.service_discovery import ServiceDiscovery
 
                 sd = ServiceDiscovery()
                 assert sd.DEFAULT_PORTS["api"] == int(port_value)
             else:
                 # Should raise for invalid ports
                 with pytest.raises((ValueError, AssertionError)):
-                    from src.server.config.service_discovery import ServiceDiscovery
 
                     sd = ServiceDiscovery()
                     # Additional validation might be needed

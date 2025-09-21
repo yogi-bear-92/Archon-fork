@@ -9,7 +9,7 @@ import re
 
 from supabase import Client, create_client
 
-from ..config.logfire_config import search_logger
+from src.server.config.logfire_config import search_logger
 
 
 def get_supabase_client() -> Client:

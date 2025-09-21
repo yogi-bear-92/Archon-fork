@@ -7,7 +7,7 @@ Handles retrieval of database statistics and metrics.
 from datetime import datetime
 from typing import Any
 
-from ...config.logfire_config import safe_logfire_error, safe_logfire_info
+from src.server.config.logfire_config import safe_logfire_error, safe_logfire_info
 
 
 class DatabaseMetricsService:

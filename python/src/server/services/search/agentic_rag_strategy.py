@@ -16,8 +16,8 @@ from typing import Any
 
 from supabase import Client
 
-from ...config.logfire_config import get_logger, safe_span
-from ..embeddings.embedding_service import create_embedding
+from src.server.config.logfire_config import get_logger, safe_span
+from src.server.services.embeddings.embedding_service import create_embedding
 
 logger = get_logger(__name__)
 
@@ -39,7 +39,7 @@ class AgenticRAGStrategy:
     def is_enabled(self) -> bool:
         """Check if agentic RAG is enabled via configuration."""
         try:
-            from ..credential_service import credential_service
+            from src.server.services.credential_service import credential_service
 
             if hasattr(credential_service, "_cache") and credential_service._cache_initialized:
                 cached_value = credential_service._cache.get("USE_AGENTIC_RAG")

@@ -1,0 +1,142 @@
+{
+  "env": {
+    "CLAUDE_FLOW_AUTO_COMMIT": "false",
+    "CLAUDE_FLOW_AUTO_PUSH": "false", 
+    "CLAUDE_FLOW_HOOKS_ENABLED": "true",
+    "CLAUDE_FLOW_TELEMETRY_ENABLED": "true",
+    "CLAUDE_FLOW_REMOTE_EXECUTION": "true",
+    "CLAUDE_FLOW_CHECKPOINTS_ENABLED": "true",
+    "ARCHON_PRP_ENABLED": "true",
+    "ARCHON_MEMORY_LIMIT": "100MB",
+    "ARCHON_MAX_AGENTS": "3",
+    "SERENA_CACHE_LIMIT": "25MB"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx claude-flow *)",
+      "Bash(npx ruv-swarm *)",
+      "Bash(archon *)",
+      "Bash(serena *)",
+      "Bash(uvx *)",
+      "Bash(docker *)",
+      "Bash(docker-compose *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(git *)",
+      "Bash(jq *)",
+      "Bash(node *)",
+      "Bash(which *)",
+      "Bash(pwd)",
+      "Bash(ls *)",
+      "Bash(vm_stat *)",
+      "Bash(free *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(eval *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.command // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks pre-command --command '{}' --archon-integration --memory-check --validate-safety true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit", 
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks pre-edit --file '{}' --archon-prp --serena-analyze --memory-aware"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command", 
+            "command": "npx claude-flow@alpha hooks pre-task-spawn --archon-coordination --memory-check --agent-limit=3"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.command // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks post-command --command '{}' --archon-metrics --memory-track"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '.tool_input.file_path // .tool_input.path // empty' | tr '\\n' '\\0' | xargs -0 -I {} npx claude-flow@alpha hooks post-edit --file '{}' --archon-prp-cycle --serena-cache-update"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx claude-flow@alpha hooks post-task-spawn --archon-socket-notify --port=8052 --update-memory"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'echo \"🔄 Archon PreCompact Guidance:\"; echo \"📋 CRITICAL: Review CLAUDE.md for Archon PRP integration:\"; echo \"   • Memory-aware agent scaling (current: 169MB available)\"; echo \"   • Progressive refinement workflows with streaming\"; echo \"   • Serena semantic analysis integration (25MB cache)\"; echo \"   • Socket.IO coordination via port 8052\"; echo \"   • Critical concurrent execution rules (GOLDEN RULE + ARCHON PRP)\"; echo \"✅ Ready for Archon-optimized compact operation\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "auto", 
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'echo \"🔄 Auto-Compact Guidance (Archon Context):\"; echo \"📋 CRITICAL: Archon PRP system active with:\"; echo \"   • 3-agent maximum for memory constraints\"; echo \"   • Progressive refinement cycles with streaming\"; echo \"   • Serena semantic integration with 25MB cache\"; echo \"   • Real-time coordination via Socket.IO (8052)\"; echo \"⚡ Apply GOLDEN RULE + ARCHON PRP: Always batch operations in single messages\"; echo \"✅ Auto-compact proceeding with full Archon context\"'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx claude-flow@alpha hooks session-end --archon-prp-export --generate-summary --persist-state --export-metrics --socket-io-disconnect=8052"
+          }
+        ]
+      }
+    ]
+  },
+  "includeCoAuthoredBy": true,
+  "enabledMcpjsonServers": ["claude-flow", "ruv-swarm", "archon", "serena"],
+  "archonIntegration": {
+    "prpEnabled": true,
+    "maxCycles": 4,
+    "memoryLimit": "100MB",
+    "socketPort": 8052,
+    "streamingEnabled": true,
+    "serenaIntegration": true,
+    "serenaCacheLimit": "25MB"
+  }
+}

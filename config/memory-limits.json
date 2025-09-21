@@ -1,0 +1,62 @@
+{
+  "memoryManagement": {
+    "globalLimits": {
+      "totalBudget": "8GB",
+      "emergencyThreshold": "15GB",
+      "optimalTarget": "6GB",
+      "criticalThreshold": "16GB"
+    },
+    "serviceLimits": {
+      "claudeCode": {
+        "maxMemory": "2GB",
+        "heapSize": "1.5GB",
+        "priority": "critical"
+      },
+      "serenaMCP": {
+        "maxMemory": "1GB",
+        "cacheSize": "512MB",
+        "priority": "high"
+      },
+      "archonAPI": {
+        "maxMemory": "1.5GB",
+        "vectorCache": "512MB",
+        "priority": "high"
+      },
+      "claudeFlow": {
+        "maxMemory": "800MB",
+        "agentPool": "400MB",
+        "priority": "medium"
+      }
+    },
+    "cacheConfiguration": {
+      "semanticCache": {
+        "maxSize": "256MB",
+        "evictionPolicy": "LRU",
+        "compressionEnabled": true,
+        "persistToDisk": true
+      },
+      "vectorCache": {
+        "maxSize": "512MB",
+        "evictionPolicy": "LFU", 
+        "compressionRatio": 0.6,
+        "warmupSize": "128MB"
+      },
+      "agentCache": {
+        "maxSize": "128MB",
+        "maxInstances": 3,
+        "recycleThreashold": "64MB",
+        "timeoutMs": 30000
+      }
+    },
+    "monitoring": {
+      "checkIntervalMs": 5000,
+      "alertThresholds": {
+        "warning": 0.8,
+        "critical": 0.9,
+        "emergency": 0.95
+      },
+      "autoCleanup": true,
+      "gcAggressive": true
+    }
+  }
+}

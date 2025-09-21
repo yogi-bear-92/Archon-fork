@@ -1,0 +1,146 @@
+name: ⚡ Performance Issue
+description: Report performance problems or optimization opportunities
+title: "[PERF] "
+labels: ["performance", "optimization"]
+projects: ["Archon-fork/1"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚡ Performance Issue Report
+        
+        Help us optimize the ANSF system! Report performance problems or suggest optimizations.
+
+  - type: dropdown
+    id: performance-area
+    attributes:
+      label: Performance Area
+      description: Which area is experiencing performance issues?
+      options:
+        - "Coordination Accuracy (< target %)"
+        - "Response Time (slow execution)"
+        - "Memory Usage (high consumption)"
+        - "Neural Model Performance"
+        - "Multi-Swarm Communication"
+        - "Dashboard/Monitoring"
+        - "System Startup Time"
+        - "Resource Scaling"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ansf-phase
+    attributes:
+      label: ANSF Phase Affected
+      description: Which phase shows the performance issue?
+      options:
+        - "Phase 1 (Memory-Critical Mode)"
+        - "Phase 2 (Enhanced Mode)"
+        - "Phase 3 (Optimal Mode)"
+        - "All Phases"
+        - "Cross-Phase Performance"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-metrics
+    attributes:
+      label: Current Performance Metrics
+      description: What are the current performance numbers you're seeing?
+      placeholder: |
+        Example:
+        - Coordination Accuracy: 85% (target: 97%)
+        - Response Time: 800ms (target: <200ms)
+        - Memory Usage: 750MB (target: <512MB)
+        - Error Rate: 8% (target: <5%)
+    validations:
+      required: true
+
+  - type: textarea
+    id: target-metrics
+    attributes:
+      label: Target Performance Metrics
+      description: What performance should we be achieving?
+      placeholder: |
+        Example:
+        - Coordination Accuracy: 97%+
+        - Response Time: <200ms
+        - Memory Usage: <512MB
+        - Error Rate: <2%
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance-impact
+    attributes:
+      label: Impact Description
+      description: How does this performance issue affect the system or workflow?
+      placeholder: |
+        Describe how this performance problem impacts your work or the system functionality...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-scenario
+    attributes:
+      label: Reproduction Scenario
+      description: When does this performance issue occur?
+      placeholder: |
+        1. Load scenario: (e.g., 32 agents, complex tasks)
+        2. System state: (e.g., high memory usage, multiple swarms)
+        3. Trigger: (e.g., specific command, workflow type)
+    validations:
+      required: true
+
+  - type: textarea
+    id: system-resources
+    attributes:
+      label: System Resources
+      description: What are the system resources when the issue occurs?
+      placeholder: |
+        - Available Memory: 
+        - CPU Usage:
+        - Active Agents:
+        - Active Swarms:
+        - Concurrent Tasks:
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: optimization-areas
+    attributes:
+      label: Potential Optimization Areas
+      description: Which areas might benefit from optimization? (Select all that apply)
+      options:
+        - label: "Neural network inference optimization"
+        - label: "Memory allocation and cleanup"
+        - label: "Multi-swarm communication efficiency"
+        - label: "Caching and data structures"
+        - label: "Parallel processing improvements"
+        - label: "Resource scaling algorithms"
+        - label: "Monitoring overhead reduction"
+        - label: "Configuration and initialization"
+
+  - type: textarea
+    id: monitoring-data
+    attributes:
+      label: Monitoring Data
+      description: Include any relevant monitoring data, logs, or metrics
+      placeholder: |
+        ```
+        Paste monitoring output, performance logs, or metrics here...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: optimization-ideas
+    attributes:
+      label: Optimization Ideas
+      description: Do you have any ideas for how to improve this performance?
+      placeholder: |
+        Suggest potential optimizations or approaches...
+    validations:
+      required: false

@@ -1,8 +1,5 @@
 {
-  "include": [
-    "src",
-    "tests"
-  ],
+  "autoSearchPaths": true,
   "exclude": [
     "**/__pycache__",
     "**/.pytest_cache",
@@ -13,14 +10,17 @@
   "extraPaths": [
     "."
   ],
-  "typeCheckingMode": "basic",
-  "pythonVersion": "3.12",
+  "include": [
+    "src",
+    "tests"
+  ],
   "pythonPlatform": "All",
+  "pythonVersion": "3.12",
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
+  "stubPath": "typings",
+  "typeCheckingMode": "basic",
   "useLibraryCodeForTypes": true,
-  "autoSearchPaths": true,
-  "venvPath": ".",
   "venv": ".venv",
-  "stubPath": "typings"
+  "venvPath": "."
 }

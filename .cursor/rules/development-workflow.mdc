@@ -1,0 +1,172 @@
+---
+alwaysApply: true
+description: Development workflow, testing, and deployment guidelines
+---
+
+# Development Workflow & Testing Rules
+
+## Development Environment Setup
+
+### Prerequisites
+- **Node.js**: Version 18+ (see [package.json](mdc:package.json))
+- **Python**: Version 3.12+ (see [python/pyproject.toml](mdc:python/pyproject.toml))
+- **Docker**: Required for containerized development
+- **uv**: Python package manager for dependency management
+
+### Environment Commands
+- **Check Environment**: `make check` - Verify all prerequisites
+- **Install Dependencies**: `make install` - Install all project dependencies
+- **Clean Environment**: `make clean` - Remove containers and volumes
+
+## Development Modes
+
+### Hybrid Development (Recommended)
+- **Command**: `make dev` - Backend in Docker, frontend local
+- **Backend**: Docker container on port 8181
+- **Frontend**: Local Vite dev server on port 3737
+- **Hot Reload**: Frontend changes reload instantly
+- **API Proxy**: Vite proxies `/api` requests to backend
+
+### Full Docker Development
+- **Command**: `make dev-docker` - Everything in Docker
+- **All Services**: Frontend, backend, database in containers
+- **Ports**: Frontend (3737), API (8181), MCP (8051), Agents (8052)
+- **Isolation**: Complete environment isolation
+
+## Testing Standards
+
+### Test Commands
+- **All Tests**: `make test` - Run frontend and backend tests
+- **Frontend Tests**: `make test-fe` - React/Vitest tests only
+- **Backend Tests**: `make test-be` - Python/pytest tests only
+- **Test Coverage**: `npm run test:coverage` - Generate coverage reports
+
+### Frontend Testing (Vitest)
+- **Test Runner**: Vitest with jsdom environment
+- **Test Files**: `*.test.{ts,tsx}` files co-located with components
+- **Setup File**: [archon-ui-main/test/setup.ts](mdc:archon-ui-main/test/setup.ts)
+- **Coverage**: V8 coverage provider with HTML/JSON reports
+- **UI Testing**: Playwright for end-to-end tests
+
+### Backend Testing (Pytest)
+- **Test Directory**: [tests/](mdc:tests/) directory
+- **Async Support**: pytest-asyncio for async test support
+- **Fixtures**: Use pytest fixtures for test data and setup
+- **Mocking**: pytest-mock for external service mocking
+- **Coverage**: pytest-cov for coverage reporting
+
+## Code Quality & Linting
+
+### Linting Commands
+- **All Linters**: `make lint` - Run frontend and backend linters
+- **Frontend Linting**: `make lint-fe` - ESLint for TypeScript/React
+- **Backend Linting**: `make lint-be` - Ruff for Python code style
+
+### Frontend Linting (ESLint)
+- **Configuration**: TypeScript ESLint rules enabled
+- **React Hooks**: ESLint plugin for React hooks rules
+- **Auto-fix**: ESLint auto-fix for fixable issues
+- **Pre-commit**: Linting runs before commits
+
+### Backend Linting (Ruff)
+- **Configuration**: [python/pyproject.toml](mdc:python/pyproject.toml) Ruff settings
+- **Auto-fix**: `ruff check --fix` for automatic fixes
+- **Type Checking**: MyPy for static type checking
+- **Import Sorting**: isort integration for import organization
+
+## SPARC & Claude Flow Integration
+
+### SPARC Commands
+- **List Modes**: `npx claude-flow sparc modes`
+- **Run Mode**: `npx claude-flow sparc run <mode> "<task>"`
+- **TDD Workflow**: `npx claude-flow sparc tdd "<feature>"`
+- **Batch Processing**: `npx claude-flow sparc batch`
+- **Pipeline**: `npx claude-flow sparc pipeline`
+
+### Swarm Management
+- **Initialize**: `npx claude-flow swarm init`
+- **Status Check**: `npx claude-flow swarm status`
+- **Monitoring**: `npx claude-flow swarm monitor`
+
+## Docker & Containerization
+
+### Docker Compose Profiles
+- **Backend Profile**: Core API and database services
+- **Frontend Profile**: UI service in container
+- **Full Profile**: Complete development environment
+
+### Container Management
+- **Build**: `docker compose up --build` - Build and start services
+- **Stop**: `make stop` - Stop all running services
+- **Logs**: `docker logs -f <container>` - View container logs
+- **Clean**: `make clean` - Remove containers and volumes
+
+## Environment Configuration
+
+### Environment Variables
+- **Frontend**: VITE_ prefixed variables for client-side config
+- **Backend**: Standard environment variables for server config
+- **Database**: Supabase connection and API keys
+- **AI Services**: OpenAI, Gemini API keys and configuration
+
+### Configuration Files
+- **Root**: [.env](mdc:.env) for shared environment variables
+- **Frontend**: [archon-ui-main/.env](mdc:archon-ui-main/.env) for UI-specific config
+- **Backend**: [python/.env](mdc:python/.env) for server-specific config
+- **Docker**: [docker-compose.yml](mdc:docker-compose.yml) for container config
+
+## Git Workflow
+
+### Branch Strategy
+- **Feature Branches**: `feature/description` for new features
+- **Bug Fixes**: `fix/description` for bug fixes
+- **Hotfixes**: `hotfix/description` for critical fixes
+- **Main Branch**: `main` for production-ready code
+
+### Commit Standards
+- **Conventional Commits**: Use conventional commit format
+- **Clear Messages**: Descriptive commit messages
+- **Atomic Commits**: One logical change per commit
+- **Pre-commit Hooks**: Linting and testing before commits
+
+## CI/CD Pipeline
+
+### Automated Testing
+- **Pull Requests**: Run tests on all PRs
+- **Code Quality**: Linting and type checking
+- **Security Scanning**: Dependency vulnerability scanning
+- **Coverage Reports**: Generate and track test coverage
+
+### Deployment
+- **Staging**: Automated deployment to staging environment
+- **Production**: Manual approval for production deployment
+- **Rollback**: Quick rollback capability for issues
+- **Monitoring**: Health checks and performance monitoring
+
+## Performance Monitoring
+
+### Frontend Performance
+- **Bundle Analysis**: Monitor bundle size and performance
+- **Core Web Vitals**: Track LCP, FID, CLS metrics
+- **Error Tracking**: Monitor and track frontend errors
+- **User Analytics**: Track user interactions and performance
+
+### Backend Performance
+- **API Response Times**: Monitor endpoint performance
+- **Database Queries**: Track query performance and optimization
+- **Memory Usage**: Monitor memory consumption and leaks
+- **Error Rates**: Track and alert on error rates
+
+## Documentation Standards
+
+### Code Documentation
+- **Docstrings**: Comprehensive docstrings for all functions
+- **API Documentation**: Auto-generated with FastAPI/Swagger
+- **README Files**: Clear setup and usage instructions
+- **Architecture Docs**: High-level system architecture documentation
+
+### Development Documentation
+- **Setup Guides**: Step-by-step development setup
+- **API References**: Complete API endpoint documentation
+- **Troubleshooting**: Common issues and solutions
+- **Contributing Guidelines**: How to contribute to the project

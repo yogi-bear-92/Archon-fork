@@ -290,7 +290,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         const hostFromEnv = (process.env.HOST ?? env.HOST) && (process.env.HOST ?? env.HOST) !== 'localhost' 
           ? [process.env.HOST ?? env.HOST] 
           : [];
-        return [...new Set([...defaultHosts, ...hostFromEnv, ...customHosts])];
+        const ngrokHosts = ['a029ec602fb1.ngrok-free.app'];
+        return [...new Set([...defaultHosts, ...hostFromEnv, ...customHosts, ...ngrokHosts])];
       })(),
       proxy: {
         '/api': {
@@ -327,6 +328,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       // The browser can't resolve 'archon-server'
       'import.meta.env.VITE_HOST': JSON.stringify(isDocker ? 'localhost' : host),
       'import.meta.env.VITE_PORT': JSON.stringify(port),
+      'import.meta.env.VITE_API_URL': JSON.stringify(`http://${externalHost}:${port}`),
       'import.meta.env.PROD': env.PROD === 'true',
     },
     resolve: {

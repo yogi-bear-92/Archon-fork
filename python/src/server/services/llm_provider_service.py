@@ -11,7 +11,7 @@ from typing import Any
 
 import openai
 
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 from .credential_service import credential_service
 
 logger = get_logger(__name__)
@@ -19,6 +19,10 @@ logger = get_logger(__name__)
 # Settings cache with TTL
 _settings_cache: dict[str, tuple[Any, float]] = {}
 _CACHE_TTL_SECONDS = 300  # 5 minutes
+
+# Client cache for connection reuse - prevents excessive client creation
+_client_cache: dict[str, tuple[openai.AsyncOpenAI, float]] = {}
+_CLIENT_CACHE_TTL_SECONDS = 1800  # 30 minutes - longer than settings cache
 
 
 def _get_cached_settings(key: str) -> Any | None:
@@ -36,6 +40,23 @@ def _get_cached_settings(key: str) -> Any | None:
 def _set_cached_settings(key: str, value: Any) -> None:
     """Cache settings with current timestamp."""
     _settings_cache[key] = (value, time.time())
+
+
+def _get_cached_client(client_key: str) -> openai.AsyncOpenAI | None:
+    """Get cached client if not expired."""
+    if client_key in _client_cache:
+        client, timestamp = _client_cache[client_key]
+        if time.time() - timestamp < _CLIENT_CACHE_TTL_SECONDS:
+            return client
+        else:
+            # Expired, remove from cache
+            del _client_cache[client_key]
+    return None
+
+
+def _set_cached_client(client_key: str, client: openai.AsyncOpenAI) -> None:
+    """Cache client with current timestamp."""
+    _client_cache[client_key] = (client, time.time())
 
 
 @asynccontextmanager
@@ -96,6 +117,16 @@ async def get_llm_client(provider: str | None = None, use_embedding_provider: bo
             api_key = provider_config["api_key"]
             # For Ollama, don't use the base_url from config - let _get_optimal_ollama_instance decide
             base_url = provider_config["base_url"] if provider_name != "ollama" else None
+
+        # Create client cache key based on provider configuration
+        client_key = f"{provider_name}:{base_url or 'default'}:{service_type if not provider else 'explicit'}"
+        
+        # Check if we have a cached client
+        cached_client = _get_cached_client(client_key)
+        if cached_client:
+            logger.debug(f"Reusing cached LLM client for provider: {provider_name}")
+            yield cached_client
+            return
 
         logger.info(f"Creating LLM client for provider: {provider_name}")
 
@@ -158,6 +189,9 @@ async def get_llm_client(provider: str | None = None, use_embedding_provider: bo
         else:
             raise ValueError(f"Unsupported LLM provider: {provider_name}")
 
+        # Cache the newly created client
+        _set_cached_client(client_key, client)
+
         yield client
 
     except Exception as e:
@@ -203,7 +237,7 @@ async def _get_optimal_ollama_instance(instance_type: str | None = None,
                 return embedding_url if embedding_url.endswith('/v1') else f"{embedding_url}/v1"
 
         # Default to LLM base URL for chat operations
-        fallback_url = rag_settings.get("LLM_BASE_URL", "http://localhost:11434")
+        fallback_url = rag_settings.get("LLM_BASE_URL", "http://host.docker.internal:11434")
         return fallback_url if fallback_url.endswith('/v1') else f"{fallback_url}/v1"
 
     except Exception as e:
@@ -211,11 +245,11 @@ async def _get_optimal_ollama_instance(instance_type: str | None = None,
         # Final fallback to localhost only if we can't get RAG settings
         try:
             rag_settings = await credential_service.get_credentials_by_category("rag_strategy")
-            fallback_url = rag_settings.get("LLM_BASE_URL", "http://localhost:11434")
+            fallback_url = rag_settings.get("LLM_BASE_URL", "http://host.docker.internal:11434")
             return fallback_url if fallback_url.endswith('/v1') else f"{fallback_url}/v1"
         except Exception as fallback_error:
             logger.error(f"Could not retrieve fallback configuration: {fallback_error}")
-            return "http://localhost:11434/v1"
+            return "http://host.docker.internal:11434/v1"
 
 
 async def get_embedding_model(provider: str | None = None) -> str:

@@ -1,0 +1,8 @@
+{
+  "os_type": null,
+  "memory_command": null,
+  "system_info_command": null,
+  "cached_at": null,
+  "ttl_seconds": 3600,
+  "cache_enabled": true
+}

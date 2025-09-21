@@ -1,3 +1,8 @@
+import asyncio
+import os
+from unittest.mock import MagicMock, patch
+import pytest
+        import src.server.services.credential_service as cred_module
 """
 Comprehensive Tests for Async Credential Service
 
@@ -5,19 +10,11 @@ Tests the credential service async functions after sync function removal.
 Covers credential storage, retrieval, encryption/decryption, and caching.
 """
 
-import asyncio
-import os
-from unittest.mock import MagicMock, patch
-
-import pytest
-
-from src.server.services.credential_service import (
     credential_service,
     get_credential,
     initialize_credentials,
     set_credential,
 )
-
 
 class TestAsyncCredentialService:
     """Test suite for async credential service functions"""
@@ -76,7 +73,6 @@ class TestAsyncCredentialService:
 
     def test_deprecated_functions_removed(self):
         """Test that deprecated sync functions are no longer available"""
-        import src.server.services.credential_service as cred_module
 
         # The sync function should no longer exist
         assert not hasattr(cred_module, "get_credential_sync")

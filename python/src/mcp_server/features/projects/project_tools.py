@@ -1,7 +1,8 @@
 """
-Consolidated project management tools for Archon MCP Server.
+Simple project management tools for Archon MCP Server.
 
-Reduces the number of individual CRUD operations while maintaining full functionality.
+Provides separate, focused tools for each project operation.
+No complex PRP examples - just straightforward project management.
 """
 
 import asyncio
@@ -23,308 +24,784 @@ from src.server.config.service_discovery import get_api_url
 
 logger = logging.getLogger(__name__)
 
-# Optimization constants
-MAX_DESCRIPTION_LENGTH = 1000
-DEFAULT_PAGE_SIZE = 10  # Reduced from 50
-
-def truncate_text(text: str, max_length: int = MAX_DESCRIPTION_LENGTH) -> str:
-    """Truncate text to maximum length with ellipsis."""
-    if text and len(text) > max_length:
-        return text[:max_length - 3] + "..."
-    return text
-
-def optimize_project_response(project: dict) -> dict:
-    """Optimize project object for MCP response."""
-    project = project.copy()  # Don't modify original
-    
-    # Truncate description if present
-    if "description" in project and project["description"]:
-        project["description"] = truncate_text(project["description"])
-    
-    # Remove or summarize large fields
-    if "features" in project and isinstance(project["features"], list):
-        project["features_count"] = len(project["features"])
-        if len(project["features"]) > 3:
-            project["features"] = project["features"][:3]  # Keep first 3
-    
-    return project
-
 
 def register_project_tools(mcp: FastMCP):
-    """Register consolidated project management tools with the MCP server."""
+    """Register individual project management tools with the MCP server."""
 
     @mcp.tool()
-    async def find_projects(
+    async def check_duplicate_projects(
         ctx: Context,
-        project_id: str | None = None,  # For getting single project
-        query: str | None = None,  # Search capability
-        page: int = 1,
-        per_page: int = DEFAULT_PAGE_SIZE,
+        title: str,
+        github_repo: str | None = None,
     ) -> str:
         """
-        List and search projects (consolidated: list + search + get).
-        
+        Check for existing projects with similar title or GitHub repository to avoid duplicates.
+
         Args:
-            project_id: Get specific project by ID (returns full details)
-            query: Keyword search in title/description
-            page: Page number for pagination  
-            per_page: Items per page (default: 10)
-        
+            title: Project title to check for duplicates
+            github_repo: GitHub repository URL to check for duplicates
+
         Returns:
-            JSON array of projects or single project (optimized payloads for lists)
-        
-        Examples:
-            list_projects()  # All projects
-            list_projects(query="auth")  # Search projects
-            list_projects(project_id="proj-123")  # Get specific project
+            JSON with duplicate check results:
+            {
+                "has_duplicates": true/false,
+                "similar_projects": [...],
+                "recommendation": "message"
+            }
         """
         try:
             api_url = get_api_url()
             timeout = get_default_timeout()
-            
-            # Single project get mode
-            if project_id:
-                async with httpx.AsyncClient(timeout=timeout) as client:
-                    response = await client.get(urljoin(api_url, f"/api/projects/{project_id}"))
-                    
-                    if response.status_code == 200:
-                        project = response.json()
-                        # Don't optimize single project get - return full details
-                        return json.dumps({"success": True, "project": project})
-                    elif response.status_code == 404:
-                        return MCPErrorFormatter.format_error(
-                            error_type="not_found",
-                            message=f"Project {project_id} not found",
-                            suggestion="Verify the project ID is correct",
-                            http_status=404,
-                        )
-                    else:
-                        return MCPErrorFormatter.from_http_error(response, "get project")
-            
-            # List mode
+
             async with httpx.AsyncClient(timeout=timeout) as client:
+                # Get all projects
                 response = await client.get(urljoin(api_url, "/api/projects"))
                 
                 if response.status_code == 200:
-                    data = response.json()
-                    projects = data.get("projects", [])
+                    projects = response.json().get("projects", [])
+                    similar_projects = []
                     
-                    # Apply search filter if provided
-                    if query:
-                        query_lower = query.lower()
-                        projects = [
-                            p for p in projects
-                            if query_lower in p.get("title", "").lower()
-                            or query_lower in p.get("description", "").lower()
-                        ]
+                    # Check for similar titles
+                    for project in projects:
+                        if title.lower() in project.get("title", "").lower():
+                            similar_projects.append({
+                                "id": project.get("id"),
+                                "title": project.get("title"),
+                                "github_repo": project.get("github_repo"),
+                                "match_type": "title_similarity"
+                            })
                     
-                    # Apply pagination
-                    start_idx = (page - 1) * per_page
-                    end_idx = start_idx + per_page
-                    paginated = projects[start_idx:end_idx]
+                    # Check for same GitHub repo
+                    if github_repo:
+                        for project in projects:
+                            if project.get("github_repo") == github_repo:
+                                similar_projects.append({
+                                    "id": project.get("id"),
+                                    "title": project.get("title"),
+                                    "github_repo": project.get("github_repo"),
+                                    "match_type": "github_repo_exact"
+                                })
                     
-                    # Optimize project responses
-                    optimized = [optimize_project_response(p) for p in paginated]
+                    has_duplicates = len(similar_projects) > 0
+                    recommendation = ""
+                    
+                    if has_duplicates:
+                        if github_repo:
+                            recommendation = f"Found {len(similar_projects)} similar projects. Consider using a more specific title or check if you meant to update an existing project."
+                        else:
+                            recommendation = f"Found {len(similar_projects)} similar projects. Consider providing a github_repo to better identify unique projects."
+                    else:
+                        recommendation = "No similar projects found. Safe to create new project."
                     
                     return json.dumps({
+                        "has_duplicates": has_duplicates,
+                        "similar_projects": similar_projects,
+                        "recommendation": recommendation
+                    })
+                else:
+                    return MCPErrorFormatter.format_error(
+                        error_type="api_error",
+                        message="Failed to fetch projects for duplicate check",
+                        suggestion="Try again later or check API status",
+                        http_status=response.status_code,
+                    )
+                    
+        except Exception as e:
+            logger.error(f"Error checking for duplicate projects: {e}")
+            return MCPErrorFormatter.format_error(
+                error_type="internal_error",
+                message=f"Failed to check for duplicate projects: {str(e)}",
+                suggestion="Try again later",
+                http_status=500,
+            )
+
+    @mcp.tool()
+    async def merge_duplicate_projects(
+        ctx: Context,
+        primary_project_id: str,
+        duplicate_project_ids: list[str],
+        merge_strategy: str = "consolidate",
+    ) -> str:
+        """
+        Merge duplicate projects by consolidating tasks, documents, and data.
+
+        Args:
+            primary_project_id: ID of the project to keep as primary
+            duplicate_project_ids: List of project IDs to merge into primary
+            merge_strategy: Strategy for merging ("consolidate", "replace", "append")
+
+        Returns:
+            JSON with merge results:
+            {
+                "success": true,
+                "merged_projects": [...],
+                "consolidated_tasks": [...],
+                "consolidated_docs": [...],
+                "message": "Projects merged successfully"
+            }
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                # Get primary project details
+                primary_response = await client.get(
+                    urljoin(api_url, f"/api/projects/{primary_project_id}")
+                )
+                if primary_response.status_code != 200:
+                    return MCPErrorFormatter.format_error(
+                        error_type="not_found",
+                        message=f"Primary project {primary_project_id} not found",
+                        suggestion="Check project ID and try again",
+                        http_status=404,
+                    )
+
+                primary_project = primary_response.json()
+                merged_projects = [primary_project_id]
+                consolidated_tasks = []
+                consolidated_docs = []
+
+                # Process each duplicate project
+                for duplicate_id in duplicate_project_ids:
+                    # Get duplicate project details
+                    dup_response = await client.get(
+                        urljoin(api_url, f"/api/projects/{duplicate_id}")
+                    )
+                    if dup_response.status_code != 200:
+                        logger.warning(f"Duplicate project {duplicate_id} not found, skipping")
+                        continue
+
+                    duplicate_project = dup_response.json()
+
+                    # Get tasks from duplicate project
+                    tasks_response = await client.get(
+                        urljoin(api_url, f"/api/tasks?project_id={duplicate_id}")
+                    )
+                    if tasks_response.status_code == 200:
+                        tasks = tasks_response.json().get("tasks", [])
+                        for task in tasks:
+                            # Update task to belong to primary project
+                            task["project_id"] = primary_project_id
+                            consolidated_tasks.append(task)
+
+                    # Get documents from duplicate project
+                    docs_response = await client.get(
+                        urljoin(api_url, f"/api/documents?project_id={duplicate_id}")
+                    )
+                    if docs_response.status_code == 200:
+                        docs = docs_response.json().get("documents", [])
+                        for doc in docs:
+                            # Update document to belong to primary project
+                            doc["project_id"] = primary_project_id
+                            consolidated_docs.append(doc)
+
+                    # Merge project data
+                    if merge_strategy == "consolidate":
+                        # Merge features and data
+                        primary_features = primary_project.get("features", {})
+                        dup_features = duplicate_project.get("features", {})
+                        primary_project["features"] = {**primary_features, **dup_features}
+
+                        primary_data = primary_project.get("data", {})
+                        dup_data = duplicate_project.get("data", {})
+                        primary_project["data"] = {**primary_data, **dup_data}
+
+                        # Merge technical and business sources
+                        primary_tech_sources = primary_project.get("technical_sources", [])
+                        dup_tech_sources = duplicate_project.get("technical_sources", [])
+                        primary_project["technical_sources"] = list(set(primary_tech_sources + dup_tech_sources))
+
+                        primary_business_sources = primary_project.get("business_sources", [])
+                        dup_business_sources = duplicate_project.get("business_sources", [])
+                        primary_project["business_sources"] = list(set(primary_business_sources + dup_business_sources))
+
+                    merged_projects.append(duplicate_id)
+
+                # Update primary project with merged data
+                update_response = await client.put(
+                    urljoin(api_url, f"/api/projects/{primary_project_id}"),
+                    json={
+                        "features": primary_project.get("features", {}),
+                        "data": primary_project.get("data", {}),
+                        "technical_sources": primary_project.get("technical_sources", []),
+                        "business_sources": primary_project.get("business_sources", []),
+                    }
+                )
+
+                if update_response.status_code != 200:
+                    return MCPErrorFormatter.format_error(
+                        error_type="update_failed",
+                        message="Failed to update primary project with merged data",
+                        suggestion="Try again later",
+                        http_status=500,
+                    )
+
+                # Move tasks to primary project
+                for task in consolidated_tasks:
+                    task_response = await client.put(
+                        urljoin(api_url, f"/api/tasks/{task['id']}"),
+                        json={"project_id": primary_project_id}
+                    )
+                    if task_response.status_code != 200:
+                        logger.warning(f"Failed to move task {task['id']} to primary project")
+
+                # Move documents to primary project
+                for doc in consolidated_docs:
+                    doc_response = await client.put(
+                        urljoin(api_url, f"/api/documents/{doc['id']}"),
+                        json={"project_id": primary_project_id}
+                    )
+                    if doc_response.status_code != 200:
+                        logger.warning(f"Failed to move document {doc['id']} to primary project")
+
+                # Delete duplicate projects
+                for duplicate_id in duplicate_project_ids:
+                    delete_response = await client.delete(
+                        urljoin(api_url, f"/api/projects/{duplicate_id}")
+                    )
+                    if delete_response.status_code != 200:
+                        logger.warning(f"Failed to delete duplicate project {duplicate_id}")
+
+                return json.dumps({
+                    "success": True,
+                    "merged_projects": merged_projects,
+                    "consolidated_tasks": len(consolidated_tasks),
+                    "consolidated_docs": len(consolidated_docs),
+                    "message": f"Successfully merged {len(duplicate_project_ids)} projects into {primary_project_id}"
+                })
+
+        except Exception as e:
+            logger.error(f"Error merging projects: {e}")
+            return MCPErrorFormatter.format_error(
+                error_type="internal_error",
+                message=f"Failed to merge projects: {str(e)}",
+                suggestion="Try again later",
+                http_status=500,
+            )
+
+    @mcp.tool()
+    async def auto_detect_github_path(
+        ctx: Context,
+        project_title: str,
+        base_path: str = None,
+    ) -> str:
+        """
+        Automatically detect GitHub repository path based on project structure.
+
+        Args:
+            project_title: Title of the project to detect path for
+            base_path: Base path to search from (defaults to current directory)
+
+        Returns:
+            JSON with detected GitHub path:
+            {
+                "github_repo": "https://github.com/user/repo",
+                "confidence": "high|medium|low",
+                "detection_method": "git_remote|directory_structure|fallback"
+            }
+        """
+        try:
+            import os
+            import subprocess
+            from pathlib import Path
+
+            if not base_path:
+                base_path = os.getcwd()
+
+            base_path = Path(base_path).resolve()
+            github_repo = None
+            confidence = "low"
+            detection_method = "fallback"
+
+            # Method 1: Check git remote
+            try:
+                result = subprocess.run(
+                    ["git", "remote", "get-url", "origin"],
+                    cwd=base_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    github_repo = result.stdout.strip()
+                    # Convert SSH to HTTPS if needed
+                    if github_repo.startswith("git@github.com:"):
+                        github_repo = github_repo.replace("git@github.com:", "https://github.com/").replace(".git", "")
+                    confidence = "high"
+                    detection_method = "git_remote"
+            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+                pass
+
+            # Method 2: Check for .git directory and infer from directory name
+            if not github_repo and (base_path / ".git").exists():
+                try:
+                    # Try to get user from git config
+                    user_result = subprocess.run(
+                        ["git", "config", "user.name"],
+                        cwd=base_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if user_result.returncode == 0 and user_result.stdout.strip():
+                        username = user_result.stdout.strip().lower().replace(" ", "-")
+                        repo_name = base_path.name.lower().replace(" ", "-")
+                        github_repo = f"https://github.com/{username}/{repo_name}"
+                        confidence = "medium"
+                        detection_method = "directory_structure"
+                except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+                    pass
+
+            # Method 3: Fallback based on project title
+            if not github_repo:
+                # Try to extract username from common patterns
+                username = "user"  # Default fallback
+                repo_name = project_title.lower().replace(" ", "-").replace("_", "-")
+                github_repo = f"https://github.com/{username}/{repo_name}"
+                confidence = "low"
+                detection_method = "fallback"
+
+            return json.dumps({
+                "github_repo": github_repo,
+                "confidence": confidence,
+                "detection_method": detection_method,
+                "base_path": str(base_path)
+            })
+
+        except Exception as e:
+            logger.error(f"Error detecting GitHub path: {e}")
+            return MCPErrorFormatter.format_error(
+                error_type="internal_error",
+                message=f"Failed to detect GitHub path: {str(e)}",
+                suggestion="Provide github_repo manually",
+                http_status=500,
+            )
+
+    @mcp.tool()
+    async def cleanup_empty_projects(
+        ctx: Context,
+        dry_run: bool = False,
+    ) -> str:
+        """
+        Clean up projects that have no tasks.
+
+        Args:
+            dry_run: If true, only report what would be deleted without actually deleting
+
+        Returns:
+            JSON with cleanup results:
+            {
+                "success": true,
+                "empty_projects_found": 5,
+                "projects_deleted": 5,
+                "projects_kept": 10,
+                "deleted_project_ids": [...],
+                "message": "Cleanup completed successfully"
+            }
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                # Get all projects
+                projects_response = await client.get(urljoin(api_url, "/api/projects"))
+                if projects_response.status_code != 200:
+                    return MCPErrorFormatter.format_error(
+                        error_type="api_error",
+                        message="Failed to fetch projects",
+                        suggestion="Try again later",
+                        http_status=projects_response.status_code,
+                    )
+
+                projects = projects_response.json().get("projects", [])
+                empty_projects = []
+                projects_with_tasks = []
+
+                # Check each project for tasks
+                for project in projects:
+                    project_id = project['id']
+                    project_title = project['title']
+
+                    # Get tasks for this project
+                    tasks_response = await client.get(
+                        urljoin(api_url, f"/api/tasks?project_id={project_id}")
+                    )
+                    if tasks_response.status_code == 200:
+                        tasks = tasks_response.json().get('tasks', [])
+                        if len(tasks) == 0:
+                            empty_projects.append(project)
+                        else:
+                            projects_with_tasks.append(project)
+
+                deleted_project_ids = []
+
+                if not dry_run and empty_projects:
+                    # Delete empty projects
+                    for project in empty_projects:
+                        project_id = project['id']
+                        delete_response = await client.delete(
+                            urljoin(api_url, f"/api/projects/{project_id}")
+                        )
+                        if delete_response.status_code == 200:
+                            deleted_project_ids.append(project_id)
+
+                return json.dumps({
+                    "success": True,
+                    "empty_projects_found": len(empty_projects),
+                    "projects_deleted": len(deleted_project_ids),
+                    "projects_kept": len(projects_with_tasks),
+                    "deleted_project_ids": deleted_project_ids,
+                    "dry_run": dry_run,
+                    "message": f"Cleanup completed successfully. {'Dry run - no projects deleted.' if dry_run else f'Deleted {len(deleted_project_ids)} empty projects.'}"
+                })
+
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+            return MCPErrorFormatter.format_error(
+                error_type="internal_error",
+                message=f"Failed to cleanup empty projects: {str(e)}",
+                suggestion="Try again later",
+                http_status=500,
+            )
+
+    @mcp.tool()
+    async def create_project(
+        ctx: Context,
+        title: str,
+        description: str = "",
+        github_repo: str | None = None,
+    ) -> str:
+        """
+        Create a new project with automatic AI assistance.
+
+        The project creation starts a background process that generates PRP documentation
+        and initial tasks based on the title and description.
+
+        Args:
+            title: Project title - should be descriptive (required)
+            description: Project description explaining goals and scope
+            github_repo: GitHub repository URL (e.g., "https://github.com/org/repo") - RECOMMENDED to avoid duplicate projects
+
+        Returns:
+            JSON with project details:
+            {
+                "success": true,
+                "project": {...},
+                "project_id": "550e8400-e29b-41d4-a716-446655440000",
+                "message": "Project created successfully"
+            }
+
+        Examples:
+            # Simple project (GitHub repo recommended to avoid duplicates)
+            create_project(
+                title="Task Management API",
+                description="RESTful API for managing tasks and projects"
+            )
+
+            # Project with GitHub integration (RECOMMENDED)
+            create_project(
+                title="OAuth2 Authentication System",
+                description="Implement secure OAuth2 authentication with multiple providers",
+                github_repo="https://github.com/myorg/auth-service"
+            )
+        """
+        try:
+            # Auto-detect GitHub repo if not provided
+            if not github_repo:
+                logger.info(f"GitHub repository not provided for project '{title}'. Attempting auto-detection...")
+                try:
+                    # Call auto_detect_github_path function
+                    detection_result = await auto_detect_github_path(ctx, title)
+                    detection_data = json.loads(detection_result)
+                    if detection_data.get("github_repo"):
+                        github_repo = detection_data["github_repo"]
+                        logger.info(f"Auto-detected GitHub repository: {github_repo} (confidence: {detection_data.get('confidence', 'unknown')})")
+                    else:
+                        logger.warning(f"Could not auto-detect GitHub repository for project '{title}'. This may lead to duplicate projects.")
+                except Exception as e:
+                    logger.warning(f"Auto-detection failed for project '{title}': {e}")
+            
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(
+                    urljoin(api_url, "/api/projects"),
+                    json={"title": title, "description": description, "github_repo": github_repo},
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+
+                    # Handle async project creation
+                    if "progress_id" in result:
+                        # Poll for completion with proper error handling and backoff
+                        max_attempts = get_max_polling_attempts()
+                        polling_timeout = get_polling_timeout()
+
+                        for attempt in range(max_attempts):
+                            try:
+                                # Exponential backoff
+                                sleep_interval = get_polling_interval(attempt)
+                                await asyncio.sleep(sleep_interval)
+
+                                # Create new client with polling timeout
+                                async with httpx.AsyncClient(
+                                    timeout=polling_timeout
+                                ) as poll_client:
+                                    list_response = await poll_client.get(
+                                        urljoin(api_url, "/api/projects")
+                                    )
+                                    list_response.raise_for_status()  # Raise on HTTP errors
+
+                                    response_data = list_response.json()
+                                    # Extract projects array from response
+                                    projects = response_data.get("projects", [])
+                                    # Find project with matching title created recently
+                                    for proj in projects:
+                                        if proj.get("title") == title:
+                                            return json.dumps({
+                                                "success": True,
+                                                "project": proj,
+                                                "project_id": proj["id"],
+                                                "message": f"Project created successfully with ID: {proj['id']}",
+                                            })
+
+                            except httpx.RequestError as poll_error:
+                                logger.warning(
+                                    f"Polling attempt {attempt + 1}/{max_attempts} failed: {poll_error}"
+                                )
+                                if attempt == max_attempts - 1:  # Last attempt
+                                    return MCPErrorFormatter.format_error(
+                                        error_type="polling_timeout",
+                                        message=f"Project creation polling failed after {max_attempts} attempts",
+                                        details={
+                                            "progress_id": result["progress_id"],
+                                            "title": title,
+                                            "last_error": str(poll_error),
+                                        },
+                                        suggestion="The project may still be creating. Use list_projects to check status",
+                                    )
+                            except Exception as poll_error:
+                                logger.warning(
+                                    f"Unexpected error during polling attempt {attempt + 1}: {poll_error}"
+                                )
+
+                        # If we couldn't find it after polling
+                        return json.dumps({
+                            "success": True,
+                            "progress_id": result["progress_id"],
+                            "message": f"Project creation in progress after {max_attempts} checks. Use list_projects to find it once complete.",
+                        })
+                    else:
+                        # Direct response (shouldn't happen with current API)
+                        return json.dumps({"success": True, "project": result})
+                else:
+                    return MCPErrorFormatter.from_http_error(response, "create project")
+
+        except httpx.ConnectError as e:
+            return MCPErrorFormatter.from_exception(
+                e, "create project", {"title": title, "api_url": api_url}
+            )
+        except httpx.TimeoutException as e:
+            return MCPErrorFormatter.from_exception(
+                e, "create project", {"title": title, "timeout": str(timeout)}
+            )
+        except Exception as e:
+            logger.error(f"Error creating project: {e}", exc_info=True)
+            return MCPErrorFormatter.from_exception(e, "create project", {"title": title})
+
+    @mcp.tool()
+    async def list_projects(ctx: Context) -> str:
+        """
+        List all projects.
+
+        Returns:
+            JSON array of all projects with their basic information
+
+        Example:
+            list_projects()
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                # CRITICAL: Pass include_content=False for lightweight response
+                response = await client.get(
+                    urljoin(api_url, "/api/projects"),
+                    params={"include_content": False}
+                )
+
+                if response.status_code == 200:
+                    response_data = response.json()
+                    # Response already includes projects array and count
+                    return json.dumps({
                         "success": True,
-                        "projects": optimized,
-                        "count": len(optimized),
-                        "total": len(projects),
-                        "page": page,
-                        "per_page": per_page,
-                        "query": query
+                        "projects": response_data,
+                        "count": response_data.get("count", 0),
                     })
                 else:
                     return MCPErrorFormatter.from_http_error(response, "list projects")
-                    
+
         except httpx.RequestError as e:
-            return MCPErrorFormatter.from_exception(e, "list projects")
+            return MCPErrorFormatter.from_exception(e, "list projects", {"api_url": api_url})
         except Exception as e:
             logger.error(f"Error listing projects: {e}", exc_info=True)
             return MCPErrorFormatter.from_exception(e, "list projects")
 
     @mcp.tool()
-    async def manage_project(
+    async def get_project(ctx: Context, project_id: str) -> str:
+        """
+        Get detailed information about a specific project.
+
+        Args:
+            project_id: UUID of the project
+
+        Returns:
+            JSON with complete project details
+
+        Example:
+            get_project(project_id="550e8400-e29b-41d4-a716-446655440000")
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.get(urljoin(api_url, f"/api/projects/{project_id}"))
+
+                if response.status_code == 200:
+                    project = response.json()
+                    return json.dumps({"success": True, "project": project})
+                elif response.status_code == 404:
+                    return MCPErrorFormatter.format_error(
+                        error_type="not_found",
+                        message=f"Project {project_id} not found",
+                        suggestion="Verify the project ID is correct",
+                        http_status=404,
+                    )
+                else:
+                    return MCPErrorFormatter.from_http_error(response, "get project")
+
+        except httpx.RequestError as e:
+            return MCPErrorFormatter.from_exception(e, "get project", {"project_id": project_id})
+        except Exception as e:
+            logger.error(f"Error getting project: {e}", exc_info=True)
+            return MCPErrorFormatter.from_exception(e, "get project")
+
+    @mcp.tool()
+    async def delete_project(ctx: Context, project_id: str) -> str:
+        """
+        Delete a project.
+
+        Args:
+            project_id: UUID of the project to delete
+
+        Returns:
+            JSON confirmation of deletion
+
+        Example:
+            delete_project(project_id="550e8400-e29b-41d4-a716-446655440000")
+        """
+        try:
+            api_url = get_api_url()
+            timeout = get_default_timeout()
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.delete(urljoin(api_url, f"/api/projects/{project_id}"))
+
+                if response.status_code == 200:
+                    return json.dumps({
+                        "success": True,
+                        "message": f"Project {project_id} deleted successfully",
+                    })
+                elif response.status_code == 404:
+                    return MCPErrorFormatter.format_error(
+                        error_type="not_found",
+                        message=f"Project {project_id} not found",
+                        suggestion="Verify the project ID is correct",
+                        http_status=404,
+                    )
+                else:
+                    return MCPErrorFormatter.from_http_error(response, "delete project")
+
+        except httpx.RequestError as e:
+            return MCPErrorFormatter.from_exception(e, "delete project", {"project_id": project_id})
+        except Exception as e:
+            logger.error(f"Error deleting project: {e}", exc_info=True)
+            return MCPErrorFormatter.from_exception(e, "delete project")
+
+    @mcp.tool()
+    async def update_project(
         ctx: Context,
-        action: str,  # "create" | "update" | "delete"
-        project_id: str | None = None,
+        project_id: str,
         title: str | None = None,
         description: str | None = None,
         github_repo: str | None = None,
     ) -> str:
         """
-        Manage projects (consolidated: create/update/delete).
-        
+        Update a project's basic information.
+
         Args:
-            action: "create" | "update" | "delete"
-            project_id: Project UUID for update/delete
-            title: Project title (required for create)
-            description: Project goals and scope
-            github_repo: GitHub URL (e.g. "https://github.com/org/repo")
-        
-        Examples:
-            manage_project("create", title="Auth System")
-            manage_project("update", project_id="p-1", description="Updated")
-            manage_project("delete", project_id="p-1")
-        
-        Returns: {success: bool, project?: object, message: string}
+            project_id: UUID of the project to update
+            title: New title (optional)
+            description: New description (optional)
+            github_repo: New GitHub repository URL (optional)
+
+        Returns:
+            JSON with updated project details
+
+        Example:
+            update_project(project_id="550e8400-e29b-41d4-a716-446655440000",
+                         title="Updated Project Title")
         """
         try:
             api_url = get_api_url()
             timeout = get_default_timeout()
-            
+
+            # Build update payload with only provided fields
+            update_data = {}
+            if title is not None:
+                update_data["title"] = title
+            if description is not None:
+                update_data["description"] = description
+            if github_repo is not None:
+                update_data["github_repo"] = github_repo
+
+            if not update_data:
+                return MCPErrorFormatter.format_error(
+                    error_type="validation_error",
+                    message="No fields to update",
+                    suggestion="Provide at least one field to update (title, description, or github_repo)",
+                )
+
             async with httpx.AsyncClient(timeout=timeout) as client:
-                if action == "create":
-                    if not title:
-                        return MCPErrorFormatter.format_error(
-                            "validation_error",
-                            "title required for create"
-                        )
-                    
-                    response = await client.post(
-                        urljoin(api_url, "/api/projects"),
-                        json={
-                            "title": title,
-                            "description": description or "",
-                            "github_repo": github_repo
-                        }
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        
-                        # Handle async project creation with polling
-                        if "progress_id" in result:
-                            max_attempts = get_max_polling_attempts()
-                            polling_timeout = get_polling_timeout()
-                            
-                            for attempt in range(max_attempts):
-                                try:
-                                    # Exponential backoff
-                                    sleep_interval = get_polling_interval(attempt)
-                                    await asyncio.sleep(sleep_interval)
-                                    
-                                    async with httpx.AsyncClient(timeout=polling_timeout) as poll_client:
-                                        poll_response = await poll_client.get(
-                                            urljoin(api_url, f"/api/progress/{result['progress_id']}")
-                                        )
-                                        
-                                        if poll_response.status_code == 200:
-                                            poll_data = poll_response.json()
-                                            
-                                            if poll_data.get("status") == "completed":
-                                                project = poll_data.get("result", {}).get("project", {})
-                                                return json.dumps({
-                                                    "success": True,
-                                                    "project": optimize_project_response(project),
-                                                    "project_id": project.get("id"),
-                                                    "message": poll_data.get("result", {}).get("message", "Project created successfully")
-                                                })
-                                            elif poll_data.get("status") == "failed":
-                                                error_msg = poll_data.get("error", "Project creation failed")
-                                                return MCPErrorFormatter.format_error(
-                                                    "creation_failed",
-                                                    error_msg,
-                                                    details=poll_data.get("details")
-                                                )
-                                            # Continue polling if still processing
-                                            
-                                except httpx.RequestError as poll_error:
-                                    logger.warning(f"Polling attempt {attempt + 1} failed: {poll_error}")
-                                    if attempt == max_attempts - 1:
-                                        return MCPErrorFormatter.format_error(
-                                            "timeout",
-                                            "Project creation timed out",
-                                            suggestion="Check project status manually"
-                                        )
-                            
-                            return MCPErrorFormatter.format_error(
-                                "timeout",
-                                "Project creation timed out after maximum attempts",
-                                details={"progress_id": result.get("progress_id")}
-                            )
-                        else:
-                            # Synchronous response
-                            project = result.get("project", {})
-                            return json.dumps({
-                                "success": True,
-                                "project": optimize_project_response(project),
-                                "project_id": project.get("id"),
-                                "message": result.get("message", "Project created successfully")
-                            })
-                    else:
-                        return MCPErrorFormatter.from_http_error(response, "create project")
-                        
-                elif action == "update":
-                    if not project_id:
-                        return MCPErrorFormatter.format_error(
-                            "validation_error",
-                            "project_id required for update"
-                        )
-                    
-                    update_data = {}
-                    if title is not None:
-                        update_data["title"] = title
-                    if description is not None:
-                        update_data["description"] = description
-                    if github_repo is not None:
-                        update_data["github_repo"] = github_repo
-                    
-                    if not update_data:
-                        return MCPErrorFormatter.format_error(
-                            "validation_error",
-                            "No fields to update"
-                        )
-                    
-                    response = await client.put(
-                        urljoin(api_url, f"/api/projects/{project_id}"),
-                        json=update_data
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        project = result.get("project")
-                        
-                        if project:
-                            project = optimize_project_response(project)
-                        
-                        return json.dumps({
-                            "success": True,
-                            "project": project,
-                            "message": result.get("message", "Project updated successfully")
-                        })
-                    else:
-                        return MCPErrorFormatter.from_http_error(response, "update project")
-                        
-                elif action == "delete":
-                    if not project_id:
-                        return MCPErrorFormatter.format_error(
-                            "validation_error",
-                            "project_id required for delete"
-                        )
-                    
-                    response = await client.delete(
-                        urljoin(api_url, f"/api/projects/{project_id}")
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        return json.dumps({
-                            "success": True,
-                            "message": result.get("message", "Project deleted successfully")
-                        })
-                    else:
-                        return MCPErrorFormatter.from_http_error(response, "delete project")
-                        
-                else:
+                response = await client.put(
+                    urljoin(api_url, f"/api/projects/{project_id}"), json=update_data
+                )
+
+                if response.status_code == 200:
+                    project = response.json()
+                    return json.dumps({
+                        "success": True,
+                        "project": project,
+                        "message": "Project updated successfully",
+                    })
+                elif response.status_code == 404:
                     return MCPErrorFormatter.format_error(
-                        "invalid_action",
-                        f"Unknown action: {action}"
+                        error_type="not_found",
+                        message=f"Project {project_id} not found",
+                        suggestion="Verify the project ID is correct",
+                        http_status=404,
                     )
-                    
+                else:
+                    return MCPErrorFormatter.from_http_error(response, "update project")
+
         except httpx.RequestError as e:
-            return MCPErrorFormatter.from_exception(e, f"{action} project")
+            return MCPErrorFormatter.from_exception(e, "update project", {"project_id": project_id})
         except Exception as e:
-            logger.error(f"Error managing project ({action}): {e}", exc_info=True)
-            return MCPErrorFormatter.from_exception(e, f"{action} project")
+            logger.error(f"Error updating project: {e}", exc_info=True)
+            return MCPErrorFormatter.from_exception(e, "update project")

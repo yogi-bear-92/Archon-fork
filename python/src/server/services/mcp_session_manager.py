@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta
 
 # Removed direct logging import - using unified config
-from ..config.logfire_config import get_logger
+from src.server.config.logfire_config import get_logger
 
 logger = get_logger(__name__)
 

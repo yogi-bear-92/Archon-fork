@@ -1,0 +1,66 @@
+{
+  "topology": "adaptive",
+  "maxAgents": 10,
+  "coordination": {
+    "type": "mesh",
+    "fallback": "hierarchical"
+  },
+  "archon_integration": {
+    "enabled": true,
+    "priority": "primary",
+    "mcp_server_required": true,
+    "task_management_first": true,
+    "prp_cycles": 4,
+    "backend_port": 8080,
+    "agents_port": 8052,
+    "mcp_port": 8051,
+    "workflow": {
+      "pre_task": "check_archon_tasks",
+      "during_task": "update_archon_status", 
+      "post_task": "complete_archon_task"
+    }
+  },
+  "critical_rules": {
+    "archon_first": {
+      "enabled": true,
+      "priority": "absolute",
+      "description": "ALWAYS check Archon MCP server for task management before TodoWrite",
+      "violation_action": "stop_and_restart_with_archon",
+      "required_mcp_tools": [
+        "archon:manage_task",
+        "archon:perform_rag_query", 
+        "archon:search_code_examples",
+        "archon:manage_project",
+        "archon:get_available_sources"
+      ]
+    },
+    "task_driven_development": {
+      "mandatory_cycle": [
+        "check_current_task",
+        "research_for_task", 
+        "implement_task",
+        "update_task_status",
+        "get_next_task"
+      ],
+      "never_skip_task_updates": true,
+      "never_code_without_checking_tasks": true
+    }
+  },
+  "swarm_monitoring": {
+    "enabled": true,
+    "interval": 1000,
+    "export_metrics": true,
+    "performance_target": "200ms"
+  },
+  "neural_features": {
+    "enabled": true,
+    "pattern_learning": true,
+    "adaptive_spawning": true
+  },
+  "memory": {
+    "persistent": true,
+    "cross_session": true,
+    "memory_coordinator": true,
+    "archon_integration": true
+  }
+}

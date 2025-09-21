@@ -1,0 +1,17 @@
+{
+  "agent": {
+    "maxInstances": 4
+  },
+  "memory": {
+    "maxCacheSize": 128
+  },
+  "orchestrator": {
+    "maxConcurrentTasks": 3
+  },
+  "swarm": {
+    "maxAgents": 6
+  },
+  "terminal": {
+    "poolSize": 8
+  }
+}

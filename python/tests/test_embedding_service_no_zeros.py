@@ -1,3 +1,6 @@
+from unittest.mock import AsyncMock, Mock, patch
+import openai
+import pytest
 """
 Tests for embedding service to ensure no zero embeddings are returned.
 
@@ -5,22 +8,14 @@ These tests verify that the embedding service raises appropriate exceptions
 instead of returning zero embeddings, following the "fail fast and loud" principle.
 """
 
-from unittest.mock import AsyncMock, Mock, patch
-
-import openai
-import pytest
-
-from src.server.services.embeddings.embedding_exceptions import (
     EmbeddingAPIError,
     EmbeddingQuotaExhaustedError,
     EmbeddingRateLimitError,
 )
-from src.server.services.embeddings.embedding_service import (
     EmbeddingBatchResult,
     create_embedding,
     create_embeddings_batch,
 )
-
 
 class TestNoZeroEmbeddings:
     """Test that no zero embeddings are ever returned."""
@@ -265,7 +260,6 @@ class TestNoZeroEmbeddings:
             # Verify no zero embeddings in the result
             for embedding in result.embeddings:
                 assert not is_zero_embedding(embedding)
-
 
 class TestEmbeddingBatchResult:
     """Test the EmbeddingBatchResult dataclass."""

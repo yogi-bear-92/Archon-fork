@@ -1,0 +1,53 @@
+{
+  "validation_start": "2025-09-05T17:19:38.124081",
+  "initial_memory_state": {
+    "timestamp": "2025-09-05T17:19:38.124387",
+    "total_memory_gb": 16.0,
+    "available_memory_gb": 3.380157470703125,
+    "used_memory_gb": 6.019561767578125,
+    "memory_percent": 78.9,
+    "process_memory_mb": 16.859375,
+    "free_memory_mb": 62.40625,
+    "emergency_abort_needed": false,
+    "warning_level": false
+  },
+  "test_results": [
+    {
+      "test_name": "memory_pressure_integration_tests",
+      "status": "failed",
+      "duration_seconds": 0.19167184829711914,
+      "return_code": 4,
+      "memory_before": 78.9,
+      "memory_after": 79.0,
+      "memory_delta": 0.09999999999999432,
+      "stdout_lines": 1,
+      "stderr_lines": 3
+    },
+    {
+      "test_name": "coordination_under_pressure_tests",
+      "status": "failed",
+      "duration_seconds": 0.10432791709899902,
+      "return_code": 4,
+      "memory_before": 79.0,
+      "memory_after": 79.0,
+      "memory_delta": 0.0,
+      "stdout_lines": 1,
+      "stderr_lines": 3
+    }
+  ],
+  "final_status": "validation_failed",
+  "emergency_cleanups": 0,
+  "validation_end": "2025-09-05T17:19:38.421242",
+  "final_memory_state": {
+    "timestamp": "2025-09-05T17:19:38.421269",
+    "total_memory_gb": 16.0,
+    "available_memory_gb": 3.3662261962890625,
+    "used_memory_gb": 5.9828643798828125,
+    "memory_percent": 79.0,
+    "process_memory_mb": 16.890625,
+    "free_memory_mb": 82.8125,
+    "emergency_abort_needed": false,
+    "warning_level": false
+  },
+  "success_rate": 0.0
+}
