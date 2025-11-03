@@ -135,6 +135,44 @@ mcp__archon__rag_search_code_examples(
 )
 ```
 
+### Agent Work Orders Service
+
+```bash
+# Agent Work Orders Service (independent microservice)
+make agent-work-orders  # Run agent work orders service locally on 8053
+# Or manually:
+uv run python -m uvicorn src.agent_work_orders.server:app --port 8053 --reload
+
+# Docker operations
+docker compose up --build -d       # Start all services
+docker compose --profile backend up -d  # Backend only (for hybrid dev)
+docker compose --profile work-orders up -d   # Include agent work orders service
+docker compose logs -f archon-server    # View server logs
+docker compose logs -f archon-mcp       # View MCP server logs
+docker compose logs -f archon-agent-work-orders  # View agent work orders service logs
+docker compose restart archon-server    # Restart after code changes
+docker compose down      # Stop all services
+docker compose down -v   # Stop and remove volumes
+```
+
+### Development Modes
+
+```bash
+# Hybrid with Agent Work Orders Service - backend in Docker, agent work orders local
+make dev-work-orders     # Starts backend in Docker, prompts to run agent service in separate terminal
+# Then in separate terminal:
+make agent-work-orders   # Start agent work orders service locally
+
+# Full Docker mode
+make dev-docker          # Or: docker compose up --build -d
+docker compose --profile work-orders up -d  # Include agent work orders service
+
+# All Local (3 terminals) - for agent work orders service development
+# Terminal 1: uv run python -m uvicorn src.server.main:app --port 8181 --reload
+# Terminal 2: make agent-work-orders
+# Terminal 3: cd archon-ui-main && npm run dev
+```
+
 ### Project Workflows
 
 **New Project:**
@@ -173,6 +211,16 @@ mcp__archon__find_tasks(filter_by="project", filter_value="proj-123")
 
 // 3. Continue work or create new tasks
 ```
+
+### Repository Configuration
+
+Repository information (owner, name) is centralized in `python/src/server/config/version.py`:
+- `GITHUB_REPO_OWNER` - GitHub repository owner (default: "coleam00")
+- `GITHUB_REPO_NAME` - GitHub repository name (default: "Archon")
+
+This is the single source of truth for repository configuration. All services (version checking, bug reports, etc.) should import these constants rather than hardcoding repository URLs.
+
+Environment variable override: `GITHUB_REPO="owner/repo"` can be set to override defaults.
 
 ### Archon MCP Tool Reference
 
